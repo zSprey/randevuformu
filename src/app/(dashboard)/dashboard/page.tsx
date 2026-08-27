@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { Users, CalendarCheck, TrendingUp, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
 
-const data = [
+const chartData = [
   { name: 'Pzt', gelir: 4000 },
   { name: 'Sal', gelir: 3000 },
   { name: 'Çar', gelir: 2000 },
@@ -14,10 +17,32 @@ const data = [
 ];
 
 export default function DashboardPage() {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      // Bütün randevuları servis detayıyla birlikte çek (Gerçekte RLS ve Auth ile filtrelecek)
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*, services(name, price_text)')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setAppointments(data);
+      }
+      setLoading(false);
+    }
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <div className="p-8 font-bold text-slate-500">Veriler Yükleniyor...</div>;
+
+  const todayCount = appointments.filter(a => a.appointment_date === format(new Date(), 'yyyy-MM-dd')).length;
+  const pendingCount = appointments.filter(a => a.status === 'pending').length;
+
   return (
     <div className="space-y-6">
-      
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
@@ -25,10 +50,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Bugünkü Randevular</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">12</h3>
-            <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +3 düne göre
-            </p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{todayCount}</h3>
           </div>
         </div>
 
@@ -37,11 +59,8 @@ export default function DashboardPage() {
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Yeni Müşteriler</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">48</h3>
-            <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> Bu hafta
-            </p>
+            <p className="text-sm font-medium text-slate-500">Yeni Randevular (Toplam)</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{appointments.length}</h3>
           </div>
         </div>
 
@@ -61,25 +80,19 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Bekleyen Onaylar</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">2</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{pendingCount}</h3>
           </div>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        
-        {/* Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="font-bold text-slate-900">Gelir Analizi</h3>
-            <select className="text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-600">
-              <option>Son 7 Gün</option>
-              <option>Bu Ay</option>
-            </select>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorGelir" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
@@ -96,26 +109,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Upcoming Appointments */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900">Yaklaşan Randevular</h3>
-            <button className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Tümünü Gör</button>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
+          <div className="mb-6 flex items-center justify-between shrink-0">
+            <h3 className="font-bold text-slate-900">Son Randevular</h3>
           </div>
           
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-100">
-                <div className="w-12 h-12 bg-slate-100 rounded-full flex flex-col items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-slate-500">14:30</span>
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            {appointments.length === 0 ? (
+              <p className="text-slate-500 text-sm">Henüz randevu yok.</p>
+            ) : (
+              appointments.slice(0, 5).map((app: any) => (
+                <div key={app.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-100">
+                  <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex flex-col items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-indigo-600">{app.appointment_time.substring(0,5)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-900 truncate">{app.customer_name}</p>
+                    <p className="text-xs text-slate-500 truncate">{app.services?.name}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 truncate">Merve Kaya</p>
-                  <p className="text-sm text-slate-500 truncate">Diş Taşı Temizliği</p>
-                </div>
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
