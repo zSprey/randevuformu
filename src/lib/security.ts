@@ -6,7 +6,7 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 dakika
 const MAX_REQUESTS_PER_WINDOW = 30; // Banka seviyesinde katı limit
 
 export function applyRateLimit(req: NextRequest) {
-  const ip = req.ip || req.headers.get("x-forwarded-for") || "unknown";
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
   const now = Date.now();
   
   const userRecord = rateLimitMap.get(ip);

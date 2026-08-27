@@ -35,7 +35,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${error ? 'border-red-500/50 focus:ring-red-500/50' : ''}
               ${className}
             `}
-            {...props}
+            {...(props as any)}
           />
         </div>
         {error && (
