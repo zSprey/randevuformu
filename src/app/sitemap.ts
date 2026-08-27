@@ -1,19 +1,28 @@
 import { MetadataRoute } from 'next'
- 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return [
+import { supabase } from '@/lib/supabase'
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { data: businesses } = await supabase
+    .from('businesses')
+    .select('slug, created_at');
+
+  const baseUrl = 'https://randevuformu.com';
+
+  const defaultPages: MetadataRoute.Sitemap = [
     {
-      url: 'https://randevuformu.com',
+      url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
+      changeFrequency: 'daily',
       priority: 1,
-    },
-    {
-      url: 'https://randevuformu.com/dr-ahmet',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    // İleride buraya dinamik olarak tüm işletmelerin profilleri eklenecek
-  ]
+    }
+  ];
+
+  const businessPages: MetadataRoute.Sitemap = (businesses || []).map((business) => ({
+    url: `${baseUrl}/${business.slug}`,
+    lastModified: business.created_at ? new Date(business.created_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  return [...defaultPages, ...businessPages];
 }

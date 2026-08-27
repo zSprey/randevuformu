@@ -6,6 +6,7 @@ import { format, addDays, startOfToday } from "date-fns";
 import { tr } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import SchemaMarkup from "@/components/SchemaMarkup";
 
 const TIME_SLOTS = ["09:00", "09:30", "10:30", "11:00", "13:30", "14:00", "15:45", "16:30"];
 
@@ -85,6 +86,16 @@ export default function BookingPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-sans selection:bg-indigo-100 selection:text-indigo-900 py-12 px-4 flex items-center justify-center relative overflow-hidden">
+      <SchemaMarkup 
+        type="LocalBusiness" 
+        data={{
+          name: BUSINESS.name,
+          url: `https://randevuformu.com/${BUSINESS.slug}`,
+          image: `https://randevuformu.com/og-image.jpg`,
+          address: "Türkiye", // Ideally from DB, defaulting for now
+          department: BUSINESS.category
+        }} 
+      />
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-slate-100 to-transparent -z-10" />
       
       <div className="max-w-[1000px] w-full bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
