@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Lock
 } from "lucide-react";
+import SmartWaitlistWidget from "./SmartWaitlistWidget";
 
 interface ServiceItem {
   id: string;
@@ -368,6 +369,16 @@ export default function BookingWidget({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* AI Smart Waitlist Integration */}
+              <div className="pt-2">
+                <SmartWaitlistWidget
+                  tenantId={tenantId}
+                  serviceId={selectedService?.id}
+                  businessName={businessName}
+                  selectedDate={selectedDate}
+                />
               </div>
 
               <div className="mt-8 flex justify-between items-center pt-4 border-t border-white/10">
