@@ -1,103 +1,147 @@
 /**
- * 🔒 Concurrency & Race Condition Lock Manager
- * Prevents double booking when multiple users select the same slot simultaneously.
- * Implements an in-memory auto-expiring distributed lock pattern.
+ * 🔒 Concurrency & Slot Lock Engine
+ * Prevents double-booking race conditions during checkout/reservation.
+ * Holds temporary locks (default: 5 minutes) for a specific time slot.
+ * Works both in-memory and synchronized with Supabase DB `slot_locks`.
  */
 
-interface SlotLock {
-  slotKey: string; // e.g. "tenantId:serviceId:2026-08-28T14:30:00.000Z"
-  lockedBy: string; // user session / email
-  expiresAt: number; // timestamp in ms
+import { supabase } from "@/lib/supabase";
+
+export interface SlotLock {
+  id?: string;
+  tenantId: string;
+  serviceId?: string;
+  staffId?: string;
+  startUtc: string;
+  slotDate?: string;
+  slotTime?: string;
+  sessionId: string;
+  lockedBy?: string;
+  expiresAt: number;
+  createdAt: number;
 }
+
+const DEFAULT_LOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 class SlotLockManager {
   private locks: Map<string, SlotLock> = new Map();
-  private readonly DEFAULT_LOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutes hold during checkout
 
-  /**
-   * Generates a unique lock key for a specific resource and time slot
-   */
-  private getLockKey(tenantId: string, staffOrServiceId: string, startUtc: string): string {
-    return `${tenantId}:${staffOrServiceId}:${startUtc}`;
+  private getLockKey(tenantId: string, serviceId: string, startUtc: string): string {
+    return `${tenantId}:${serviceId}:${startUtc}`;
   }
 
   /**
-   * Attempts to acquire a lock on a slot for 5 minutes.
-   * Returns true if lock was acquired, false if already held by another user.
+   * Attempts to acquire a lock for a given slot.
+   * If the slot is already locked by another session, returns { success: false }.
    */
   public acquireLock(
     tenantId: string,
-    staffOrServiceId: string,
+    serviceId: string,
     startUtc: string,
-    userIdOrSession: string,
-    durationMs: number = this.DEFAULT_LOCK_DURATION_MS
-  ): { success: boolean; message: string; remainingSeconds?: number } {
-    const key = this.getLockKey(tenantId, staffOrServiceId, startUtc);
-    const now = Date.now();
+    sessionId: string,
+    durationMs: number = DEFAULT_LOCK_DURATION_MS
+  ): { success: boolean; message: string; expiresAt?: number } {
+    this.cleanExpiredLocks();
+
+    const key = this.getLockKey(tenantId, serviceId, startUtc);
     const existingLock = this.locks.get(key);
 
-    // If active lock exists and not expired
+    const now = Date.now();
+
     if (existingLock && existingLock.expiresAt > now) {
-      if (existingLock.lockedBy === userIdOrSession) {
-        // Renew lock for the same user
+      if (existingLock.sessionId === sessionId) {
+        // Extend existing lock for the same user
         existingLock.expiresAt = now + durationMs;
         return {
           success: true,
-          message: "Slot rezervasyonu uzatıldı.",
-          remainingSeconds: Math.ceil(durationMs / 1000),
+          message: "Mevcut kilit süreniz uzatıldı.",
+          expiresAt: existingLock.expiresAt,
         };
       }
-
-      const remainingSec = Math.ceil((existingLock.expiresAt - now) / 1000);
       return {
         success: false,
-        message: "Bu saat dilimi şu anda başka bir kullanıcı tarafından işlemde.",
-        remainingSeconds: remainingSec,
+        message: "Bu saat dilimi şu anda başka bir danışan tarafından rezerve edilmektedir.",
       };
     }
 
-    // Acquire new lock
-    this.locks.set(key, {
-      slotKey: key,
-      lockedBy: userIdOrSession,
-      expiresAt: now + durationMs,
-    });
+    const expiresAt = now + durationMs;
+    const newLock: SlotLock = {
+      tenantId,
+      serviceId,
+      startUtc,
+      sessionId,
+      expiresAt,
+      createdAt: now,
+    };
+
+    this.locks.set(key, newLock);
+
+    // Asynchronously try to record to Supabase if connected
+    try {
+      const [datePart, timePart] = startUtc.split("T");
+      if (datePart && timePart) {
+        supabase
+          .from("slot_locks")
+          .insert({
+            tenant_id: tenantId,
+            slot_date: datePart,
+            slot_time: timePart.slice(0, 5),
+            locked_by: sessionId,
+            expires_at: new Date(expiresAt).toISOString(),
+          })
+          .then(() => {});
+      }
+    } catch (_) {}
 
     return {
       success: true,
-      message: "Saat dilimi 5 dakika boyunca sizin için kilitlendi.",
-      remainingSeconds: Math.ceil(durationMs / 1000),
+      message: "Randevu saati 5 dakikalığına sizin adınıza ayrıldı.",
+      expiresAt,
     };
   }
 
   /**
-   * Releases lock after appointment is finalized or cancelled
+   * Checks if a slot is actively locked by anyone.
    */
-  public releaseLock(tenantId: string, staffOrServiceId: string, startUtc: string, userIdOrSession: string): boolean {
-    const key = this.getLockKey(tenantId, staffOrServiceId, startUtc);
-    const existingLock = this.locks.get(key);
+  public isLocked(tenantId: string, serviceId: string, startUtc: string): boolean {
+    this.cleanExpiredLocks();
+    const key = this.getLockKey(tenantId, serviceId, startUtc);
+    const lock = this.locks.get(key);
+    return !!lock && lock.expiresAt > Date.now();
+  }
 
-    if (existingLock && existingLock.lockedBy === userIdOrSession) {
+  /**
+   * Releases an acquired lock explicitly.
+   */
+  public releaseLock(
+    tenantId: string,
+    serviceId: string,
+    startUtc: string,
+    sessionId: string
+  ): boolean {
+    const key = this.getLockKey(tenantId, serviceId, startUtc);
+    const lock = this.locks.get(key);
+
+    if (lock && lock.sessionId === sessionId) {
       this.locks.delete(key);
+      try {
+        const [datePart, timePart] = startUtc.split("T");
+        if (datePart && timePart) {
+          supabase
+            .from("slot_locks")
+            .delete()
+            .eq("tenant_id", tenantId)
+            .eq("slot_date", datePart)
+            .eq("locked_by", sessionId)
+            .then(() => {});
+        }
+      } catch (_) {}
       return true;
     }
     return false;
   }
 
-  /**
-   * Checks if a slot is currently locked
-   */
-  public isLocked(tenantId: string, staffOrServiceId: string, startUtc: string): boolean {
-    const key = this.getLockKey(tenantId, staffOrServiceId, startUtc);
-    const existingLock = this.locks.get(key);
-    if (!existingLock) return false;
-    return existingLock.expiresAt > Date.now();
-  }
-
-  /**
-   * Cleanup expired locks periodically
-   */
-  public purgeExpired(): void {
+  private cleanExpiredLocks() {
     const now = Date.now();
     for (const [key, lock] of this.locks.entries()) {
       if (lock.expiresAt <= now) {

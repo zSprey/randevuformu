@@ -2,7 +2,10 @@
  * 🤖 50-Agent Swarm Feature: AI Smart Waitlist & No-Show Recovery Engine
  * Automatically queues customers when slots are full and instantly matches/notifies
  * them via WhatsApp / SMS / Email when a cancellation occurs.
+ * Stores in memory and synchronizes to Supabase `waitlist` table.
  */
+
+import { supabase } from "@/lib/supabase";
 
 export interface WaitlistEntry {
   id: string;
@@ -38,11 +41,28 @@ class WaitlistEngine {
     };
 
     const currentList = this.waitlist.get(key) || [];
-    // Sort by priority score (descending) and creation date (ascending)
     currentList.push(newEntry);
     currentList.sort((a, b) => b.priorityScore - a.priorityScore || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     
     this.waitlist.set(key, currentList);
+
+    // Asynchronously insert into Supabase `waitlist` table
+    try {
+      supabase
+        .from("waitlist")
+        .insert({
+          tenant_id: entry.tenantId,
+          service_id: entry.serviceId,
+          customer_name: entry.customerName,
+          customer_phone: entry.customerPhone,
+          customer_email: entry.customerEmail,
+          preferred_date: entry.preferredDate,
+          priority_score: entry.priorityScore,
+          status: "WAITING",
+        })
+        .then(() => {});
+    } catch (_) {}
+
     return newEntry;
   }
 
@@ -76,6 +96,17 @@ class WaitlistEngine {
 
     candidate.status = "OFFERED";
     candidate.offeredAt = new Date().toISOString();
+
+    // Async update in Supabase
+    try {
+      supabase
+        .from("waitlist")
+        .update({ status: "OFFERED", offered_at: candidate.offeredAt })
+        .eq("tenant_id", tenantId)
+        .eq("preferred_date", date)
+        .eq("customer_phone", candidate.customerPhone)
+        .then(() => {});
+    } catch (_) {}
 
     return {
       candidate,
