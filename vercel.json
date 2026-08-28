@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/seo-blog-generator",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/retention-recall",
+      "schedule": "0 9 * * *"
     }
   ]
 }

@@ -25,6 +25,9 @@ import {
   Sparkles,
   QrCode,
   BookOpen,
+  HeartPulse,
+  Package,
+  RotateCcw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -105,6 +108,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: "Özet Gösterge", href: "/dashboard", icon: LayoutDashboard },
     { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
+    { name: "Danışan CRM", href: "/clients", icon: HeartPulse },
+    { name: "Paketler & Fatura", href: "/packages", icon: Package },
+    { name: "Müşteri Hatırlatma", href: "/retention", icon: RotateCcw },
     { name: "Ekip & Uzmanlar", href: "/staff", icon: Users },
     { name: "Form Oluşturucu", href: "/forms", icon: FileText },
     { name: "QR Stand & Widget", href: "/qr-stand", icon: QrCode },
