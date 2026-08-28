@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase";
 import { SEKTOR_DATA } from "@/lib/sektorler";
+import { INITIAL_BLOG_POSTS } from "@/lib/blogData";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_ROOT_DOMAIN
@@ -25,7 +26,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/ornek`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
     },
   ];
 
@@ -37,7 +50,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
-  // 3. Dynamic Registered Tenant Business Pages
+  // 3. Blog Post Articles (Google SEO Rank #1 Optimized)
+  const blogPages: MetadataRoute.Sitemap = INITIAL_BLOG_POSTS.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.9,
+  }));
+
+  // 4. Showcase Example Booking Pages
+  const examplePages: MetadataRoute.Sitemap = Object.values(SEKTOR_DATA).map((item) => ({
+    url: `${baseUrl}/ornek/${item.exampleSlug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
+  // 5. Dynamic Registered Tenant Business Pages
   let businessPages: MetadataRoute.Sitemap = [];
   try {
     const { data: businesses } = await supabase
@@ -56,5 +85,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // fallback
   }
 
-  return [...staticPages, ...sectorPages, ...businessPages];
+  return [...staticPages, ...sectorPages, ...blogPages, ...examplePages, ...businessPages];
 }

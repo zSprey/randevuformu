@@ -23,6 +23,8 @@ import {
   FileText,
   Mail,
   Sparkles,
+  QrCode,
+  BookOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -105,6 +107,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
     { name: "Ekip & Uzmanlar", href: "/staff", icon: Users },
     { name: "Form Oluşturucu", href: "/forms", icon: FileText },
+    { name: "QR Stand & Widget", href: "/qr-stand", icon: QrCode },
+    { name: "Blog & SEO Rehberi", href: "/blog", icon: BookOpen },
     { name: "İşletme Ayarları", href: "/settings", icon: Settings },
     { name: "B2B İletişim", href: "/contact", icon: Mail },
   ];

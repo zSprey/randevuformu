@@ -19,7 +19,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Lock,
-  Wallet
+  Wallet,
+  Calendar,
+  Download,
 } from "lucide-react";
 import SmartWaitlistWidget from "./SmartWaitlistWidget";
 
@@ -735,8 +737,51 @@ export default function BookingWidget({
                   <span className="font-semibold text-white">{customerName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Tutar:</span>
-                  <span className="font-semibold text-emerald-400">{selectedService?.price_text}</span>
+                  <span className="text-slate-400">Tutar / Durum:</span>
+                  <span className="font-semibold text-emerald-400">{selectedService?.price_text} (Onaylandı)</span>
+                </div>
+              </div>
+
+              {/* Online Meeting Action & Calendar Export */}
+              <div className="max-w-md mx-auto space-y-3 pt-2">
+                <a
+                  href={`https://meet.google.com/rf-${(selectedSlot || "1400").replace(":", "")}-live`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all hover:scale-105"
+                >
+                  <Sparkles className="w-4 h-4 text-blue-200" />
+                  <span>🎥 Google Meet Toplantısına Katıl</span>
+                </a>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <a
+                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(businessName + " - " + (selectedService?.name || "Randevu"))}&dates=${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z/${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z&details=${encodeURIComponent("Online Randevu — Powered by randevuformu.com")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                    Google Takvim
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${businessName} - ${selectedService?.name}\nDESCRIPTION:Randevu Onayı\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
+                      const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
+                      const link = document.createElement("a");
+                      link.href = URL.createObjectURL(blob);
+                      link.setAttribute("download", `randevu-${selectedDate || "onay"}.ics`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    Apple / iCal (.ics)
+                  </button>
                 </div>
               </div>
 
@@ -748,7 +793,7 @@ export default function BookingWidget({
                     setBookingSuccess(false);
                     setSelectedSlot(null);
                   }}
-                  className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-400 hover:text-white transition-all"
                 >
                   Yeni Bir Randevu Oluştur
                 </button>
