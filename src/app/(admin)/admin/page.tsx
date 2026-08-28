@@ -196,22 +196,36 @@ export default function SuperAdminDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">
+            <ShieldCheck className="w-4 h-4" />
+            <span>SuperAdmin: <strong>musa</strong></span>
+          </div>
+
           <button
             onClick={loadData}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 shadow-sm transition-all"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 shadow-sm transition-all"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
             Yenile
           </button>
           <a
             href="/"
             target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
           >
-            <ExternalLink className="w-4 h-4" />
-            Canlı Siteyi Gör
+            <ExternalLink className="w-3.5 h-3.5" />
+            Siteyi Gör
           </a>
+          <button
+            onClick={async () => {
+              await fetch("/api/admin/auth/check", { method: "POST" });
+              window.location.href = "/admin/login";
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 transition-all"
+          >
+            Güvenli Çıkış
+          </button>
         </div>
       </div>
 

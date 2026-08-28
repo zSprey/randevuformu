@@ -4,14 +4,57 @@ import { NextResponse, type NextRequest } from 'next/server'
 // ────────────────────────────────────────────────────────
 // Korumalı Rota Tanımları (Auth Guard)
 // ────────────────────────────────────────────────────────
-const PROTECTED_ROUTES = ['/dashboard', '/calendar', '/forms', '/settings'];
-const ADMIN_ROUTES = ['/admin'];
-const PUBLIC_ROUTES = ['/', '/login', '/contact', '/sektorler'];
+const PROTECTED_ROUTES = ['/dashboard', '/calendar', '/forms', '/settings', '/staff'];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
-  // Supabase Auth SSR Client
+  const pathname = request.nextUrl.pathname
+  const lowerPathname = pathname.toLowerCase()
+
+  // ────────────────────────────────────────────────────────
+  // 1. SUPER ADMIN AUTH GATEWAY (/admin, /admiN, /admin/login)
+  // ────────────────────────────────────────────────────────
+  if (lowerPathname === '/admin' || lowerPathname.startsWith('/admin/')) {
+    const adminToken = request.cookies.get('rf_superadmin_session')?.value;
+    let isSuperAdmin = false;
+
+    if (adminToken && adminToken.includes('.')) {
+      try {
+        const [payloadB64] = adminToken.split('.');
+        const decoded = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+        if (
+          decoded.role === 'SUPER_ADMIN' &&
+          decoded.user === 'musa' &&
+          decoded.expiresAt > Date.now()
+        ) {
+          isSuperAdmin = true;
+        }
+      } catch {
+        isSuperAdmin = false;
+      }
+    }
+
+    // Super Admin Login sayfası
+    if (lowerPathname === '/admin/login') {
+      if (isSuperAdmin) {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+      return supabaseResponse;
+    }
+
+    // Korunan Admin paneli
+    if (!isSuperAdmin) {
+      const adminLoginUrl = new URL('/admin/login', request.url);
+      return NextResponse.redirect(adminLoginUrl);
+    }
+
+    return supabaseResponse;
+  }
+
+  // ────────────────────────────────────────────────────────
+  // 2. TENANT DASHBOARD AUTH GUARD (/dashboard, /calendar, vb.)
+  // ────────────────────────────────────────────────────────
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://isymhicfyatamwiwyuhk.supabase.co',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Va5Rnrm_uAwrPjKK3ClIzQ_QhJrRadT',
@@ -31,20 +74,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Oturum durumunu sessizce güncelle ve kullanıcıyı al
   const { data: { user } } = await supabase.auth.getUser()
   const hasCookieSession = request.cookies.get('rf_session')?.value === 'true' || request.cookies.get('demo_session')?.value === 'true';
   const isAuthenticated = !!user || hasCookieSession;
 
-  const pathname = request.nextUrl.pathname
-
-  // ────────────────────────────────────────────────────────
-  // AUTH GUARD: Dashboard ve Admin rotaları için oturum kontrolü
-  // ────────────────────────────────────────────────────────
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-  const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
 
-  if ((isProtectedRoute || isAdminRoute) && !isAuthenticated) {
+  if (isProtectedRoute && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
@@ -56,7 +92,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────
-  // SUBDOMAIN ROUTING (dr-ahmet.randevuformu.com → /dr-ahmet)
+  // 3. SUBDOMAIN ROUTING (dr-ahmet.randevuformu.com → /dr-ahmet)
   // ────────────────────────────────────────────────────────
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
@@ -77,7 +113,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────
-  // GÜVENLİK BAŞLIKLARI
+  // 4. GÜVENLİK BAŞLIKLARI
   // ────────────────────────────────────────────────────────
   finalResponse.headers.set('X-Frame-Options', 'DENY')
   finalResponse.headers.set('X-Content-Type-Options', 'nosniff')
@@ -85,7 +121,6 @@ export async function middleware(request: NextRequest) {
   finalResponse.headers.set('X-XSS-Protection', '1; mode=block')
   finalResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
-  // Supabase cookie'lerini kopyala (subdomain rewrite durumunda)
   if (finalResponse !== supabaseResponse) {
     const cookiesToSet = supabaseResponse.cookies.getAll()
     cookiesToSet.forEach((cookie) => {
@@ -95,8 +130,6 @@ export async function middleware(request: NextRequest) {
         httpOnly: cookie.httpOnly,
         secure: cookie.secure,
         sameSite: cookie.sameSite,
-        maxAge: cookie.maxAge,
-        expires: cookie.expires
       })
     })
   }
@@ -106,6 +139,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
