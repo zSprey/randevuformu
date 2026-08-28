@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { OtpManager } from "@/lib/security/otpStore";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiRateLimited,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 // ──────────────────────────────────────────────────────────
 // SMS OTP GÖNDERME — Netgsm XML API
@@ -10,56 +17,34 @@ const NETGSM_USERCODE = process.env.NETGSM_USERCODE || "";
 const NETGSM_PASSWORD = process.env.NETGSM_PASSWORD || "";
 const NETGSM_MSGHEADER = process.env.NETGSM_MSGHEADER || "RANDEVUFRM";
 
-// Basit sunucu taraflı OTP deposu (Production'da Upstash Redis kullanın)
-const otpStore = new Map<string, { code: string; expiresAt: number; attempts: number }>();
-
-// Süresi dolmuş OTP'leri temizle
-function cleanupExpiredOtps() {
-  const now = Date.now();
-  for (const [key, value] of otpStore.entries()) {
-    if (value.expiresAt < now) {
-      otpStore.delete(key);
-    }
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const { phone } = await req.json();
+    const body = await req.json();
+    const { phone } = body;
 
     if (!phone || typeof phone !== "string") {
-      return NextResponse.json(
-        { success: false, error: "Telefon numarası gereklidir." },
-        { status: 400 }
+      return apiBadRequest("Telefon numarası gereklidir.");
+    }
+
+    const sanitizedPhone = OtpManager.sanitizePhone(phone);
+
+    if (!OtpManager.isValidTurkishPhone(sanitizedPhone)) {
+      return apiBadRequest("Geçerli bir Türk cep telefonu numarası girin (05XX XXX XX XX).");
+    }
+
+    // Rate limit check: 60 seconds cooldown
+    const rateCheck = OtpManager.canRequestOtp(sanitizedPhone);
+    if (!rateCheck.allowed) {
+      return apiRateLimited(
+        `Lütfen ${rateCheck.waitSeconds} saniye bekleyip tekrar deneyin.`,
+        rateCheck.waitSeconds
       );
     }
 
-    // Türk telefon formatına normalize et
-    const sanitizedPhone = phone
-      .replace(/\s/g, "")
-      .replace(/^\+90/, "")
-      .replace(/^0/, "");
+    // Create OTP
+    const { code: otpCode } = OtpManager.createOtp(sanitizedPhone);
 
-    if (!/^5\d{9}$/.test(sanitizedPhone)) {
-      return NextResponse.json(
-        { success: false, error: "Geçerli bir Türk cep telefonu numarası girin (05XX XXX XX XX)." },
-        { status: 400 }
-      );
-    }
-
-    // Rate limit: Aynı numaraya 60 saniye içinde tekrar OTP gönderme
-    const existing = otpStore.get(sanitizedPhone);
-    if (existing && existing.expiresAt - 4 * 60 * 1000 > Date.now()) {
-      return NextResponse.json(
-        { success: false, error: "Lütfen 60 saniye bekleyip tekrar deneyin." },
-        { status: 429 }
-      );
-    }
-
-    // 6 haneli OTP üret
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Netgsm XML API ile SMS gönder
+    // Send SMS via Netgsm XML API if credentials configured
     if (NETGSM_USERCODE && NETGSM_PASSWORD) {
       const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
 <mainbody>
@@ -84,34 +69,20 @@ export async function POST(req: NextRequest) {
         });
       } catch (smsError) {
         console.error("Netgsm SMS gönderim hatası:", smsError);
-        // SMS gönderimi başarısız olsa bile OTP'yi kaydet (dev ortamında test için)
       }
     } else {
-      // Geliştirme ortamı: Netgsm kimlik bilgileri yoksa konsola yazdır
-      console.log(`[DEV] OTP for ${sanitizedPhone}: ${otpCode}`);
+      // Dev mode: log to console
+      console.log(`[DEV SMS OTP] Phone: ${sanitizedPhone}, Code: ${otpCode}`);
     }
 
-    // OTP'yi kaydet (5 dakika geçerli, max 3 deneme)
-    otpStore.set(sanitizedPhone, {
-      code: otpCode,
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      attempts: 0,
-    });
-
-    // Periyodik temizlik
-    cleanupExpiredOtps();
-
-    return NextResponse.json({
-      success: true,
-      message: "Doğrulama kodu telefonunuza gönderildi.",
-      // Geliştirme ortamında kodu döndür (production'da kaldır!)
-      ...(process.env.NODE_ENV === "development" ? { devCode: otpCode } : {}),
-    });
-  } catch (error) {
-    console.error("OTP gönderim hatası:", error);
-    return NextResponse.json(
-      { success: false, error: "SMS gönderilemedi. Lütfen tekrar deneyin." },
-      { status: 500 }
+    return apiSuccess(
+      {
+        phone: sanitizedPhone,
+        ...(process.env.NODE_ENV === "development" ? { devCode: otpCode } : {}),
+      },
+      "Doğrulama kodu telefonunuza SMS ile gönderildi."
     );
+  } catch (error: any) {
+    return handleApiError(error, "SMS gönderimi sırasında bir hata oluştu.");
   }
 }

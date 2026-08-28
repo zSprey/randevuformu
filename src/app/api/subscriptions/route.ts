@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export const PLANS = {
   free: {
@@ -36,36 +41,39 @@ export const PLANS = {
 };
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const tenantId = searchParams.get("tenantId");
+  try {
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
 
-  if (!tenantId) {
-    return NextResponse.json({ success: true, availablePlans: PLANS });
+    if (!tenantId) {
+      return apiSuccess({ availablePlans: PLANS });
+    }
+
+    // Fetch tenant subscription details
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("id, name, plan")
+      .eq("id", tenantId)
+      .single();
+
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    const currentPlanKey = (tenant?.plan || sub?.plan || "pro") as keyof typeof PLANS;
+    const currentPlan = PLANS[currentPlanKey] || PLANS.pro;
+
+    return apiSuccess({
+      tenant,
+      currentPlan,
+      subscription: sub,
+      availablePlans: PLANS,
+    });
+  } catch (error: any) {
+    return handleApiError(error, "Abonelik bilgileri yüklenemedi.");
   }
-
-  // Fetch tenant subscription details
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("id, name, plan")
-    .eq("id", tenantId)
-    .single();
-
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-
-  const currentPlanKey = (tenant?.plan || sub?.plan || "pro") as keyof typeof PLANS;
-  const currentPlan = PLANS[currentPlanKey] || PLANS.pro;
-
-  return NextResponse.json({
-    success: true,
-    tenant,
-    currentPlan,
-    subscription: sub,
-    availablePlans: PLANS,
-  });
 }
 
 export async function POST(req: NextRequest) {
@@ -74,10 +82,7 @@ export async function POST(req: NextRequest) {
     const { tenantId, planKey } = body;
 
     if (!tenantId || !planKey || !PLANS[planKey as keyof typeof PLANS]) {
-      return NextResponse.json(
-        { error: "Geçersiz paket veya tenantId seçimi." },
-        { status: 400 }
-      );
+      return apiBadRequest("Geçersiz paket veya tenantId seçimi.");
     }
 
     // Update tenant plan
@@ -86,7 +91,7 @@ export async function POST(req: NextRequest) {
       .update({ plan: planKey })
       .eq("id", tenantId);
 
-    if (tenantErr) {
+    if (tenantErr && !tenantErr.message?.includes("relation")) {
       console.warn("Tenant update warning:", tenantErr);
     }
 
@@ -99,15 +104,13 @@ export async function POST(req: NextRequest) {
       current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
-    return NextResponse.json({
-      success: true,
-      message: `Tebrikler! Hesabınız ${PLANS[planKey as keyof typeof PLANS].name} paketine başarıyla yükseltildi.`,
-      plan: PLANS[planKey as keyof typeof PLANS],
-    });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Abonelik güncellenemedi." },
-      { status: 500 }
+    const chosenPlan = PLANS[planKey as keyof typeof PLANS];
+
+    return apiSuccess(
+      { plan: chosenPlan },
+      `Tebrikler! Hesabınız ${chosenPlan.name} paketine başarıyla yükseltildi.`
     );
+  } catch (error: any) {
+    return handleApiError(error, "Abonelik güncellenemedi.");
   }
 }

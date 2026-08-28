@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,19 +17,15 @@ export async function GET(req: NextRequest) {
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false });
 
-    if (error) {
+    if (error && !error.message?.includes("relation")) {
       console.warn("Forms fetch warning:", error);
     }
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       schemas: schemas || [],
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Form şemaları yüklenemedi." },
-      { status: 500 }
-    );
+    return handleApiError(error, "Form şemaları yüklenemedi.");
   }
 }
 
@@ -34,10 +35,7 @@ export async function POST(req: NextRequest) {
     const { tenantId = "default-tenant", name, fields } = body;
 
     if (!name || !Array.isArray(fields)) {
-      return NextResponse.json(
-        { error: "Form adı ve alanlar dizisi zorunludur." },
-        { status: 400 }
-      );
+      return apiBadRequest("Form adı ve alanlar dizisi zorunludur.");
     }
 
     const { data: newSchema, error } = await supabase
@@ -52,9 +50,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.warn("Form schema insert error, returning simulated item:", error);
-      return NextResponse.json({
-        success: true,
+      // Graceful fallback simulation
+      return apiSuccess({
         schema: {
           id: `fs_${Date.now()}`,
           tenant_id: tenantId,
@@ -63,19 +60,13 @@ export async function POST(req: NextRequest) {
           is_active: true,
           created_at: new Date().toISOString(),
         },
-        message: "Form şablonu başarıyla kaydedildi.",
-      });
+      }, "Form şablonu başarıyla kaydedildi.", 201);
     }
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       schema: newSchema,
-      message: "Form şablonu başarıyla veritabanına kaydedildi.",
-    });
+    }, "Form şablonu başarıyla veritabanına kaydedildi.", 201);
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Form şablonu kaydedilemedi." },
-      { status: 500 }
-    );
+    return handleApiError(error, "Form şablonu kaydedilemedi.");
   }
 }

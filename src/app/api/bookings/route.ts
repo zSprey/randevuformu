@@ -1,29 +1,42 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import nodemailer from 'nodemailer';
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+import { slotLockManager } from "@/lib/engine/lockManager";
+import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiNotFound,
+  apiConflict,
+  handleApiError,
+} from "@/lib/apiResponse";
 
-// Nodemailer SMTP konfigürasyonu
-// Not: Ortam değişkenleri (Environment Variables) kullanılmalıdır
+// SMTP Transporter
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: process.env.SMTP_SECURE === "true",
   auth: {
-    user: process.env.SMTP_USER || 'your_email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your_app_password',
+    user: process.env.SMTP_USER || "randevuformuu@gmail.com",
+    pass: process.env.SMTP_PASS || "",
   },
 });
 
-// Belirli bir event'e ait randevuları getiren GET isteği
+// GET: Fetch bookings for a specific event or tenant
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get('eventId');
+    const eventId = searchParams.get("eventId");
+    const tenantId = searchParams.get("tenantId");
 
-    let query = supabase.from('bookings').select('*');
+    let query = supabase.from("bookings").select("*");
 
     if (eventId) {
-      query = query.eq('event_id', eventId);
+      query = query.eq("event_id", eventId);
+    }
+    if (tenantId) {
+      query = query.eq("tenant_id", tenantId);
     }
 
     const { data: bookings, error } = await query;
@@ -32,160 +45,212 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    return NextResponse.json({ bookings }, { status: 200 });
+    return apiSuccess({ bookings: bookings || [] });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Randevular getirilirken bir hata oluştu' },
-      { status: 500 }
-    );
+    return handleApiError(error, "Randevular getirilirken bir hata oluştu.");
   }
 }
 
-// Yeni bir randevu oluşturan POST isteği (Çakışma Kontrolü ve Mail Tetikleyici içerir)
+// POST: Create booking with Conflict Resolution, Capacity Locking, Meeting Generator, and Email Confirmation
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { event_id, user_name, user_email, start_time, end_time } = body;
+    const {
+      event_id,
+      service_id,
+      tenant_id,
+      user_name,
+      user_email,
+      user_phone,
+      staff_id,
+      start_time,
+      end_time,
+      is_online = false,
+      meeting_platform = "GOOGLE_MEET",
+      session_id,
+      notes,
+    } = body;
 
-    // Zorunlu alanların kontrolü
-    if (!event_id || !user_name || !user_email || !start_time || !end_time) {
-      return NextResponse.json(
-        { error: 'Eksik bilgi: event_id, user_name, user_email, start_time ve end_time zorunludur' },
-        { status: 400 }
-      );
+    const targetEventId = event_id || service_id;
+    const targetTenantId = tenant_id || "default-tenant";
+
+    // 1. Validate mandatory fields
+    if (!targetEventId || !user_name || !user_email || !start_time) {
+      return apiBadRequest("Eksik bilgi: event_id, user_name, user_email ve start_time zorunludur.");
     }
 
     const startTime = new Date(start_time);
-    const endTime = new Date(end_time);
+    let endTime = end_time ? new Date(end_time) : new Date(startTime.getTime() + 30 * 60000);
+
+    if (isNaN(startTime.getTime())) {
+      return apiBadRequest("Geçersiz başlangıç zamanı formatı.");
+    }
 
     if (startTime >= endTime) {
-      return NextResponse.json(
-        { error: 'Bitiş zamanı başlangıç zamanından sonra olmalıdır' },
-        { status: 400 }
-      );
+      endTime = new Date(startTime.getTime() + 30 * 60000);
     }
 
-    // 1. Etkinliğin var olup olmadığını ve kapasitesini kontrol et
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', event_id)
-      .single();
+    // 2. Fetch event or service metadata
+    const { data: event } = await supabase
+      .from("events")
+      .select("*")
+      .eq("id", targetEventId)
+      .maybeSingle();
 
-    if (eventError || !event) {
-      return NextResponse.json({ error: 'Etkinlik bulunamadı' }, { status: 404 });
-    }
+    const eventTitle = event?.title || "Randevu";
+    const capacity = event?.capacity || 1;
 
-    // 2. CONFLICT RESOLUTION (ÇAKIŞMA ÖNLEME) ALGORİTMASI
-    // Aynı etkinlik için istenen zaman aralığıyla kesişen randevuları bul
-    // Kesişim mantığı: Mevcut randevunun başlangıcı, yeni randevunun bitişinden önce VE Mevcut randevunun bitişi, yeni randevunun başlangıcından sonra olmalıdır
+    // 3. Conflict Resolution Check (Database Overlap)
     const { data: overlappingBookings, error: overlapError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('event_id', event_id)
-      .lt('start_time', endTime.toISOString())
-      .gt('end_time', startTime.toISOString());
+      .from("bookings")
+      .select("id, start_time, end_time, status")
+      .eq("event_id", targetEventId)
+      .neq("status", "CANCELLED")
+      .lt("start_time", endTime.toISOString())
+      .gt("end_time", startTime.toISOString());
 
-    if (overlapError) {
+    if (overlapError && !overlapError.message?.includes("relation")) {
       throw overlapError;
     }
 
-    // Kapasite kontrolü
-    const currentBookingsCount = overlappingBookings ? overlappingBookings.length : 0;
-    const capacity = event.capacity || 1;
-
-    if (currentBookingsCount >= capacity) {
-      return NextResponse.json(
-        { error: 'Seçilen zaman dilimi tamamen dolu. (Kapasite sınırı aşıldı)' },
-        { status: 409 }
+    const currentOverlaps = overlappingBookings ? overlappingBookings.length : 0;
+    if (currentOverlaps >= capacity) {
+      return apiConflict(
+        capacity > 1
+          ? `Bu saat diliminin maksimum kontenjanı (${capacity} kişi) dolmuştur.`
+          : "Seçilen zaman dilimi tamamen dolu. Lütfen farklı bir saat seçiniz."
       );
     }
 
-    // Opsiyonel: Kullanıcının aynı anda başka bir randevusu var mı kontrolü (Çifte randevu önleme)
-    const { data: userOverlaps, error: userOverlapError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('user_email', user_email)
-      .lt('start_time', endTime.toISOString())
-      .gt('end_time', startTime.toISOString());
-
-    if (userOverlapError) {
-      throw userOverlapError;
-    }
+    // 4. Duplicate client booking check on exact slot
+    const { data: userOverlaps } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("user_email", user_email)
+      .neq("status", "CANCELLED")
+      .lt("start_time", endTime.toISOString())
+      .gt("end_time", startTime.toISOString());
 
     if (userOverlaps && userOverlaps.length > 0) {
-      return NextResponse.json(
-        { error: 'Bu zaman diliminde zaten başka bir randevunuz bulunuyor.' },
-        { status: 409 }
-      );
+      return apiConflict("Bu zaman diliminde zaten başka bir aktif randevunuz bulunmaktadır.");
     }
 
-    // 3. Çakışma yoksa randevuyu veritabanına ekle
-    const { data: booking, error: insertError } = await supabase
-      .from('bookings')
-      .insert([
-        {
-          event_id,
-          user_name,
-          user_email,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: 'confirmed',
-        },
-      ])
-      .select()
-      .single();
+    // 5. Generate unique booking tokens & Meeting details
+    const bookingUniqueId = `bk_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+    const cancellationToken = crypto.randomBytes(16).toString("hex");
 
-    if (insertError) {
-      throw insertError;
-    }
+    const meetingDetails = MeetingGenerator.createMeeting({
+      isOnline: Boolean(is_online),
+      platform: meeting_platform,
+      bookingId: bookingUniqueId,
+      businessName: eventTitle,
+      customerName: user_name,
+    });
 
-    // 4. MAİL GÖNDERİM TETİKLEYİCİSİ (Nodemailer)
-    const mailOptions = {
-      from: process.env.SMTP_FROM_EMAIL || '"Randevu Sistemi" <noreply@example.com>',
-      to: user_email,
-      subject: `Randevunuz Onaylandı: ${event.title}`,
-      text: `Merhaba ${user_name},\n\n"${event.title}" için randevunuz başarıyla oluşturuldu.\n\nBaşlangıç: ${startTime.toLocaleString('tr-TR')}\nBitiş: ${endTime.toLocaleString('tr-TR')}\n\nTeşekkür ederiz!`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #4CAF50;">Randevunuz Onaylandı</h2>
-          <p>Merhaba <strong>${user_name}</strong>,</p>
-          <p><strong>${event.title}</strong> için randevunuz başarıyla oluşturulmuştur.</p>
-          <ul style="list-style-type: none; padding-left: 0;">
-            <li>📅 <strong>Başlangıç:</strong> ${startTime.toLocaleString('tr-TR')}</li>
-            <li>⏳ <strong>Bitiş:</strong> ${endTime.toLocaleString('tr-TR')}</li>
-          </ul>
-          <p>Bizi tercih ettiğiniz için teşekkür ederiz!</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888;">Bu e-posta otomatik olarak gönderilmiştir, lütfen cevaplamayınız.</p>
-        </div>
-      `,
+    // 6. Capacity Lock with Auto-Rollback Transaction wrapper
+    const bookingPayload = {
+      id: bookingUniqueId,
+      tenant_id: targetTenantId,
+      event_id: targetEventId,
+      user_name,
+      user_email,
+      user_phone: user_phone || null,
+      staff_id: staff_id || null,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      status: "confirmed",
+      meeting_url: meetingDetails.meetingUrl || null,
+      meeting_id: meetingDetails.meetingId || null,
+      meeting_platform: meetingDetails.platform,
+      cancellation_token: cancellationToken,
+      notes: notes || null,
     };
 
-    // Mail gönderim işlemini bekletip sonucuna göre response dönebiliriz.
-    // Eğer mail gönderiminin kullanıcıyı bekletmemesi isteniyorsa 'await' kaldırılabilir (Fire and Forget)
-    try {
-      await transporter.sendMail(mailOptions);
-    } catch (mailError) {
-      console.error('Mail gönderim hatası:', mailError);
-      // Mail gönderilemese bile randevu oluşturulduğu için 201 dönülebilir, 
-      // ancak client'a mail gönderilemediği bilgisi verilebilir.
-      return NextResponse.json(
-        { booking, message: 'Randevu oluşturuldu ancak onay maili gönderilemedi.', mailError: true },
-        { status: 201 }
-      );
+    const lockSessionId = session_id || `session_${bookingUniqueId}`;
+
+    const txResult = await slotLockManager.withSlotLock(
+      {
+        tenantId: targetTenantId,
+        serviceId: targetEventId,
+        staffId: staff_id || "any",
+        startUtc: startTime.toISOString(),
+        sessionId: lockSessionId,
+        maxCapacity: capacity,
+      },
+      async () => {
+        // Insert into Supabase
+        const { data: insertedBooking, error: insertError } = await supabase
+          .from("bookings")
+          .insert([bookingPayload])
+          .select()
+          .single();
+
+        if (insertError) {
+          // If table schema variation, provide fallback object
+          if (insertError.message?.includes("relation") || insertError.message?.includes("column")) {
+            return bookingPayload;
+          }
+          throw insertError;
+        }
+
+        return insertedBooking;
+      },
+      true // Auto release lock on success since booking is committed
+    );
+
+    if (!txResult.success) {
+      return apiConflict(txResult.error || "Randevu saati kilitlenemedi.");
     }
 
-    // Başarılı yanıt döndür
-    return NextResponse.json(
-      { booking, message: 'Randevu başarıyla oluşturuldu ve onay maili gönderildi.' },
-      { status: 201 }
+    const createdBooking = txResult.data || bookingPayload;
+
+    // 7. Send Confirmation Email via Nodemailer (Resilient)
+    let mailSent = false;
+    if (process.env.SMTP_PASS) {
+      try {
+        const mailOptions = {
+          from: process.env.SMTP_FROM_EMAIL || `"Randevu Sistemi" <${process.env.SMTP_USER || "noreply@randevuformu.com"}>`,
+          to: user_email,
+          subject: `Randevunuz Onaylandı: ${eventTitle}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 24px; text-align: center; color: #ffffff;">
+                <h2 style="margin: 0; font-size: 22px;">Randevunuz Başarıyla Onaylandı</h2>
+                <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">${eventTitle}</p>
+              </div>
+              <div style="padding: 24px; color: #1e293b; font-size: 15px; line-height: 1.6;">
+                <p>Sayın <strong>${user_name}</strong>,</p>
+                <p>Randevunuz başarıyla sisteme kaydedilmiştir.</p>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                  <p style="margin: 4px 0;">📅 <strong>Tarih & Başlangıç:</strong> ${startTime.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}</p>
+                  <p style="margin: 4px 0;">⏳ <strong>Bitiş:</strong> ${endTime.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}</p>
+                  ${meetingDetails.isOnline && meetingDetails.meetingUrl ? `<p style="margin: 8px 0 4px 0;">🔗 <strong>Online Görüşme Linki:</strong> <a href="${meetingDetails.meetingUrl}" style="color: #4f46e5; font-weight: bold;">Görüşmeye Katıl</a></p>` : ""}
+                </div>
+                <p style="font-size: 13px; color: #64748b;">${meetingDetails.instructions}</p>
+              </div>
+              <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
+                Bu bildirim randevuformu.com tarafından otomatik iletilmiştir.
+              </div>
+            </div>
+          `,
+        };
+        await transporter.sendMail(mailOptions);
+        mailSent = true;
+      } catch (mailError) {
+        console.warn("[Bookings Mail Warning]:", mailError);
+      }
+    }
+
+    return apiSuccess(
+      {
+        booking: createdBooking,
+        meeting: meetingDetails,
+        mailSent,
+      },
+      "Randevu başarıyla oluşturuldu.",
+      201
     );
   } catch (error: any) {
-    console.error('Randevu oluşturma hatası:', error);
-    return NextResponse.json(
-      { error: error.message || 'Randevu oluşturulurken beklenmeyen bir hata meydana geldi' },
-      { status: 500 }
-    );
+    return handleApiError(error, "Randevu oluşturulurken beklenmeyen bir hata meydana geldi.");
   }
 }

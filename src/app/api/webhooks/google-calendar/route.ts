@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,10 +11,12 @@ export async function POST(req: NextRequest) {
     const resourceState = req.headers.get("x-goog-resource-state");
     const resourceId = req.headers.get("x-goog-resource-id");
 
-    console.log(`[Google Calendar Webhook] Notification received: Channel ${channelId}, State: ${resourceState}, Resource: ${resourceId}`);
+    console.log(
+      `[Google Calendar Webhook] Notification received: Channel ${channelId}, State: ${resourceState}, Resource: ${resourceId}`
+    );
 
     if (resourceState === "sync") {
-      return NextResponse.json({ success: true, message: "Sync handshake confirmed" });
+      return apiSuccess({ received: true }, "Google Takvim senkronizasyon bağlantısı onaylandı.");
     }
 
     // Log notification event to notification_logs for real-time tracking
@@ -21,12 +27,11 @@ export async function POST(req: NextRequest) {
       payload: { channelId, resourceState, resourceId, receivedAt: new Date().toISOString() },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Google Calendar event processed and schedule synced successfully.",
-    });
+    return apiSuccess(
+      { channelId, resourceId },
+      "Google Calendar etkinliği işlendi ve takvim eşitlendi."
+    );
   } catch (error: any) {
-    console.error("[Google Webhook Error]:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(error, "Google Calendar webhook işlenemedi.");
   }
 }

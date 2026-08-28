@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import crypto from "crypto";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiNotFound,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 function generateReferralCode(prefix: string = "REF"): string {
   const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -42,8 +48,7 @@ export async function GET(req: NextRequest) {
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "randevuformu.com";
     const referralLink = `https://${rootDomain}?ref=${activeCode}`;
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       referralCode: activeCode,
       referralLink,
       stats: {
@@ -55,7 +60,7 @@ export async function GET(req: NextRequest) {
       rewardDescription: "Davet ettiğiniz her yeni işletme Pro plana geçtiğinde 1 ay ücretsiz kazanın!",
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return handleApiError(err, "Tavsiye bilgileri alınamadı.");
   }
 }
 
@@ -65,10 +70,7 @@ export async function POST(req: NextRequest) {
     const { referralCode, newTenantId } = body;
 
     if (!referralCode || !newTenantId) {
-      return NextResponse.json(
-        { error: "referralCode ve newTenantId zorunludur" },
-        { status: 400 }
-      );
+      return apiBadRequest("referralCode ve newTenantId zorunludur.");
     }
 
     const cleanCode = referralCode.trim().toUpperCase();
@@ -80,17 +82,11 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (refError || !refRecord) {
-      return NextResponse.json(
-        { valid: false, message: "Geçersiz veya süresi dolmuş tavsiye kodu." },
-        { status: 404 }
-      );
+      return apiNotFound("Geçersiz veya süresi dolmuş tavsiye kodu.");
     }
 
     if (refRecord.referrer_tenant_id === newTenantId) {
-      return NextResponse.json(
-        { valid: false, message: "Kendi tavsiye kodunuzu kullanamazsınız." },
-        { status: 400 }
-      );
+      return apiBadRequest("Kendi tavsiye kodunuzu kullanamazsınız.");
     }
 
     await supabase
@@ -101,13 +97,14 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", refRecord.id);
 
-    return NextResponse.json({
-      valid: true,
-      success: true,
-      message: "Tavsiye kodu başarıyla uygulandı. 1 Ay ücretsiz Pro plan hediyeniz tanımlandı!",
-      rewardApplied: "PRO_1_MONTH_FREE",
-    });
+    return apiSuccess(
+      {
+        valid: true,
+        rewardApplied: "PRO_1_MONTH_FREE",
+      },
+      "Tavsiye kodu başarıyla uygulandı. 1 Ay ücretsiz Pro plan hediyeniz tanımlandı!"
+    );
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return handleApiError(err, "Tavsiye kodu uygulanamadı.");
   }
 }

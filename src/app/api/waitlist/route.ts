@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { waitlistEngine } from "@/lib/engine/waitlistEngine";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,9 +12,8 @@ export async function POST(req: NextRequest) {
     const { tenantId, serviceId, customerName, customerPhone, customerEmail, preferredDate } = body;
 
     if (!tenantId || !customerName || !customerPhone || !preferredDate) {
-      return NextResponse.json(
-        { error: "Eksik parametreler (tenantId, customerName, customerPhone, preferredDate zorunludur)" },
-        { status: 400 }
+      return apiBadRequest(
+        "Eksik parametreler (tenantId, customerName, customerPhone, preferredDate zorunludur)."
       );
     }
 
@@ -23,31 +27,29 @@ export async function POST(req: NextRequest) {
       priorityScore: 85,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Yedek listeye başarıyla kaydedildiniz. Slot açıldığında WhatsApp ile bildirim alacaksınız.",
-      entry,
-    });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Yedek liste kaydı başarısız oldu" },
-      { status: 500 }
+    return apiSuccess(
+      { entry },
+      "Yedek listeye başarıyla kaydedildiniz. Slot açıldığında WhatsApp/SMS ile bildirim alacaksınız.",
+      201
     );
+  } catch (error: any) {
+    return handleApiError(error, "Yedek liste kaydı başarısız oldu.");
   }
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const tenantId = searchParams.get("tenantId");
-  const date = searchParams.get("date");
+  try {
+    const { searchParams } = new URL(req.url);
+    const tenantId = searchParams.get("tenantId");
+    const date = searchParams.get("date");
 
-  if (!tenantId || !date) {
-    return NextResponse.json(
-      { error: "tenantId ve date parametreleri zorunludur" },
-      { status: 400 }
-    );
+    if (!tenantId || !date) {
+      return apiBadRequest("tenantId ve date parametreleri zorunludur.");
+    }
+
+    const list = waitlistEngine.getWaitlist(tenantId, date);
+    return apiSuccess({ count: list.length, waitlist: list });
+  } catch (error: any) {
+    return handleApiError(error, "Yedek liste getirilemedi.");
   }
-
-  const list = waitlistEngine.getWaitlist(tenantId, date);
-  return NextResponse.json({ success: true, count: list.length, waitlist: list });
 }

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BruteForceGuard } from "@/lib/security/bruteForceGuard";
+import {
+  apiSuccess,
+  apiUnauthorized,
+  apiRateLimited,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 // Expected Super Admin Credentials
 const SUPER_ADMIN_USER = process.env.SUPER_ADMIN_USER || "musa";
@@ -14,13 +20,10 @@ export async function POST(req: NextRequest) {
     // 1. Check Brute-force Lockout
     const lockout = BruteForceGuard.checkLockout(ip);
     if (lockout.isLocked) {
-      return NextResponse.json(
-        {
-          error: `Çok fazla hatalı deneme yapıldı. Güvenlik nedeniyle hesabınız kilitlendi. Lütfen ${lockout.remainingSeconds} saniye sonra tekrar deneyin.`,
-          isLocked: true,
-          remainingSeconds: lockout.remainingSeconds,
-        },
-        { status: 429 }
+      return apiRateLimited(
+        `Çok fazla hatalı deneme yapıldı. Güvenlik nedeniyle hesabınız kilitlendi. Lütfen ${lockout.remainingSeconds} saniye sonra tekrar deneyin.`,
+        lockout.remainingSeconds,
+        { isLocked: true, remainingSeconds: lockout.remainingSeconds }
       );
     }
 
@@ -32,22 +35,16 @@ export async function POST(req: NextRequest) {
       const attemptResult = BruteForceGuard.recordFailedAttempt(ip);
 
       if (attemptResult.isNowLocked) {
-        return NextResponse.json(
-          {
-            error: "5 kez hatalı giriş yapıldı. Güvenlik nedeniyle sistem 15 dakika kilitlendi.",
-            isLocked: true,
-            attemptsLeft: 0,
-          },
-          { status: 429 }
+        return apiRateLimited(
+          "5 kez hatalı giriş yapıldı. Güvenlik nedeniyle sistem 15 dakika kilitlendi.",
+          15 * 60,
+          { isLocked: true, attemptsLeft: 0 }
         );
       }
 
-      return NextResponse.json(
-        {
-          error: `Kullanıcı adı veya şifre hatalı! Kalan deneme hakkı: ${attemptResult.attemptsLeft}`,
-          attemptsLeft: attemptResult.attemptsLeft,
-        },
-        { status: 401 }
+      return apiUnauthorized(
+        `Kullanıcı adı veya şifre hatalı! Kalan deneme hakkı: ${attemptResult.attemptsLeft}`,
+        { attemptsLeft: attemptResult.attemptsLeft }
       );
     }
 
@@ -58,11 +55,9 @@ export async function POST(req: NextRequest) {
     const adminToken = BruteForceGuard.createAdminToken(username.trim());
 
     // 5. Response with secure HTTP-only cookie
-    const response = NextResponse.json({
-      success: true,
-      message: "Super Admin girişi başarılı.",
+    const response = apiSuccess({
       user: { username: SUPER_ADMIN_USER, role: "SUPER_ADMIN" },
-    });
+    }, "Super Admin girişi başarılı.");
 
     response.cookies.set("rf_superadmin_session", adminToken, {
       httpOnly: true,
@@ -74,6 +69,6 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Giriş işlemi başarısız" }, { status: 500 });
+    return handleApiError(err, "Giriş işlemi sırasında hata oluştu.");
   }
 }

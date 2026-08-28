@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 const IYZICO_API_KEY = process.env.IYZICO_API_KEY || "";
 const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || "";
@@ -20,11 +25,8 @@ export async function POST(req: NextRequest) {
       returnSlug,
     } = body;
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Geçerli bir ödeme tutarı giriniz." },
-        { status: 400 }
-      );
+    if (!amount || Number(amount) <= 0) {
+      return apiBadRequest("Geçerli bir ödeme tutarı giriniz.");
     }
 
     const conversationId = `conv_${Date.now()}_${appointmentId || "direct"}`;
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
           email: customerEmail || "danisan@randevuformu.com",
           identityNumber: "11111111111",
           registrationAddress: "Turkiye",
-          ip: req.headers.get("x-forwarded-for") || "127.0.0.1",
+          ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1",
           city: "Istanbul",
           country: "Turkey",
         },
@@ -72,28 +74,20 @@ export async function POST(req: NextRequest) {
         .digest("base64");
       const authorization = `IYZWS ${IYZICO_API_KEY}:${hash}`;
 
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         provider: "IYZICO",
         conversationId,
         redirectUrl: `${appUrl}/${returnSlug || ""}?status=success&paid=iyzico&conv=${conversationId}`,
-        message: "İyzico 3D Secure oturumu hazırlandı.",
-      });
+      }, "İyzico 3D Secure oturumu hazırlandı.");
     }
 
     // Dev/Sandbox simulation
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       provider: "IYZICO_SANDBOX",
       conversationId,
       redirectUrl: `${appUrl}/${returnSlug || ""}?status=success&paid=iyzico_sandbox&appointmentId=${appointmentId || ""}`,
-      message: "İyzico Test Modu: Ödeme başarıyla onaylandı.",
-    });
+    }, "İyzico Test Modu: Ödeme başarıyla onaylandı.");
   } catch (error: any) {
-    console.error("[Iyzico Checkout Error]:", error);
-    return NextResponse.json(
-      { error: error.message || "İyzico ödeme başlatılamadı." },
-      { status: 500 }
-    );
+    return handleApiError(error, "İyzico ödeme oturumu başlatılamadı.");
   }
 }

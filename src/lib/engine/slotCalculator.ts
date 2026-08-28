@@ -11,6 +11,9 @@ export interface TimeSlot {
   displayTime: string; // "14:30" in local timezone
   isAvailable: boolean;
   reasonIfNotAvailable?: string;
+  maxCapacity?: number;
+  bookedCount?: number;
+  remainingCapacity?: number;
 }
 
 export interface ExistingBooking {
@@ -28,6 +31,7 @@ export interface SlotCalculationOptions {
   existingBookings: ExistingBooking[];
   slotIntervalMinutes?: number; // e.g. 15 or 30 (step between start times)
   timezone?: string; // default "Europe/Istanbul"
+  maxCapacity?: number; // Group capacity per slot (default: 1)
 }
 
 /**
@@ -42,7 +46,7 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
     workingHours,
     existingBookings,
     slotIntervalMinutes = 30,
-    timezone = "Europe/Istanbul",
+    maxCapacity = 1,
   } = options;
 
   // 1. If staff/business is off on this day, return empty
@@ -50,6 +54,7 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
     return [];
   }
 
+  const effectiveCapacity = Math.max(1, maxCapacity);
   const slots: TimeSlot[] = [];
 
   // Parse working hours (e.g. "09:00" to "18:00")
@@ -69,9 +74,12 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
   const workStartTotalMinutes = startHour * 60 + startMinute;
   const workEndTotalMinutes = endHour * 60 + endMinute;
 
-  // Active bookings in timestamps (filter out cancelled)
+  // Active bookings in timestamps (filter out cancelled and no-show)
   const activeBookings = existingBookings
-    .filter((b) => b.status !== "CANCELLED" && b.status !== "cancelled")
+    .filter((b) => {
+      const s = b.status?.toUpperCase();
+      return s !== "CANCELLED" && s !== "CANCELED";
+    })
     .map((b) => ({
       start: new Date(b.startUtc).getTime(),
       end: new Date(b.endUtc).getTime(),
@@ -110,10 +118,13 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
     // Check if in the past
     const isPast = slotStartDate.getTime() <= now;
 
-    // Check overlap with existing appointments
-    const hasOverlap = activeBookings.some(
+    // Count active overlapping appointments
+    const overlappingBookings = activeBookings.filter(
       (b) => slotStartWithBuffer < b.end && slotEndWithBuffer > b.start
     );
+    const bookedCount = overlappingBookings.length;
+    const remainingCapacity = Math.max(0, effectiveCapacity - bookedCount);
+    const isFull = bookedCount >= effectiveCapacity;
 
     let isAvailable = true;
     let reasonIfNotAvailable: string | undefined;
@@ -124,9 +135,11 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
     } else if (isInBreak) {
       isAvailable = false;
       reasonIfNotAvailable = "Öğle / Mola arası";
-    } else if (hasOverlap) {
+    } else if (isFull) {
       isAvailable = false;
-      reasonIfNotAvailable = "Dolu / Rezerve";
+      reasonIfNotAvailable = effectiveCapacity > 1
+        ? `Grup kapasitesi dolu (${bookedCount}/${effectiveCapacity})`
+        : "Dolu / Rezerve";
     }
 
     slots.push({
@@ -135,6 +148,9 @@ export function calculateAvailableSlots(options: SlotCalculationOptions): TimeSl
       displayTime,
       isAvailable,
       reasonIfNotAvailable,
+      maxCapacity: effectiveCapacity,
+      bookedCount,
+      remainingCapacity,
     });
   }
 

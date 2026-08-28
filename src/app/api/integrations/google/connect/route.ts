@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import {
+  apiSuccess,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,11 +19,9 @@ export async function GET(req: NextRequest) {
       `${process.env.NEXT_PUBLIC_APP_URL || "https://randevuformu.com"}/api/integrations/google/callback`;
 
     if (!clientId || !clientSecret) {
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         url: `${returnUrl}?success=google_connected_sandbox`,
-        message: "Geliştirme modu: Google Takvim simülasyonu bağlandı.",
-      });
+      }, "Geliştirme modu: Google Takvim simülasyonu bağlandı.");
     }
 
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
@@ -46,12 +48,11 @@ export async function GET(req: NextRequest) {
 
     const acceptHeader = req.headers.get("accept") || "";
     if (acceptHeader.includes("application/json")) {
-      return NextResponse.json({ url: authUrl });
+      return apiSuccess({ url: authUrl });
     }
 
     return NextResponse.redirect(authUrl);
   } catch (error: any) {
-    console.error("[Google Connect Error]:", error);
-    return NextResponse.json({ error: error.message || "OAuth başlatılamadı" }, { status: 500 });
+    return handleApiError(error, "Google OAuth başlatılamadı.");
   }
 }

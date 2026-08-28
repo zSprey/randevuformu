@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BruteForceGuard } from "@/lib/security/bruteForceGuard";
+import {
+  apiSuccess,
+  apiUnauthorized,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
@@ -7,20 +12,20 @@ export async function GET(req: NextRequest) {
     const isValid = BruteForceGuard.verifyAdminToken(token);
 
     if (!isValid) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+      return apiUnauthorized("Oturum geçerli değil.");
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       authenticated: true,
       user: { username: "musa", role: "SUPER_ADMIN" },
     });
   } catch (err: any) {
-    return NextResponse.json({ authenticated: false, error: err.message }, { status: 500 });
+    return handleApiError(err, "Oturum doğrulanamadı.");
   }
 }
 
 export async function POST(req: NextRequest) {
-  const response = NextResponse.json({ success: true, message: "Çıkış yapıldı" });
+  const response = apiSuccess({ authenticated: false }, "Çıkış yapıldı.");
   response.cookies.delete("rf_superadmin_session");
   return response;
 }

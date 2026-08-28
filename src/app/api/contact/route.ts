@@ -1,5 +1,10 @@
-import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function POST(req: Request) {
   try {
@@ -7,19 +12,16 @@ export async function POST(req: Request) {
     const { name, company, email, message } = body;
 
     if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: 'Lütfen isim, e-posta ve mesaj alanlarını eksiksiz doldurun.' },
-        { status: 400 }
-      );
+      return apiBadRequest("Lütfen isim, e-posta ve mesaj alanlarını eksiksiz doldurun.");
     }
 
-    // SMTP Yapılandırması (Environment Variables)
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.SMTP_PORT || '587');
-    const user = process.env.SMTP_USER || 'randevuformuu@gmail.com';
-    const pass = process.env.SMTP_PASS || '';
+    // SMTP Configuration
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const port = parseInt(process.env.SMTP_PORT || "587", 10);
+    const user = process.env.SMTP_USER || "randevuformuu@gmail.com";
+    const pass = process.env.SMTP_PASS || "";
 
-    // HTML E-posta İçeriği
+    // HTML Email Content
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
         <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 24px; text-align: center; color: #ffffff;">
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Şirket Adı:</td>
-              <td style="padding: 8px 0; color: #0f172a;">${company || 'Belirtilmedi'}</td>
+              <td style="padding: 8px 0; color: #0f172a;">${company || "Belirtilmedi"}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #64748b; font-weight: 600;">E-posta:</td>
@@ -47,12 +49,11 @@ export async function POST(req: Request) {
           </div>
         </div>
         <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
-          Bu bildirim randevuformu.com kurumsal altyapısı tarafından otomatik iletilmiştir.
+          Bu bildirim randevuformu.com kurumsal altyapısı tarafından iletilmiştir.
         </div>
       </div>
     `;
 
-    // Eğer SMTP şifresi varsa mail gönder
     if (pass) {
       const transporter = nodemailer.createTransport({
         host,
@@ -63,21 +64,17 @@ export async function POST(req: Request) {
 
       await transporter.sendMail({
         from: `"randevuformu.com İletişim" <${user}>`,
-        to: 'randevuformuu@gmail.com',
+        to: "randevuformuu@gmail.com",
         replyTo: email,
-        subject: `[B2B İletişim] ${company ? `${company} - ` : ''}${name}`,
+        subject: `[B2B İletişim] ${company ? `${company} - ` : ""}${name}`,
         html: htmlContent,
       });
     } else {
-      console.log('[Contact API] SMTP_PASS not set. Logging contact submission:', { name, company, email, message });
+      console.log("[Contact API] Dev Mode: Logging contact submission:", { name, company, email, message });
     }
 
-    return NextResponse.json({ success: true, message: 'Mesajınız başarıyla iletildi.' }, { status: 200 });
+    return apiSuccess({}, "Mesajınız başarıyla iletildi.");
   } catch (error: any) {
-    console.error('[Contact API Error]:', error);
-    return NextResponse.json(
-      { error: error.message || 'Mesaj gönderilirken bir hata oluştu.' },
-      { status: 500 }
-    );
+    return handleApiError(error, "Mesaj gönderilirken bir hata oluştu.");
   }
 }

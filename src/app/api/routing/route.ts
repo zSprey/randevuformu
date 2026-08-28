@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StaffRouter, RoutingStrategy } from "@/lib/engine/staffRouter";
+import { StaffRouter, RoutingStrategy, StaffRoutingError } from "@/lib/engine/staffRouter";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiConflict,
+  apiNotFound,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,13 +21,10 @@ export async function POST(req: NextRequest) {
     } = body;
 
     if (!tenantId || !serviceId) {
-      return NextResponse.json(
-        { error: "tenantId ve serviceId zorunludur" },
-        { status: 400 }
-      );
+      return apiBadRequest("tenantId ve serviceId zorunludur.");
     }
 
-    // Fetch staff for tenant
+    // 1. Fetch active staff for tenant
     const { data: dbStaff } = await supabase
       .from("staff")
       .select("*")
@@ -30,27 +34,31 @@ export async function POST(req: NextRequest) {
     const staffList = (dbStaff || []).map((s: any) => ({
       id: s.id,
       tenantId: s.tenant_id,
-      name: s.display_name,
+      name: s.display_name || s.name || "Uzman",
       role: s.role || "STAFF",
-      isActive: s.is_active,
+      isActive: s.is_active !== false,
+      workingHours: s.working_hours || undefined,
     }));
 
     if (staffList.length === 0) {
-      return NextResponse.json({
-        success: true,
-        assignedStaff: {
-          id: "default-staff",
-          tenantId,
-          name: "Baş Hekim / Baş Uzman",
-          role: "STAFF",
-          isActive: true,
-        },
+      // Default fallback specialist for new tenants
+      const defaultSpecialist = {
+        id: "default-staff",
+        tenantId,
+        name: "Baş Hekim / Baş Uzman",
+        role: "STAFF",
+        isActive: true,
+      };
+
+      return apiSuccess({
+        assignedStaff: defaultSpecialist,
         strategyUsed: strategy,
-        reason: "Varsayılan işletme yetkilisi atandı.",
+        reason: "İşletme için kayıtlı özel personel bulunmadığından varsayılan yetkili atandı.",
+        availableStaffCount: 1,
       });
     }
 
-    // Fetch existing appointments
+    // 2. Fetch existing appointments
     const { data: dbAppointments } = await supabase
       .from("appointments")
       .select("id, staff_id, start_utc, end_utc, status")
@@ -62,7 +70,7 @@ export async function POST(req: NextRequest) {
       staffId: a.staff_id,
       startUtc: a.start_utc,
       endUtc: a.end_utc,
-      status: a.status,
+      status: a.status || "CONFIRMED",
     }));
 
     let result;
@@ -74,7 +82,7 @@ export async function POST(req: NextRequest) {
         tenantId,
         name: "Hizmet",
         durationMinutes: 30,
-        bufferTimeBeforeMinutes: 0,
+        bufferTimeBeforeMinutes: 5,
         bufferTimeAfterMinutes: 5,
         price: 0,
         currency: "TRY",
@@ -83,6 +91,7 @@ export async function POST(req: NextRequest) {
         assignedStaffIds: [],
         isActive: true,
       };
+
       result = StaffRouter.routeAvailabilityFirst(
         staffList as any,
         mockService as any,
@@ -90,18 +99,30 @@ export async function POST(req: NextRequest) {
         appointments as any,
         date
       );
+    } else if (strategy === "PRIORITY" && date) {
+      result = StaffRouter.routePriority(staffList as any, appointments as any, date);
     } else {
       result = StaffRouter.routeRoundRobin(staffList as any, serviceId, tenantId);
     }
 
-    return NextResponse.json({
-      success: true,
-      ...result,
+    return apiSuccess({
+      assignedStaff: result.assignedStaff,
+      strategyUsed: result.strategyUsed,
+      reason: result.reason,
+      availableStaffCount: result.availableStaffCount,
+      totalStaffEvaluated: result.totalStaffEvaluated,
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Personel yönlendirme hatası" },
-      { status: 500 }
-    );
+    if (error instanceof StaffRoutingError) {
+      if (error.code === "NO_ELIGIBLE_STAFF" || error.code === "NO_STAFF_AVAILABLE") {
+        return apiNotFound(error.message, { code: error.code });
+      }
+      if (error.code === "SCHEDULE_CONFLICT") {
+        return apiConflict(error.message, { code: error.code });
+      }
+      return apiBadRequest(error.message, { code: error.code });
+    }
+
+    return handleApiError(error, "Personel yönlendirme işlemi sırasında bir hata oluştu.");
   }
 }

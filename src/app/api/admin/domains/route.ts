@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as dns } from "dns";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiValidationError,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 const CNAME_TARGET = process.env.CUSTOM_DOMAIN_CNAME_TARGET || "cname.randevuformu.com";
-const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN;
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
 
 function isValidDomain(domain: string): boolean {
   const domainRegex = /^(?!:\/\/)([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+\.[a-zA-Z]{2,11}$/;
@@ -23,21 +27,8 @@ export async function GET(req: NextRequest) {
       .eq("id", tenantId)
       .single();
 
-    if (error || !tenant) {
-      return NextResponse.json({
-        configured: false,
-        domain: null,
-        status: "NOT_CONFIGURED",
-        instructions: {
-          recordType: "CNAME",
-          host: "randevu",
-          value: CNAME_TARGET,
-        },
-      });
-    }
-
-    if (!tenant.custom_domain) {
-      return NextResponse.json({
+    if (error || !tenant || !tenant.custom_domain) {
+      return apiSuccess({
         configured: false,
         domain: null,
         status: "NOT_CONFIGURED",
@@ -61,7 +52,7 @@ export async function GET(req: NextRequest) {
       isCnameValid = false;
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       configured: true,
       domain,
       status: isCnameValid ? "VERIFIED_ACTIVE" : "PENDING_DNS",
@@ -70,7 +61,7 @@ export async function GET(req: NextRequest) {
       sslActive: isCnameValid,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return handleApiError(err, "Alan adı durumu sorgulanamadı.");
   }
 }
 
@@ -81,13 +72,13 @@ export async function POST(req: NextRequest) {
     const { tenantId = "default-tenant", domain } = body;
 
     if (!domain) {
-      return NextResponse.json({ error: "domain parametresi zorunludur" }, { status: 400 });
+      return apiBadRequest("domain parametresi zorunludur.");
     }
 
     const cleanDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, "");
 
     if (!isValidDomain(cleanDomain)) {
-      return NextResponse.json({ error: "Geçersiz alan adı formatı." }, { status: 422 });
+      return apiValidationError("Geçersiz alan adı formatı.");
     }
 
     // Save in DB
@@ -96,8 +87,7 @@ export async function POST(req: NextRequest) {
       .update({ custom_domain: cleanDomain })
       .eq("id", tenantId);
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       domain: cleanDomain,
       status: "PENDING_DNS",
       dnsInstructions: {
@@ -105,8 +95,8 @@ export async function POST(req: NextRequest) {
         name: cleanDomain.startsWith("www.") ? "www" : cleanDomain.split(".")[0],
         value: CNAME_TARGET,
       },
-    });
+    }, "Özel alan adı başarıyla tanımlandı.");
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return handleApiError(err, "Özel alan adı kaydedilemedi.");
   }
 }

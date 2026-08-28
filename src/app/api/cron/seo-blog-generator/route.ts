@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { INITIAL_BLOG_POSTS, BlogPost } from "@/lib/blogData";
+import { BlogPost } from "@/lib/blogData";
+import {
+  apiSuccess,
+  apiUnauthorized,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 const CRON_SECRET = process.env.CRON_SECRET || "randevuformu_cron_secret_2026_x99";
 
@@ -36,15 +41,16 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     // Verify cron authorization if present
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-      // Allow local development and Vercel internal cron
       const isVercelCron = req.headers.get("x-vercel-cron") === "1";
       if (!isVercelCron && process.env.NODE_ENV === "production") {
-        return NextResponse.json({ error: "Unauthorized cron trigger" }, { status: 401 });
+        return apiUnauthorized("Geçersiz cron yetkilendirme anahtarı.");
       }
     }
 
     // Pick topic based on day of year
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
+    );
     const topic = KEYWORD_TOPICS[dayOfYear % KEYWORD_TOPICS.length];
 
     const newPost: BlogPost = {
@@ -61,12 +67,12 @@ export async function GET(req: NextRequest) {
       faqs: [
         {
           question: `${topic.category} için online randevu almak neden önemli?`,
-          answer: "Müşterilerin %70'inden fazlası mesai saatleri dışında doğrudan web veya Instagram üzerinden randevu oluşturmayı tercih eder."
+          answer: "Müşterilerin %70'inden fazlası mesai saatleri dışında doğrudan web veya Instagram üzerinden randevu oluşturmayı tercih eder.",
         },
         {
           question: "Randevu teyit mesajları otomatik mi gider?",
-          answer: "Evet, randevuformu.com tüm danışanlara SMS ve WhatsApp üzerinden konum ve saat onayını otomatik iletir."
-        }
+          answer: "Evet, randevuformu.com tüm danışanlara SMS ve WhatsApp üzerinden konum ve saat onayını otomatik iletir.",
+        },
       ],
       content: `
 ## ${topic.title}
@@ -82,10 +88,10 @@ randevuformu.com ile bu süreç tamamen otonom hale gelir:
 4. **Google Takvim Senkronizasyonu:** Tüm ekibin takvimi anlık eşitlensin.
 
 Hemen [randevuformu.com/login](/login) üzerinden 1 dakikada ücretsiz formunuzu oluşturun.
-      `
+      `,
     };
 
-    // Attempt to upsert to Supabase if database table exists
+    // Attempt to upsert to Supabase
     try {
       await supabase.from("blog_posts").upsert({
         slug: newPost.slug,
@@ -99,21 +105,19 @@ Hemen [randevuformu.com/login](/login) üzerinden 1 dakikada ücretsiz formunuzu
         tags: newPost.tags,
         faq_items: newPost.faqs,
       });
-    } catch (dbErr) {
+    } catch {
       console.log("[SEO Cron] Note: Supabase blog_posts table skipped, served via hybrid memory cache.");
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Otonom SEO makalesi başarıyla üretildi ve yayına alındı.",
+    return apiSuccess({
       article: {
         slug: newPost.slug,
         title: newPost.title,
         category: newPost.category,
         timestamp: new Date().toISOString(),
       },
-    });
+    }, "Otonom SEO makalesi başarıyla üretildi ve yayına alındı.");
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Cron execution failed" }, { status: 500 });
+    return handleApiError(err, "Cron çalıştırması başarısız oldu.");
   }
 }

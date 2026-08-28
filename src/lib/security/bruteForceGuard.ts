@@ -81,18 +81,34 @@ export class BruteForceGuard {
   }
 
   /**
-   * Create signed SuperAdmin session token
+   * Create signed SuperAdmin session token with configurable TTL (default 24 hours)
    */
-  public static createAdminToken(username: string): string {
+  public static createAdminToken(username: string, ttlMs: number = 24 * 60 * 60 * 1000): string {
     const payload = JSON.stringify({
       user: username,
       role: "SUPER_ADMIN",
       issuedAt: Date.now(),
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      expiresAt: Date.now() + ttlMs,
     });
     const base64Payload = Buffer.from(payload).toString("base64url");
     const hmac = crypto.createHmac("sha256", ADMIN_SECRET).update(base64Payload).digest("hex");
     return `${base64Payload}.${hmac}`;
+  }
+
+  /**
+   * Get current failed attempt count for an identifier
+   */
+  public static getAttemptCount(identifier: string): number {
+    this.cleanup();
+    const record = attemptMap.get(identifier);
+    return record ? record.count : 0;
+  }
+
+  /**
+   * Reset all brute force attempts (useful for tests)
+   */
+  public static resetAll(): void {
+    attemptMap.clear();
   }
 
   /**

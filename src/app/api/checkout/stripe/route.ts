@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import {
+  apiSuccess,
+  apiBadRequest,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "randevuformu.com";
@@ -20,11 +25,8 @@ export async function POST(req: NextRequest) {
       returnSlug,
     } = body;
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: "Geçerli bir ödeme tutarı belirtilmelidir." },
-        { status: 400 }
-      );
+    if (!amount || Number(amount) <= 0) {
+      return apiBadRequest("Geçerli bir ödeme tutarı belirtilmelidir.");
     }
 
     const successRedirect = returnSlug
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
       ? `${appUrl}/${returnSlug}?status=cancelled`
       : `${appUrl}/dashboard?status=cancelled`;
 
-    // Stripe SDK initialized if key exists
+    // Stripe SDK initialized if valid key exists
     if (STRIPE_SECRET_KEY && !STRIPE_SECRET_KEY.includes("dummy")) {
       const stripe = new Stripe(STRIPE_SECRET_KEY, {
         apiVersion: "2023-10-16" as any,
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
                 name: serviceName || "Randevu Hizmet Bedeli / Kapora",
                 description: customerName ? `Danışan: ${customerName}` : undefined,
               },
-              unit_amount: Math.round(Number(amount) * 100), // convert to cents/kuruş
+              unit_amount: Math.round(Number(amount) * 100), // convert to kuruş/cents
             },
             quantity: 1,
           },
@@ -67,24 +69,18 @@ export async function POST(req: NextRequest) {
         cancel_url: cancelRedirect,
       });
 
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         url: session.url,
         sessionId: session.id,
-      });
+      }, "Stripe ödeme oturumu oluşturuldu.");
     }
 
     // Dev/Preview Fallback Simulation
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       url: `${successRedirect}&simulated=true`,
-      message: "Geliştirme ortamı: Sanal ödeme onaylandı.",
-    });
+      simulated: true,
+    }, "Geliştirme ortamı: Sanal ödeme oturumu onaylandı.");
   } catch (error: any) {
-    console.error("[Stripe Checkout Error]:", error);
-    return NextResponse.json(
-      { error: error.message || "Ödeme oturumu başlatılamadı." },
-      { status: 500 }
-    );
+    return handleApiError(error, "Ödeme oturumu başlatılamadı.");
   }
 }

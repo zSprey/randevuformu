@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiNotFound,
+  handleApiError,
+} from "@/lib/apiResponse";
 
 // GET: Fetch all staff members for a tenant
 export async function GET(req: NextRequest) {
@@ -14,8 +20,8 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      // Return default list if table query error
-      return NextResponse.json({
+      // Return default list if table query error in development
+      return apiSuccess({
         staff: [
           {
             id: "staff-1",
@@ -41,9 +47,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ staff: staffList });
+    return apiSuccess({ staff: staffList || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(error, "Personel listesi alınamadı.");
   }
 }
 
@@ -60,7 +66,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     if (!displayName) {
-      return NextResponse.json({ error: "Personel ismi zorunludur" }, { status: 400 });
+      return apiBadRequest("Personel ismi zorunludur.");
     }
 
     const { data: newStaff, error } = await supabase
@@ -77,12 +83,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      throw error;
     }
 
-    return NextResponse.json({ success: true, staff: newStaff });
+    return apiSuccess({ staff: newStaff }, "Yeni personel başarıyla eklendi.", 201);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(error, "Personel eklenemedi.");
   }
 }
 
@@ -93,7 +99,7 @@ export async function PUT(req: NextRequest) {
     const { id, displayName, email, phone, role, isActive } = body;
 
     if (!id) {
-      return NextResponse.json({ error: "Personel ID zorunludur" }, { status: 400 });
+      return apiBadRequest("Personel ID zorunludur.");
     }
 
     const updatePayload: Record<string, any> = {};
@@ -111,12 +117,12 @@ export async function PUT(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      throw error;
     }
 
-    return NextResponse.json({ success: true, staff: updatedStaff });
+    return apiSuccess({ staff: updatedStaff }, "Personel bilgileri güncellendi.");
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(error, "Personel güncellenemedi.");
   }
 }
 
@@ -127,17 +133,17 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "id zorunludur" }, { status: 400 });
+      return apiBadRequest("id parametresi zorunludur.");
     }
 
     const { error } = await supabase.from("staff").delete().eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      throw error;
     }
 
-    return NextResponse.json({ success: true, message: "Personel silindi" });
+    return apiSuccess({ id }, "Personel başarıyla silindi.");
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(error, "Personel silinemedi.");
   }
 }
