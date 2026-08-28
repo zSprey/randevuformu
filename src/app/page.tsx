@@ -30,9 +30,16 @@ import {
   ChevronDown,
   Phone,
   Layers,
-  Sparkle,
   Award,
   Globe,
+  Stethoscope,
+  Apple,
+  Dog,
+  Scale,
+  Scissors,
+  Brain,
+  Activity,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -45,34 +52,34 @@ export default function Home() {
   const servicesData = [
     {
       id: "implant",
-      name: "İmplant Konsültasyonu & Analiz",
+      name: "İlk Muayene & Panoramik Röntgen",
       duration: "30 Dakika",
-      badge: "Ön Muayene",
-      price: "Ücretsiz",
+      badge: "Klinik İçi",
+      price: "₺1.000",
       highlight: true,
     },
     {
       id: "bleach",
-      name: "Lazerli Diş Beyazlatma",
-      duration: "60 Dakika",
-      badge: "Tek Seans",
-      price: "₺3.000",
-      highlight: false,
-    },
-    {
-      id: "smile",
-      name: "Estetik Gülüş Tasarımı",
+      name: "Ortodonti & Şeffaf Plak Analizi",
       duration: "45 Dakika",
-      badge: "3D Simülasyon",
+      badge: "Uzman Hekim",
       price: "₺1.500",
       highlight: false,
     },
     {
-      id: "zircon",
-      name: "Zirkonyum Kaplama Ön Analizi",
+      id: "smile",
+      name: "Estetik Gülüş & Dijital Tarama",
       duration: "45 Dakika",
-      badge: "Klinik Çekim",
-      price: "₺1.000",
+      badge: "3D Dijital",
+      price: "₺2.000",
+      highlight: false,
+    },
+    {
+      id: "zircon",
+      name: "Zirkonyum Kaplama Ön Konsültasyonu",
+      duration: "30 Dakika",
+      badge: "Planlama",
+      price: "₺1.200",
       highlight: false,
     },
   ];
@@ -81,35 +88,27 @@ export default function Home() {
 
   const faqs = [
     {
-      q: "Calendly veya Cal.com yerine neden randevuformu.com kullanmalıyım?",
-      a: "randevuformu.com tamamen Türkiye pazarı için tasarlanmıştır. Yerli İyzico sanal POS, Netgsm SMS OTP teyidi, WhatsApp API hatırlatmaları, %100 Türkçe dil desteği ve KVKK veri koruma mevzuatına tam uyum sunar. Yabancı platformlarda olmayan yerel ödeme ve faturalandırma avantajlarına sahiptir.",
+      q: "Calendly veya Cal.com yerine neden randevuformu.com tercih edilmeli?",
+      a: "randevuformu.com, Türkiye'deki işletmelerin ihtiyaçlarına tam uyumlu geliştirilmiştir. İyzico altyapısıyla kredi kartı ve kapora tahsilatı, Netgsm ile SMS OTP teyidi, WhatsApp API entegrasyonu, Türkçe zaman dilimi ve 6698 Sayılı KVKK veri mevzuatına tam uyum sunar.",
     },
     {
       q: "Randevu çakışması (çifte rezervasyon) nasıl engelleniyor?",
-      a: "Gelişmiş atomik concurrency lock mekanizmamız sayesinde aynı saniyede birden fazla danışan aynı koltuğa veya hekime randevu almaya çalışsa bile milisaniyelik kilit devreye girer. Ayrıca Google ve Outlook Takviminizdeki kişisel etkinlikleriniz taranarak o saatler anında bloke edilir.",
+      a: "Atomik concurrency kilidi algoritmamız sayesinde iki danışan aynı saniye içinde aynı uzmana veya koltuğa randevu oluşturmaya çalışsa dahi milisaniyelik kilit devreye girer. Ayrıca Google ve Outlook Takviminizdeki kişisel etkinlikler taranarak meşgul saatler otomatik bloke edilir.",
     },
     {
-      q: "Kendi web siteme veya Instagram profilime entegre edebilir miyim?",
-      a: "Evet! Size özel oluşturulan randevu linkinizi (örn: randevuformu.com/dr-ahmet) Instagram 'Biyografi' alanına ekleyebilir, hazır tek satırlık iframe kodumuz ile WordPress, Wix veya özel web sitenize gömebilir ya da kliniğiniz için QR masa standı çıktısı alabilirsiniz.",
-    },
-    {
-      q: "Çoklu hekim veya çalışan (Multi-Staff) desteği var mı?",
-      a: "Evet! Ekibinizdeki tüm hekim veya uzmanları ekleyebilir, her birinin çalışma saatlerini bağımsız belirleyebilir ve 'İlk Müsait Uzman' seçeneğinde Round-Robin (sıralı) veya Least-Busy (yük dengeleme) algoritmasıyla randevuları otomatik paylaştırabilirsiniz.",
-    },
-    {
-      q: "Başlamak için kredi kartı bilgisi gerekiyor mu?",
-      a: "Hayır. 30 saniye içinde ücretsiz hesabınızı oluşturabilir, randevu formunuzu yayınlayabilir ve danışanlarınızdan rezervasyon kabul etmeye hemen başlayabilirsiniz.",
+      q: "Başlamak için kurulum veya kredi kartı gerekiyor mu?",
+      a: "Hayır. 30 saniye içinde hesabınızı oluşturabilir, randevu linkinizi web sitenize veya Instagram biyografinize ekleyerek hemen rezervasyon kabul etmeye başlayabilirsiniz.",
     },
   ];
 
   const sectors = [
-    { name: "Diş Hekimi", slug: "dis-hekimi", icon: "🦷", desc: "Konsültasyon, cerrahi & estetik" },
-    { name: "Diyetisyen", slug: "diyetisyen", icon: "🥗", desc: "Online seans & kilo kontrolü" },
-    { name: "Veteriner", slug: "veteriner", icon: "🐾", desc: "Aşı, muayene & pet oteli" },
-    { name: "Avukat", slug: "avukat", icon: "⚖️", desc: "Ön danışmanlık & vekalet" },
-    { name: "Kuaför & Güzellik", slug: "kuafor", icon: "✂️", desc: "Kaporalı koltuk rezervasyonu" },
-    { name: "Psikolog", slug: "psikolog", icon: "🧠", desc: "Bireysel terapi & Google Meet" },
-    { name: "Fizyoterapist", slug: "fizyoterapist", icon: "💪", desc: "Manuel terapi & egzersiz" },
+    { name: "Diş Hekimi", slug: "dis-hekimi", icon: Stethoscope, desc: "Konsültasyon, cerrahi & estetik" },
+    { name: "Diyetisyen", slug: "diyetisyen", icon: Apple, desc: "Online seans & kilo yönetimi" },
+    { name: "Veteriner", slug: "veteriner", icon: Dog, desc: "Aşı, muayene & cerrahi operasyon" },
+    { name: "Hukuk & Avukat", slug: "avukat", icon: Scale, desc: "Müvekkil görüşmeleri & danışmanlık" },
+    { name: "Kuaför & Stüdyo", slug: "kuafor", icon: Scissors, desc: "Personel ve koltuk rezervasyonu" },
+    { name: "Psikolog & Terapi", slug: "psikolog", icon: Brain, desc: "Bireysel terapi & Google Meet" },
+    { name: "Fizyoterapist", slug: "fizyoterapist", icon: Activity, desc: "Manuel terapi & rehabilitasyon" },
   ];
 
   const jsonLd = {
@@ -137,39 +136,39 @@ export default function Home() {
       />
 
       {/* Top Notification Bar with Direct Contact Email */}
-      <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-white/5 py-2 px-4 text-center text-xs text-slate-300 flex items-center justify-center gap-2 relative z-50">
-        <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-        <span className="hidden sm:inline">Kurumsal B2B Entegrasyon & Özel Yazılım Çözümleri:</span>
-        <span className="sm:hidden">Kurumsal İletişim:</span>
+      <div className="bg-[#0B0F17] border-b border-slate-800/80 py-2 px-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2 relative z-50">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+        <span className="hidden sm:inline text-slate-300">Kurumsal B2B Entegrasyon & Özel Yazılım Çözümleri:</span>
+        <span className="sm:hidden text-slate-300">Kurumsal İletişim:</span>
         <a
           href="mailto:randevuformuu@gmail.com"
-          className="text-indigo-400 font-bold hover:text-indigo-300 underline underline-offset-4 flex items-center gap-1 transition-colors"
+          className="text-slate-200 font-medium hover:text-white underline underline-offset-4 flex items-center gap-1 transition-colors"
         >
-          <Mail className="w-3.5 h-3.5" />
+          <Mail className="w-3.5 h-3.5 text-slate-400" />
           randevuformuu@gmail.com
         </a>
       </div>
 
-      {/* Modern Glassmorphic Navbar */}
-      <header className="sticky top-0 w-full z-50 bg-[#070B12]/80 backdrop-blur-2xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white p-2.5 rounded-2xl group-hover:scale-105 transition-transform shadow-lg shadow-indigo-600/30">
-              <CalendarDays className="w-5 h-5" />
+      {/* Modern High-End Navbar */}
+      <header className="sticky top-0 w-full z-50 bg-[#080C14]/90 backdrop-blur-xl border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-white text-slate-950 flex items-center justify-center shadow-sm">
+              <CalendarDays className="w-5 h-5 text-slate-950" />
             </div>
-            <span className="font-black text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
-              randevuformu<span className="text-indigo-400">.com</span>
+            <span className="font-bold text-lg tracking-tight text-white">
+              randevuformu<span className="text-slate-400 font-normal">.com</span>
             </span>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-300">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-medium text-slate-300">
             <Link
               href="/kesfet"
               className="hover:text-white transition-colors flex items-center gap-1.5"
             >
-              <span>Uzman Keşfet</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+              <span>Uzman Dizini</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-800 text-slate-300 rounded border border-slate-700">
                 Pazar Yeri
               </span>
             </Link>
@@ -178,7 +177,7 @@ export default function Home() {
               className="hover:text-white transition-colors flex items-center gap-1.5"
             >
               <span>Örnek Şablonlar</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-800 text-slate-300 rounded border border-slate-700">
                 Demo
               </span>
             </Link>
@@ -209,13 +208,13 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="hidden sm:inline-flex text-xs font-semibold text-slate-300 hover:text-white transition-colors px-3 py-2"
+              className="hidden sm:inline-flex text-xs font-medium text-slate-300 hover:text-white transition-colors px-3 py-2"
             >
               Giriş Yap
             </Link>
             <Link
               href="/login"
-              className="text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-full hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
+              className="text-xs font-semibold bg-white text-slate-950 px-4 py-2 rounded-xl hover:bg-slate-200 transition-colors shadow-sm"
             >
               Ücretsiz Başla
             </Link>
@@ -224,7 +223,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              className="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-colors"
               aria-label="Menüyü Aç"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -239,83 +238,83 @@ export default function Home() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="lg:hidden bg-[#0B0F17]/95 border-b border-white/10 backdrop-blur-2xl px-4 py-6 space-y-4 overflow-hidden"
+              transition={{ duration: 0.2 }}
+              className="lg:hidden bg-[#0B0F17] border-b border-slate-800 px-4 py-6 space-y-4 overflow-hidden"
             >
-              <nav className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-300">
+              <nav className="grid grid-cols-2 gap-2 text-xs font-medium text-slate-300">
                 <Link
                   href="/ornek"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-between"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center justify-between"
                 >
                   <span>Örnek Şablonlar</span>
-                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-semibold">
                     Demo
                   </span>
                 </Link>
                 <Link
                   href="/calendar"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <Calendar className="w-4 h-4 text-indigo-400" />
+                  <Calendar className="w-4 h-4 text-slate-400" />
                   <span>Takvim Paneli</span>
                 </Link>
                 <Link
                   href="/staff"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <Users className="w-4 h-4 text-purple-400" />
+                  <Users className="w-4 h-4 text-slate-400" />
                   <span>Ekip Yönetimi</span>
                 </Link>
                 <Link
                   href="/forms"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <FileText className="w-4 h-4 text-slate-400" />
                   <span>Form Oluşturucu</span>
                 </Link>
                 <Link
                   href="/qr-stand"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <QrCode className="w-4 h-4 text-blue-400" />
+                  <QrCode className="w-4 h-4 text-slate-400" />
                   <span>QR Stand & Widget</span>
                 </Link>
                 <Link
                   href="/blog"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <BookOpen className="w-4 h-4 text-amber-400" />
+                  <BookOpen className="w-4 h-4 text-slate-400" />
                   <span>Blog & Rehber</span>
                 </Link>
                 <Link
                   href="/contact"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
+                  className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 flex items-center gap-2"
                 >
-                  <Mail className="w-4 h-4 text-pink-400" />
+                  <Mail className="w-4 h-4 text-slate-400" />
                   <span>B2B İletişim</span>
                 </Link>
               </nav>
 
-              <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+              <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs text-center shadow-lg shadow-indigo-600/30"
+                  className="w-full py-3 rounded-xl bg-white text-slate-950 font-semibold text-xs text-center shadow-sm"
                 >
                   Ücretsiz Giriş Yap / Hesap Aç
                 </Link>
                 <a
                   href="mailto:randevuformuu@gmail.com"
-                  className="text-center text-[11px] text-slate-400 hover:text-indigo-300"
+                  className="text-center text-xs text-slate-400 hover:text-white py-1"
                 >
-                  B2B Destek: randevuformuu@gmail.com
+                  Destek: randevuformuu@gmail.com
                 </a>
               </div>
             </motion.div>
@@ -323,223 +322,209 @@ export default function Home() {
         </AnimatePresence>
       </header>
 
-      {/* Hero Section */}
+      {/* Main Content Area */}
       <main className="flex-1">
+        {/* Modern Restrained Hero Section */}
         <section className="relative pt-16 sm:pt-24 pb-20 px-4 sm:px-6 overflow-hidden">
-          {/* Ambient Glows */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] bg-gradient-to-r from-indigo-600/25 via-purple-600/20 to-pink-600/10 blur-[150px] rounded-full -z-10 pointer-events-none" />
-          <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-blue-500/15 blur-[120px] rounded-full -z-10 pointer-events-none" />
-
-          <div className="max-w-5xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center">
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-indigo-300 text-xs sm:text-sm font-semibold mb-6 shadow-inner"
+              transition={{ duration: 0.3 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium mb-6"
             >
-              <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
-              <span>Türkiye&apos;nin Yeni Nesil Rezervasyon Altyapısı (Calendly & Cal.com Alternatifi)</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+              <span>Türkiye&apos;nin Yeni Nesil Rezervasyon Altyapısı</span>
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.08] mb-6"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.15] mb-6"
             >
-              Randevuları yönetmenin <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-                en kusursuz ve akıllı yolu.
-              </span>
+              Modern işletmeler için akıllı randevu ve danışan yönetim altyapısı.
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 font-normal leading-relaxed"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="text-sm sm:text-lg text-slate-400 max-w-2xl mx-auto mb-8 font-normal leading-relaxed"
             >
-              Telefon trafiğine ve çifte rezervasyon karmaşasına son verin. Danışanlarınız saniyeler içinde randevu alsın; Google Takvim, SMS ve WhatsApp anında senkronize olsun.
+              Telefon trafiğine ve çifte rezervasyon karmaşasına son verin. Danışanlarınız web sitenizden veya WhatsApp üzerinden saniyeler içinde randevu alsın; takvimleriniz, SMS bildirimleri ve hatırlatmalar kusursuz senkronize kalsın.
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-3"
             >
               <Link
                 href="/login"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-base hover:shadow-xl hover:shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-slate-950 px-6 py-3.5 rounded-xl font-medium text-sm hover:bg-slate-200 transition-colors shadow-sm"
               >
-                Hemen Ücretsiz Başla
-                <ArrowRight className="w-5 h-5" />
+                Ücretsiz Hesap Oluştur
+                <ArrowRight className="w-4 h-4 text-slate-950" />
               </Link>
               <Link
                 href="/ornek"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold text-slate-200 bg-white/10 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium text-sm text-slate-300 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:text-white transition-colors"
               >
-                Canlı Örnek Şablonları Gör
+                Canlı Demoyu İncele
               </Link>
             </motion.div>
           </div>
 
           {/* Interactive Live Hero Booking Widget */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="mt-16 max-w-4xl mx-auto"
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-14 max-w-4xl mx-auto"
           >
-            <div className="p-1 rounded-[2.5rem] bg-gradient-to-b from-indigo-500/30 via-white/10 to-transparent backdrop-blur-2xl shadow-2xl shadow-indigo-950/80">
-              <div className="bg-[#0D131F]/95 border border-white/10 rounded-[2.3rem] p-6 sm:p-8 backdrop-blur-xl">
-                {/* Header of Mockup */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 border border-indigo-400/40 flex items-center justify-center text-white font-black text-lg shadow-md shadow-indigo-600/25">
-                      AY
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-white text-lg">Dr. Ahmet Yılmaz</h3>
-                        <span className="p-1 bg-blue-500/20 text-blue-400 rounded-full" title="Doğrulanmış Klinik">
-                          <Check className="w-3 h-3" />
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        Diş Hekimi & Estetik Gülüş Tasarımı • randevuformu.com/dr-ahmet
-                      </p>
-                    </div>
+            <div className="rounded-2xl bg-[#0B0F17] border border-slate-800 p-6 sm:p-8 shadow-2xl">
+              {/* Header of Mockup */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold flex items-center justify-center text-sm shadow-sm">
+                    ES
                   </div>
-
-                  <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-500/40 px-3.5 py-1.5 rounded-full font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Müsait Saatler Canlı
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-white text-base">Dr. Emre Sarıkaya</h3>
+                      <span className="p-0.5 bg-emerald-500/10 text-emerald-400 rounded" title="Doğrulanmış Klinik">
+                        <Check className="w-3 h-3" />
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Ortodonti & Estetik Diş Hekimliği • randevuformu.com/dr-emre
+                    </p>
                   </div>
                 </div>
 
-                {/* Body of Interactive Widget */}
-                <div className="grid md:grid-cols-12 gap-6 mt-6">
-                  {/* Left Column: Services Selection */}
-                  <div className="md:col-span-6 space-y-2.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      1. Hizmet Seçin
-                    </label>
-                    {servicesData.map((svc) => {
-                      const isSelected = selectedService === svc.id;
-                      return (
-                        <div
-                          key={svc.id}
-                          onClick={() => setSelectedService(svc.id)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                            isSelected
-                              ? "bg-indigo-600/25 border-indigo-500 shadow-md shadow-indigo-500/20 scale-[1.01]"
-                              : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-                          }`}
-                        >
-                          <div>
-                            <div className="font-semibold text-white text-sm">{svc.name}</div>
-                            <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                              <Clock className="w-3 h-3 text-indigo-400" /> {svc.duration} • {svc.badge}
-                            </div>
+                <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1 rounded-full font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Müsait Saatler Canlı
+                </div>
+              </div>
+
+              {/* Body of Interactive Widget */}
+              <div className="grid md:grid-cols-12 gap-6 mt-6">
+                {/* Left Column: Services Selection */}
+                <div className="md:col-span-6 space-y-2">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                    1. Hizmet Seçimi
+                  </label>
+                  {servicesData.map((svc) => {
+                    const isSelected = selectedService === svc.id;
+                    return (
+                      <div
+                        key={svc.id}
+                        onClick={() => setSelectedService(svc.id)}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? "bg-slate-800/90 border-slate-600 shadow-sm"
+                            : "bg-slate-900/50 border-slate-800 hover:border-slate-700"
+                        }`}
+                      >
+                        <div>
+                          <div className="font-medium text-white text-sm">{svc.name}</div>
+                          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                            <Clock className="w-3 h-3 text-slate-500" /> {svc.duration} • {svc.badge}
                           </div>
-                          <span
-                            className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                              svc.price === "Ücretsiz"
-                                ? "bg-indigo-500/30 text-indigo-300"
-                                : "bg-white/10 text-slate-200"
+                        </div>
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 border border-slate-700">
+                          {svc.price}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right Column: Time Slot Selection */}
+                <div className="md:col-span-6 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                      2. Müsait Saat Seçimi
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["09:30", "11:00", "14:30", "16:00", "17:15", "18:30"].map((time) => {
+                        const isSelected = selectedTime === time;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setSelectedTime(time)}
+                            className={`py-2.5 px-2 text-xs font-medium rounded-xl border transition-all ${
+                              isSelected
+                                ? "bg-white text-slate-950 border-white shadow-sm"
+                                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white"
                             }`}
                           >
-                            {svc.price}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Right Column: Time Slot Selection */}
-                  <div className="md:col-span-6 space-y-3 flex flex-col justify-between">
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                        2. Bugün İçin Saat Seçin
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {["09:30", "11:00", "14:30", "16:00", "17:15", "18:30"].map((time) => {
-                          const isSelected = selectedTime === time;
-                          return (
-                            <button
-                              key={time}
-                              type="button"
-                              onClick={() => setSelectedTime(time)}
-                              className={`py-3 px-2 text-xs font-bold rounded-xl border transition-all ${
-                                isSelected
-                                  ? "bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-600/30 scale-105"
-                                  : "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white"
-                              }`}
-                            >
-                              {time}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="p-3 mt-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Seçilen Hizmet:</span>
-                          <span className="font-semibold text-white">{currentServiceObj.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Randevu Saati:</span>
-                          <span className="font-semibold text-indigo-400">Bugün {selectedTime}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Tutar:</span>
-                          <span className="font-semibold text-emerald-400">{currentServiceObj.price}</span>
-                        </div>
-                      </div>
+                            {time}
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    <Link
-                      href="/ornek/dr-ahmet"
-                      className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all hover:scale-105 active:scale-95"
-                    >
-                      <span>{selectedTime} İçin Randevuyu Tamamla</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
+                    <div className="p-3.5 mt-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 space-y-1.5">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Seçilen İşlem:</span>
+                        <span className="font-medium text-white">{currentServiceObj.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Randevu Saati:</span>
+                        <span className="font-medium text-slate-200">Bugün {selectedTime}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Hizmet Bedeli:</span>
+                        <span className="font-semibold text-emerald-400">{currentServiceObj.price}</span>
+                      </div>
+                    </div>
                   </div>
+
+                  <Link
+                    href="/ornek/dr-ahmet"
+                    className="w-full mt-4 py-3 rounded-xl bg-white text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:bg-slate-200 transition-colors shadow-sm"
+                  >
+                    <span>{selectedTime} İçin Randevuyu Tamamla</span>
+                    <ChevronRight className="w-4 h-4 text-slate-950" />
+                  </Link>
                 </div>
               </div>
             </div>
           </motion.div>
         </section>
 
-        {/* Live Metrics Row */}
-        <section className="py-10 border-y border-white/5 bg-[#090E17]/60">
+        {/* Live Reliability Metrics Row */}
+        <section className="py-10 border-y border-slate-800 bg-[#070B12]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               <div className="p-4">
-                <div className="text-3xl sm:text-4xl font-black text-white bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-                  1,200+
+                <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+                  0 ms
                 </div>
-                <div className="text-xs text-slate-400 mt-1 font-semibold">Aktif Sağlık & Hizmet İşletmesi</div>
+                <div className="text-xs text-slate-400 mt-1 font-medium">Çakışma Toleransı (Atomik Kilit)</div>
               </div>
               <div className="p-4">
-                <div className="text-3xl sm:text-4xl font-black text-emerald-400">
+                <div className="text-2xl sm:text-3xl font-bold text-emerald-400 font-mono">
                   %99.98
                 </div>
-                <div className="text-xs text-slate-400 mt-1 font-semibold">Bulut Çalışma Süresi (SLA)</div>
+                <div className="text-xs text-slate-400 mt-1 font-medium">Bulut Çalışma Süresi (SLA)</div>
               </div>
               <div className="p-4">
-                <div className="text-3xl sm:text-4xl font-black text-purple-400">
-                  0
+                <div className="text-2xl sm:text-3xl font-bold text-white font-mono">
+                  &lt; 30 sn
                 </div>
-                <div className="text-xs text-slate-400 mt-1 font-semibold">Çifte Rezervasyon Çakışması</div>
+                <div className="text-xs text-slate-400 mt-1 font-medium">Ortalama Form Kurulum Süresi</div>
               </div>
               <div className="p-4">
-                <div className="text-3xl sm:text-4xl font-black text-indigo-400">
-                  &lt; 10 sn
+                <div className="text-2xl sm:text-3xl font-bold text-indigo-400 font-mono">
+                  %100
                 </div>
-                <div className="text-xs text-slate-400 mt-1 font-semibold">Ortalama Randevu Alma Hızı</div>
+                <div className="text-xs text-slate-400 mt-1 font-medium">KVKK 6698 & GİB E-Fatura Uyumu</div>
               </div>
             </div>
           </div>
@@ -560,78 +545,87 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-3xl bg-slate-900/60 border border-white/10 hover:border-indigo-500/40 transition-all hover:-translate-y-1.5 shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6">
-                <Zap className="w-6 h-6" />
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-7 rounded-2xl bg-[#0B0F17] border border-slate-800 hover:border-slate-700 transition-colors shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center mb-5">
+                <Zap className="w-5 h-5 text-slate-300" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Milisaniyelik Çakışma Koruması</h3>
+              <h3 className="text-base font-bold text-white mb-2">Milisaniyelik Çakışma Koruması</h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Aynı saniyede onlarca kişi randevu almaya çalışsa bile concurrency lock algoritmamız çifte randevuyu %100 engeller.
+                Aynı saniyede onlarca kişi randevu almaya çalışsa bile atomik concurrency lock mimarimiz çifte rezervasyonu %100 engeller.
               </p>
             </div>
 
-            <div className="p-8 rounded-3xl bg-slate-900/60 border border-white/10 hover:border-purple-500/40 transition-all hover:-translate-y-1.5 shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-6">
-                <MessageCircle className="w-6 h-6" />
+            <div className="p-7 rounded-2xl bg-[#0B0F17] border border-slate-800 hover:border-slate-700 transition-colors shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center mb-5">
+                <MessageCircle className="w-5 h-5 text-slate-300" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Otomatik E-Posta & WhatsApp</h3>
+              <h3 className="text-base font-bold text-white mb-2">Otomatik SMS & WhatsApp Teyidi</h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Randevu onaylandığında veya iptal edildiğinde müşterinize ve size anında profesyonel HTML onay mailleri ve Google Takvim daveti gider.
+                Randevu onaylandığında veya ertelendiğinde danışanınıza ve ekibinize anında bildirim, Google Meet linki ve takvim daveti iletilir.
               </p>
             </div>
 
-            <div className="p-8 rounded-3xl bg-slate-900/60 border border-white/10 hover:border-emerald-500/40 transition-all hover:-translate-y-1.5 shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6">
-                <Shield className="w-6 h-6" />
+            <div className="p-7 rounded-2xl bg-[#0B0F17] border border-slate-800 hover:border-slate-700 transition-colors shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center mb-5">
+                <Shield className="w-5 h-5 text-slate-300" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-3">Çoklu Personel & No-Code Form</h3>
+              <h3 className="text-base font-bold text-white mb-2">Çoklu Uzman & Özel Form Alanları</h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Birden fazla hekim veya personeli Round-Robin ile yönetin, özel form alanlarınızı sürükle-bırak kolaylığında oluşturun.
+                Birden fazla hekim veya personeli Round-Robin dağıtımıyla yönetin, danışanlarınızdan almak istediğiniz özel soruları kolayca ekleyin.
               </p>
             </div>
           </div>
         </section>
 
         {/* Sector Showcase Section */}
-        <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-white/5">
-          <div className="text-center mb-12 space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
-              Her Sektör İçin Hazır Şablonlar
+        <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-slate-800">
+          <div className="text-center mb-12 space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+              Her Uzmanlık İçin Hazır Şablonlar
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto">
-              Kendi sektörünüze uygun özelleştirilmiş randevu akışını tek tıkla seçin ve kullanmaya başlayın.
+              Sektörünüze özel yapılandırılmış randevu akışını seçin ve hemen yayına alın.
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sectors.map((sec) => (
-              <Link
-                key={sec.slug}
-                href={`/sektorler/${sec.slug === "dis-hekimi" ? "diyetisyen" : sec.slug}`}
-                className="p-5 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/40 hover:bg-slate-850 transition-all group hover:-translate-y-1"
-              >
-                <div className="text-3xl mb-3">{sec.icon}</div>
-                <h3 className="font-bold text-sm text-white group-hover:text-indigo-400 transition-colors">
-                  {sec.name}
-                </h3>
-                <p className="text-[11px] text-slate-400 mt-1">{sec.desc}</p>
-              </Link>
-            ))}
+            {sectors.map((sec) => {
+              const IconComp = sec.icon;
+              return (
+                <Link
+                  key={sec.slug}
+                  href={`/sektorler/${sec.slug === "dis-hekimi" ? "diyetisyen" : sec.slug}`}
+                  className="p-5 rounded-2xl bg-[#0B0F17] border border-slate-800 hover:border-slate-700 transition-colors group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-3 group-hover:border-slate-700 transition-colors">
+                      <IconComp className="w-4 h-4 text-slate-300" />
+                    </div>
+                    <h3 className="font-semibold text-sm text-white group-hover:text-white transition-colors">
+                      {sec.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1">{sec.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
 
             <Link
               href="/ornek"
-              className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950/60 to-purple-950/40 border border-indigo-500/30 hover:border-indigo-400 transition-all group hover:-translate-y-1 flex flex-col justify-between"
+              className="p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors group flex flex-col justify-between"
             >
               <div>
-                <div className="text-3xl mb-3">✨</div>
-                <h3 className="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">
-                  Tüm Canlı Demolar
+                <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3">
+                  <LayoutGrid className="w-4 h-4 text-slate-200" />
+                </div>
+                <h3 className="font-semibold text-sm text-white transition-colors">
+                  Tüm Canlı Şablonlar
                 </h3>
-                <p className="text-[11px] text-slate-300 mt-1">15+ sektörel demoyu canlı test edin.</p>
+                <p className="text-[11px] text-slate-400 mt-1">15+ sektörel demoyu canlı test edin.</p>
               </div>
-              <span className="text-xs font-bold text-indigo-400 mt-3 inline-flex items-center gap-1">
-                İncele →
+              <span className="text-xs font-semibold text-slate-300 mt-3 inline-flex items-center gap-1">
+                İncele <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               </span>
             </Link>
           </div>
@@ -746,49 +740,49 @@ export default function Home() {
 
         {/* Quick Links Banner */}
         <section className="py-12 px-4 sm:px-6 max-w-7xl mx-auto">
-          <div className="p-8 rounded-3xl bg-gradient-to-r from-indigo-950/70 via-purple-950/50 to-slate-900 border border-indigo-500/25 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+          <div className="p-8 rounded-2xl bg-[#0B0F17] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
             <div>
-              <h3 className="text-2xl font-bold text-white mb-2">Platformun Tüm Bölümlerini Keşfedin</h3>
-              <p className="text-slate-400 text-xs sm:text-sm">
-                Aşağıdaki bağlantılar ile yönetim panellerine ve şablonlara doğrudan erişebilirsiniz.
+              <h3 className="text-xl font-bold text-white mb-1.5">Platform Modülleri</h3>
+              <p className="text-slate-400 text-xs">
+                Yönetim paneline ve entegre araçlara doğrudan erişebilirsiniz.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2">
               <Link
                 href="/calendar"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                📅 Takvim Paneli
+                <Calendar className="w-3.5 h-3.5 text-slate-400" /> Takvim Paneli
               </Link>
               <Link
                 href="/staff"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                👥 Ekip Yönetimi
+                <Users className="w-3.5 h-3.5 text-slate-400" /> Ekip Yönetimi
               </Link>
               <Link
                 href="/forms"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                📝 Form Oluşturucu
+                <FileText className="w-3.5 h-3.5 text-slate-400" /> Form Oluşturucu
               </Link>
               <Link
                 href="/qr-stand"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                🖨️ QR Stand
+                <QrCode className="w-3.5 h-3.5 text-slate-400" /> QR Stand
               </Link>
               <Link
                 href="/settings"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                ⚙️ Entegrasyonlar
+                <Settings className="w-3.5 h-3.5 text-slate-400" /> Ayarlar
               </Link>
               <Link
                 href="/contact"
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-md"
+                className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
               >
-                ✉️ İletişim & B2B
+                <Mail className="w-3.5 h-3.5 text-slate-400" /> İletişim
               </Link>
             </div>
           </div>

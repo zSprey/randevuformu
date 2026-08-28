@@ -148,83 +148,75 @@ export default function MarketplaceDiscoveryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070B12] text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
-      {/* Background Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/15 blur-[140px] rounded-full" />
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-white/5">
+    <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col justify-between selection:bg-slate-700 selection:text-white font-sans antialiased">
+      {/* Top Header */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#080C14]/90 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 font-black text-lg text-white">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
-              <Compass className="w-4 h-4" />
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-white">
+            <div className="w-8 h-8 rounded-xl bg-white text-slate-950 flex items-center justify-center shadow-sm">
+              <Compass className="w-4 h-4 text-slate-950" />
             </div>
-            <span>randevuformu<span className="text-indigo-400">.com</span></span>
+            <span>randevuformu<span className="text-slate-400 font-normal">.com</span></span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/blog"
-              className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+              className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
             >
               Blog & Rehberler
             </Link>
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-105"
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-white text-slate-950 hover:bg-slate-200 shadow-sm transition-colors"
             >
-              Kliniğinizi Listeleyin
+              İşletmenizi Ekleyin
             </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full space-y-12">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full space-y-10">
         {/* Hero Search */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Türkiye'nin Doğrulanmış Sağlık & Hizmet Dizini
+        <div className="text-center space-y-3 max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+            Doğrulanmış Sağlık & Hizmet Dizini
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            Şehrinizdeki En İyi Uzmanlardan <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-              Anında Online Randevu Alın
-            </span>
+          <h1 className="text-2xl sm:text-4xl font-bold text-white tracking-tight leading-tight">
+            Şehrinizdeki seçkin uzmanlardan doğrudan online randevu alın.
           </h1>
-          <p className="text-xs sm:text-base text-slate-400">
-            Telefonla aramadan, sıra beklemeden hekiminizi seçin ve 10 saniyede takvimden yerinizi ayırtın.
+          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+            Telefon trafiğine takılmadan hekiminizi ve müsait saatinizi seçin, 30 saniye içinde randevunuzu kesinleştirin.
           </p>
 
           {/* Search Box */}
-          <div className="pt-4 max-w-xl mx-auto relative">
-            <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+          <div className="pt-3 max-w-xl mx-auto relative">
+            <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Uzman adı, klinik, semt veya tedavi ara (Örn: Diş hekimi, Kadıköy)..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-2xl transition-all"
+              className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-slate-600 shadow-sm transition-all"
             />
           </div>
         </div>
 
         {/* City & Category Filters */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {/* City Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs text-slate-500 font-semibold mr-1 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" /> Şehir:
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <span className="text-xs text-slate-500 font-medium mr-1 flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-slate-500" /> Şehir:
             </span>
             {cities.map((city) => (
               <button
                 key={city}
                 onClick={() => setSelectedCity(city)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                   selectedCity === city
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    ? "bg-white text-slate-950 shadow-sm"
                     : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
                 }`}
               >
@@ -234,18 +226,18 @@ export default function MarketplaceDiscoveryPage() {
           </div>
 
           {/* Category Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                   selectedCategory === cat
-                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                    ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                     : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
                 }`}
               >
-                {cat === "ALL" ? "Tüm Sektörler" : cat}
+                {cat === "ALL" ? "Tüm Branşlar" : cat}
               </button>
             ))}
           </div>
