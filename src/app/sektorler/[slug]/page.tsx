@@ -1,102 +1,138 @@
-"use client";
-
-import React, { use } from "react";
+import React from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import {
-  CalendarDays,
+  Calendar,
   CheckCircle2,
-  Sparkles,
+  Clock,
   ArrowRight,
-  Shield,
+  ShieldCheck,
   Zap,
+  Sparkles,
+  HelpCircle,
+  TrendingUp,
   MessageCircle,
-  Star,
-  Users,
-  Building2,
-  ChevronRight
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { SEKTOR_DATA } from "@/lib/sektorler";
 
-interface SektorConfig {
-  title: string;
-  badge: string;
-  heroHeadline: string;
-  heroSub: string;
-  painPoints: string[];
-  features: { title: string; desc: string }[];
-  exampleSlug: string;
-  exampleName: string;
+interface SektorPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-const SEKTOR_DATA: Record<string, SektorConfig> = {
-  "dis-hekimi": {
-    title: "Diş Hekimleri & Diş Klinikleri İçin Online Randevu Yazılımı",
-    badge: "🦷 Diş Sağlığı & Poliklinik Çözümü",
-    heroHeadline: "Hastalarınız 7/24 Randevu Alsın, Tedavi Planlarınız Aksamasın.",
-    heroSub: "Telefon trafiğini %80 azaltın. İmplant, kanal tedavisi ve ortodonti randevularını SMS ve WhatsApp onaylı yönetin.",
-    painPoints: ["Randevuya gelmeyen hastalar (No-show)", "Sekreterya telefon yoğunluğu", "Çakışan seans saatleri"],
-    features: [
-      { title: "3D Tomografi & Ön Muayene Formu", desc: "Hastalar randevu alırken şikayetlerini ve röntgen dosyalarını iletsin." },
-      { title: "Otomatik WhatsApp Hatırlatma", desc: "Randevudan 24 saat ve 2 saat önce giden onay mesajları ile no-show'u bitirin." },
-      { title: "Çoklu Hekim & Koltuk Yönetimi", desc: "Her hekime ve tedavi koltuğuna özel bağımsız çalışma takvimleri." },
-    ],
-    exampleSlug: "dr-ahmet",
-    exampleName: "Dr. Ahmet Yılmaz Diş Kliniği",
-  },
-  "kuafor": {
-    title: "Kuaför & Güzellik Salonları İçin Online Rezervasyon Sistemi",
-    badge: "✂️ Kuaför & Beauty Studio Çözümü",
-    heroHeadline: "Güzellik Salonunuz İçin VIP Randevu Deneyimi.",
-    heroSub: "Saç kesimi, sombre, keratin bakımı ve tırnak işlemlerinde müşterileriniz istediği uzmandan saniyeler içinde yer ayırsın.",
-    painPoints: ["Instagram DM'lerinden randevu yakalama karmaşası", "Hangi uzmanın hangi saatte dolu olduğunu takip edememe", "Yoğun Cumartesi kuyrukları"],
-    features: [
-      { title: "Uzman Bazlı Randevu Seçimi", desc: "Müşteriler dilediği kuaför veya maniküristi seçerek randevu alsın." },
-      { title: "Hizmet Süresi & Fiyat Netliği", desc: "İşlem süreleri (90 dk, 120 dk) takvimde otomatik kilitlensin." },
-      { title: "Ön Kapora / İyzico Ödeme", desc: "Randevu sırasında güvenli kapora alarak iptalleri sıfırlayın." },
-    ],
-    exampleSlug: "studio-nova",
-    exampleName: "Studio Nova Kuaför",
-  },
-  "psikolog": {
-    title: "Psikologlar & Terapistler İçin Güvenli Online Seans Takvimi",
-    badge: "🧠 Psikoloji & Terapi Danışmanlığı",
-    heroHeadline: "Danışanlarınız İçin Gizli, KVKK Uyumlu ve Güvenli Seans Yönetimi.",
-    heroSub: "Bireysel terapi, çift terapisi ve online seanslarınızı Google Meet / Zoom linkleri ile otomatik senkronize edin.",
-    painPoints: ["Seans ücreti tahsilat takibi", "Zaman dilimi karışıklıkları", "KVKK ve danışan gizliliği"],
-    features: [
-      { title: "Otomatik Online Toplantı Linki", desc: "Randevu oluştuğu an Zoom/Google Meet bağlantısı oluşturulup iletilir." },
-      { title: "KVKK Uyumlu Şifreli Altyapı", desc: "Danışan bilgileri banka seviyesinde SSL ve KVKK ile korunur." },
-      { title: "Dinamik Ön Görüşme Formu", desc: "Seans öncesi danışan öyküsü için özel sorular tanımlayın." },
-    ],
-    exampleSlug: "psk-melis",
-    exampleName: "Uzm. Psk. Melis Aktaş",
-  },
-};
+export async function generateStaticParams() {
+  return Object.keys(SEKTOR_DATA).map((slug) => ({ slug }));
+}
 
-export default function SektorLandingPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
-  const resolvedParams = "then" in params ? use(params as Promise<{ slug: string }>) : params;
-  const slug = resolvedParams?.slug || "dis-hekimi";
+export async function generateMetadata({ params }: SektorPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const sector = SEKTOR_DATA[slug];
 
-  const data = SEKTOR_DATA[slug] || SEKTOR_DATA["dis-hekimi"];
+  if (!sector) {
+    return { title: "Sektörel Randevu Çözümleri | randevuformu.com" };
+  }
+
+  return {
+    title: sector.metaTitle,
+    description: sector.metaDescription,
+    keywords: sector.keywords,
+    openGraph: {
+      title: sector.metaTitle,
+      description: sector.metaDescription,
+      url: `https://randevuformu.com/sektorler/${slug}`,
+      siteName: "randevuformu.com",
+      type: "website",
+    },
+    alternates: {
+      canonical: `https://randevuformu.com/sektorler/${slug}`,
+    },
+  };
+}
+
+export default async function SektorLandingPage({ params }: SektorPageProps) {
+  const { slug } = await params;
+  const sector = SEKTOR_DATA[slug];
+
+  if (!sector) {
+    notFound();
+  }
+
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": sector.schemaType || "LocalBusiness",
+        name: sector.title,
+        description: sector.metaDescription,
+        url: `https://randevuformu.com/sektorler/${slug}`,
+        areaServed: "TR",
+        priceRange: "₺₺",
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: `randevuformu.com - ${sector.category} Randevu Yazılımı`,
+        operatingSystem: "Web, iOS, Android",
+        applicationCategory: "BusinessApplication",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "TRY",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: sector.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://randevuformu.com" },
+          { "@type": "ListItem", position: 2, name: "Sektörler", item: "https://randevuformu.com/sektorler" },
+          { "@type": "ListItem", position: 3, name: sector.badge, item: `https://randevuformu.com/sektorler/${slug}` },
+        ],
+      },
+    ],
+  };
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-white selection:bg-indigo-500 font-sans">
-      {/* Navbar */}
-      <header className="fixed top-0 w-full z-50 bg-[#0B0F17]/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-600 text-white">
-              <CalendarDays className="w-5 h-5" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}
+      />
+
+      {/* Background glow effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/15 blur-[140px] rounded-full" />
+        <div className="absolute top-1/3 right-10 w-[400px] h-[400px] bg-purple-600/10 blur-[120px] rounded-full" />
+      </div>
+
+      {/* Header Bar */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 font-black text-lg text-white">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+              <Calendar className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-xl tracking-tight text-white">randevuformu</span>
+            <span>randevuformu<span className="text-indigo-400">.com</span></span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-xs font-semibold text-slate-300 hover:text-white">
-              Giriş Yap
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/${sector.exampleSlug}`}
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 transition-all"
+            >
+              Canlı Örnek Form
             </Link>
             <Link
               href="/login"
-              className="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-full transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-105"
             >
               Ücretsiz Başla
             </Link>
@@ -104,48 +140,153 @@ export default function SektorLandingPage({ params }: { params: Promise<{ slug: 
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="pt-32 pb-20 px-6 max-w-6xl mx-auto space-y-20">
-        <div className="text-center space-y-6 max-w-4xl mx-auto">
-          <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-            {data.badge}
-          </span>
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight text-white">
-            {data.heroHeadline}
-          </h1>
-          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">
-            {data.heroSub}
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link
-              href="/login"
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center gap-2"
-            >
-              Hemen Kliniğinizi / Salonunuzu Ekleyin <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href={`/${data.exampleSlug}`}
-              className="px-8 py-4 rounded-full bg-white/10 hover:bg-white/15 text-slate-200 font-semibold text-sm border border-white/10"
-            >
-              Örnek Rezervasyon Sayfası ({data.exampleName})
-            </Link>
-          </div>
+      {/* Hero Section */}
+      <section className="pt-16 pb-12 sm:pt-24 sm:pb-20 max-w-5xl mx-auto px-4 text-center space-y-6">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5" />
+          {sector.badge}
         </div>
 
-        {/* Features */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {data.features.map((f, i) => (
-            <div key={i} className="p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold">
-                0{i + 1}
-              </div>
-              <h3 className="font-bold text-lg text-white">{f.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{f.desc}</p>
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15]">
+          {sector.heroHeadline}
+        </h1>
+
+        <p className="text-sm sm:text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed">
+          {sector.heroSub}
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <Link
+            href="/login"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all"
+          >
+            1 Dakikada Formunu Oluştur
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href={`/${sector.exampleSlug}`}
+            className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+          >
+            {sector.exampleName} Önizle
+          </Link>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-10 max-w-3xl mx-auto">
+          {sector.stats.map((st, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-center"
+            >
+              <div className="text-xl sm:text-3xl font-black text-indigo-400">{st.value}</div>
+              <div className="text-[11px] sm:text-xs text-slate-400 mt-1 font-medium">{st.label}</div>
             </div>
           ))}
         </div>
-      </main>
+      </section>
+
+      {/* Pain Points vs Solutions */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
+            Eski Usül Randevu Almayı Bırakın
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-2">
+            Telefon trafiğini, son dakika iptallerini ve gelir kayıplarını geride bırakın.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {sector.painPoints.map((pp, i) => (
+            <div
+              key={i}
+              className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-rose-400 uppercase tracking-wider">
+                  ✕ Eski Yöntem
+                </div>
+                <p className="text-xs text-slate-400">{pp.problem}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-800 space-y-2">
+                <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> randevuformu Çözümü
+                </div>
+                <p className="text-xs text-slate-200 font-medium">{pp.solution}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
+            Sektörünüze Özel Gelişmiş Özellikler
+          </h2>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-6">
+          {sector.features.map((ft, i) => (
+            <div
+              key={i}
+              className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 space-y-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                <Zap className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">{ft.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">{ft.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-4xl mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center justify-center gap-2">
+            <HelpCircle className="w-6 h-6 text-indigo-400" /> Sıkça Sorulan Sorular
+          </h2>
+        </div>
+
+        <div className="space-y-3">
+          {sector.faqs.map((faq, i) => (
+            <details
+              key={i}
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 open:border-indigo-500/40 transition-all"
+            >
+              <summary className="font-bold text-sm text-white cursor-pointer list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-800 leading-relaxed">
+                {faq.answer}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Bottom CTA Banner */}
+      <section className="max-w-5xl mx-auto px-4 pt-12">
+        <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-indigo-900/50 via-purple-900/40 to-slate-900 border border-indigo-500/30 text-center space-y-6 shadow-2xl">
+          <h2 className="text-2xl sm:text-4xl font-black text-white">
+            {sector.category} İçin Randevu Altyapınızı Bugün Kurun
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
+            Kredi kartı gerekmez. 1 dakika içinde formunuzu yayınlayın, Instagram ve WhatsApp üzerinden randevu toplamaya başlayın.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 items-center gap-2 transition-all hover:scale-105"
+          >
+            Hemen Ücretsiz Başlayın
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

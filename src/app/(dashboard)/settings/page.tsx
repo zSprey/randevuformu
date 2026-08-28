@@ -379,12 +379,16 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setGoogleConnected(!googleConnected);
-                      showToast(`Google Calendar bağlantısı ${!googleConnected ? "kuruldu" : "kesildi"}.`);
+                      if (!googleConnected) {
+                        window.location.href = "/api/integrations/google/connect?tenantId=default-tenant&staffId=default-staff";
+                      } else {
+                        setGoogleConnected(false);
+                        showToast("Google Calendar bağlantısı kesildi.");
+                      }
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300"
+                    className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 transition-all hover:scale-105"
                   >
-                    {googleConnected ? "Bağlantıyı Kes" : "Bağlan"}
+                    {googleConnected ? "Bağlantıyı Kes" : "OAuth ile Bağlan"}
                   </button>
                 </div>
 
