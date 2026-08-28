@@ -18,7 +18,8 @@ import {
   Building,
   AlertCircle,
   CheckCircle2,
-  Lock
+  Lock,
+  Wallet
 } from "lucide-react";
 import SmartWaitlistWidget from "./SmartWaitlistWidget";
 
@@ -27,6 +28,7 @@ interface ServiceItem {
   name: string;
   duration_minutes: number;
   price_text: string;
+  price?: number;
   description?: string;
 }
 
@@ -62,6 +64,7 @@ export default function BookingWidget({
   const [kvkkConsent, setKvkkConsent] = useState(false);
 
   // Lock & State
+  const [paymentMethod, setPaymentMethod] = useState<"VENUE" | "STRIPE" | "IYZICO">("VENUE");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -156,6 +159,60 @@ export default function BookingWidget({
 
       const data = await res.json();
       if (res.ok) {
+        const servicePrice =
+          selectedService.price ||
+          parseFloat(selectedService.price_text?.replace(/[^0-9.]/g, "") || "0") ||
+          0;
+
+        // Online Payment Flow
+        if (paymentMethod === "STRIPE" && servicePrice > 0) {
+          try {
+            const payRes = await fetch("/api/checkout/stripe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                appointmentId: data.booking?.id || `bk_${Date.now()}`,
+                serviceName: selectedService.name,
+                amount: servicePrice,
+                customerEmail,
+                customerName,
+                tenantId,
+                returnSlug: businessSlug,
+              }),
+            });
+            const payData = await payRes.json();
+            if (payData.url) {
+              window.location.href = payData.url;
+              return;
+            }
+          } catch (payErr) {
+            console.warn("Stripe redirect fallback:", payErr);
+          }
+        } else if (paymentMethod === "IYZICO" && servicePrice > 0) {
+          try {
+            const payRes = await fetch("/api/checkout/iyzico", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                appointmentId: data.booking?.id || `bk_${Date.now()}`,
+                serviceName: selectedService.name,
+                amount: servicePrice,
+                customerName,
+                customerEmail,
+                customerPhone,
+                returnSlug: businessSlug,
+              }),
+            });
+            const payData = await payRes.json();
+            if (payData.redirectUrl) {
+              window.location.href = payData.redirectUrl;
+              return;
+            }
+          } catch (payErr) {
+            console.warn("Iyzico redirect fallback:", payErr);
+          }
+        }
+
         setBookingSuccess(true);
         setStep(4);
       } else {
@@ -489,6 +546,62 @@ export default function BookingWidget({
                     placeholder="Varsa şikayetiniz, talebiniz veya özel notunuz..."
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                </div>
+
+                {/* Payment Method Selector */}
+                <div className="pt-2 space-y-2">
+                  <label className="block text-xs font-semibold text-slate-300 ml-1">
+                    Ödeme Yöntemi Tercihi
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("VENUE")}
+                      className={`p-3 rounded-2xl border text-left transition-all ${
+                        paymentMethod === "VENUE"
+                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Wallet className="w-4 h-4 text-indigo-400" />
+                        <span className="text-xs font-bold">Klinikte / Yerinde</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">Nakit veya POS ile seans günü ödeyin.</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("STRIPE")}
+                      className={`p-3 rounded-2xl border text-left transition-all ${
+                        paymentMethod === "STRIPE"
+                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="w-4 h-4 text-indigo-400" />
+                        <span className="text-xs font-bold">Kredi Kartı (Stripe)</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">Global & Güvenli online kart ödemesi.</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("IYZICO")}
+                      className={`p-3 rounded-2xl border text-left transition-all ${
+                        paymentMethod === "IYZICO"
+                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold">İyzico 3D Secure</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">Tüm yerli banka ve taksit seçenekleri.</p>
+                    </button>
+                  </div>
                 </div>
 
                 {/* KVKK Consent Checkbox */}
