@@ -1,81 +1,406 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Users, Settings, LogOut, Bell, Menu } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Settings,
+  LogOut,
+  Bell,
+  Menu,
+  X,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+  CalendarDays,
+  ShieldCheck,
+  User,
+  CreditCard,
+  Trash2
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  type: "booking" | "cancel" | "payment" | "system";
+  unread: boolean;
+}
+
+const initialNotifications: NotificationItem[] = [
+  {
+    id: "n1",
+    title: "Yeni Randevu Alındı",
+    message: "Caner Öztürk - İmplant Konsültasyonu (Bugün 14:30)",
+    time: "5 dk önce",
+    type: "booking",
+    unread: true,
+  },
+  {
+    id: "n2",
+    title: "Online Ödeme Başarılı",
+    message: "₺3.000 tutarındaki Lazerli Beyazlatma ödemesi onaylandı.",
+    time: "1 saat önce",
+    type: "payment",
+    unread: true,
+  },
+  {
+    id: "n3",
+    title: "WhatsApp Hatırlatması İletildi",
+    message: "Burcu Çelik randevusu için otomatik SMS/WhatsApp gönderildi.",
+    time: "2 saat önce",
+    type: "system",
+    unread: false,
+  },
+  {
+    id: "n4",
+    title: "Google Calendar Senkronizasyonu",
+    message: "2 yeni randevu Google Takviminiz ile senkronize edildi.",
+    time: "Dün",
+    type: "system",
+    unread: false,
+  },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, unread: false })));
+  };
+
+  const deleteNotification = (id: string) => {
+    setNotifications(notifications.filter((n) => n.id !== id));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // ignore
+    }
+    router.push("/login");
+  };
 
   const navItems = [
-    { name: 'Özet', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Takvim', href: '/calendar', icon: Calendar },
-    { name: 'Form Oluşturucu', href: '/forms', icon: Users },
-    { name: 'Ayarlar', href: '/settings', icon: Settings },
+    { name: "Özet Gösterge", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
+    { name: "Form Oluşturucu", href: "/forms", icon: Users },
+    { name: "İşletme Ayarları", href: "/settings", icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar (Desktop) */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 border-r border-slate-800">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <span className="text-white font-extrabold text-xl tracking-tight">randevuformu</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
+      {/* Mobile Drawer Backdrop */}
+      {isMobileOpen && (
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+        />
+      )}
+
+      {/* Sidebar (Desktop & Mobile Responsive) */}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <span className="text-white font-extrabold text-lg tracking-tight">randevuformu</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        
-        <div className="p-4 flex-1">
-          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Menü</p>
+
+        <div className="p-4 flex-1 overflow-y-auto">
+          <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            Yönetim Menüsü
+          </p>
           <nav className="space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const Icon = item.icon;
               return (
-                <Link key={item.name} href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold"
+                      : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+                  }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span className="font-medium">{item.name}</span>
+                  <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400"}`} />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
+
+          <div className="mt-8 pt-4 border-t border-slate-800">
+            <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Hızlı Bağlantı
+            </p>
+            <a
+              href="/dr-ahmet"
+              target="_blank"
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-indigo-400 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
+            >
+              <span>Canlı Randevu Sayfam</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
-        
+
         <div className="p-4 border-t border-slate-800">
-          <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-left hover:bg-slate-800 hover:text-white transition-all text-slate-400">
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Çıkış Yap</span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3.5 py-2.5 w-full rounded-xl text-left hover:bg-red-950/30 hover:text-red-400 transition-all text-slate-400 text-sm font-medium"
+          >
+            <LogOut className="w-5 h-5 text-red-400" />
+            <span>Çıkış Yap</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10">
+        <header className="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-8 z-30 relative">
           <div className="flex items-center gap-4">
-            <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setIsMobileOpen(true)}
+              className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+            >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-slate-900 hidden sm:block">Hoşgeldin, Dr. Ahmet 👋</h1>
+            <div>
+              <h1 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                Hoş Geldiniz, Dr. Ahmet Yılmaz 👋
+              </h1>
+              <p className="text-xs text-slate-400 hidden sm:block">randevuformu.com/dr-ahmet</p>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
-            <div className="w-9 h-9 bg-indigo-100 text-indigo-700 font-bold rounded-full flex items-center justify-center border border-indigo-200">
-              A
+
+          <div className="flex items-center gap-3 sm:gap-4 relative">
+            {/* Quick Live Preview Link */}
+            <a
+              href="/dr-ahmet"
+              target="_blank"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Sayfamı Görüntüle</span>
+            </a>
+
+            {/* Notification Bell with Active Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  setShowProfileMenu(false);
+                }}
+                className="relative p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-slate-900 animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Interactive Notifications Popover */}
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
+                    <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-white">Bildirimler</h3>
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded-full">
+                          {unreadCount} yeni
+                        </span>
+                      </div>
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllAsRead}
+                          className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300"
+                        >
+                          Tümünü Okundu Say
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-xs text-slate-500">
+                          Hiç bildiriminiz bulunmuyor.
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`p-3.5 hover:bg-slate-800/50 transition-colors flex items-start justify-between gap-3 ${
+                              n.unread ? "bg-indigo-950/20" : ""
+                            }`}
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <div className="mt-0.5">
+                                {n.type === "booking" ? (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                ) : n.type === "payment" ? (
+                                  <CreditCard className="w-4 h-4 text-indigo-400" />
+                                ) : (
+                                  <Bell className="w-4 h-4 text-amber-400" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-xs text-white">{n.title}</div>
+                                <div className="text-[11px] text-slate-400 mt-0.5">{n.message}</div>
+                                <div className="text-[10px] text-slate-500 mt-1">{n.time}</div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteNotification(n.id)}
+                              className="text-slate-500 hover:text-red-400 p-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="p-3 bg-slate-950/60 text-center border-t border-slate-800">
+                      <Link
+                        href="/calendar"
+                        onClick={() => setShowNotifications(false)}
+                        className="text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                      >
+                        Randevu Takvimine Git →
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Profile Avatar with Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileMenu(!showProfileMenu);
+                  setShowNotifications(false);
+                }}
+                className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-sm flex items-center justify-center border border-indigo-400/40 shadow-md shadow-indigo-600/20 hover:scale-105 transition-transform"
+              >
+                AY
+              </button>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50"
+                  >
+                    <div className="p-3 border-b border-slate-800">
+                      <p className="font-bold text-xs text-white">Dr. Ahmet Yılmaz</p>
+                      <p className="text-[11px] text-slate-400">ahmet@yilmazdental.com</p>
+                      <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+                        Pro Plan
+                      </span>
+                    </div>
+
+                    <div className="py-1 space-y-0.5">
+                      <Link
+                        href="/settings"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      >
+                        <User className="w-4 h-4 text-indigo-400" />
+                        Profil & Klinik Ayarları
+                      </Link>
+                      <Link
+                        href="/admin"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-blue-400" />
+                        Süper Yönetici Paneli
+                      </Link>
+                      <a
+                        href="/dr-ahmet"
+                        target="_blank"
+                        className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <CalendarDays className="w-4 h-4 text-emerald-400" />
+                          Canlı Profilim
+                        </span>
+                        <ExternalLink className="w-3 h-3 text-slate-500" />
+                      </a>
+                    </div>
+
+                    <div className="pt-1 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-950/40 rounded-xl transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Çıkış Yap
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-4 sm:p-8">
-          {children}
-        </div>
-      </main>
+        {/* Dynamic Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950 text-slate-100">
+          <div className="max-w-7xl mx-auto">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
