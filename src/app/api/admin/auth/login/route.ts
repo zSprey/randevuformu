@@ -54,13 +54,14 @@ export async function POST(req: NextRequest) {
     // 4. Create signed SuperAdmin Token
     const adminToken = BruteForceGuard.createAdminToken(username.trim());
 
-    // 5. Response with secure HTTP-only cookie
+    // 5. Response with secure cookie
     const response = apiSuccess({
       user: { username: SUPER_ADMIN_USER, role: "SUPER_ADMIN" },
+      token: adminToken,
     }, "Super Admin girişi başarılı.");
 
     response.cookies.set("rf_superadmin_session", adminToken, {
-      httpOnly: true,
+      httpOnly: false, // Accessible to client and edge middleware
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",

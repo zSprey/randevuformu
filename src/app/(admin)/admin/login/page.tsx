@@ -40,9 +40,13 @@ export default function SuperAdminLoginPage() {
         }
       } else {
         setSuccessMsg("Super Admin doğrulaması başarılı! Kontrol merkezine aktarılıyorsunuz...");
+        if (data?.data?.token || data?.token) {
+          const t = data?.data?.token || data?.token;
+          document.cookie = `rf_superadmin_session=${t}; path=/; max-age=86400; SameSite=Lax`;
+        }
         setTimeout(() => {
-          router.push("/admin");
-        }, 800);
+          window.location.href = "/admin";
+        }, 500);
       }
     } catch (err: any) {
       setErrorMsg("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");

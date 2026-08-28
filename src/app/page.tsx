@@ -165,6 +165,15 @@ export default function Home() {
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-300">
             <Link
+              href="/kesfet"
+              className="hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <span>Uzman Keşfet</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+                Pazar Yeri
+              </span>
+            </Link>
+            <Link
               href="/ornek"
               className="hover:text-white transition-colors flex items-center gap-1.5"
             >
@@ -193,13 +202,6 @@ export default function Home() {
             </Link>
             <Link href="/contact" className="hover:text-white transition-colors">
               İletişim & B2B
-            </Link>
-            <Link
-              href="/admin/login"
-              className="hover:text-red-300 transition-colors flex items-center gap-1 text-red-400"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Admin
             </Link>
           </nav>
 
@@ -297,15 +299,7 @@ export default function Home() {
                   className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center gap-2"
                 >
                   <Mail className="w-4 h-4 text-pink-400" />
-                  <span>İletişim & B2B</span>
-                </Link>
-                <Link
-                  href="/admin/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-3 rounded-2xl bg-red-950/40 border border-red-800/50 text-red-300 hover:bg-red-900/40 flex items-center gap-2"
-                >
-                  <ShieldCheck className="w-4 h-4 text-red-400" />
-                  <span>Admin Girişi</span>
+                  <span>B2B İletişim</span>
                 </Link>
               </nav>
 
@@ -796,12 +790,6 @@ export default function Home() {
               >
                 ✉️ İletişim & B2B
               </Link>
-              <Link
-                href="/admin/login"
-                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-md"
-              >
-                👑 Super Admin
-              </Link>
             </div>
           </div>
         </section>
@@ -863,9 +851,6 @@ export default function Home() {
               </Link>
               <Link href="/contact" className="hover:text-white transition-colors">
                 Kurumsal İletişim
-              </Link>
-              <Link href="/admin/login" className="hover:text-red-400 transition-colors">
-                Super Admin
               </Link>
             </div>
             <p className="text-slate-500">

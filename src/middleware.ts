@@ -22,7 +22,11 @@ export async function middleware(request: NextRequest) {
     if (adminToken && adminToken.includes('.')) {
       try {
         const [payloadB64] = adminToken.split('.');
-        const decoded = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+        let b64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4 !== 0) {
+          b64 += '=';
+        }
+        const decoded = JSON.parse(atob(b64));
         if (
           decoded.role === 'SUPER_ADMIN' &&
           decoded.user === 'musa' &&

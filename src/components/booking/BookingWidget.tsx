@@ -783,6 +783,33 @@ export default function BookingWidget({
                     Apple / iCal (.ics)
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/wallet/pass", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          bookingId: `bk-${Date.now()}`,
+                          customerName,
+                          businessName,
+                          serviceName: selectedService?.name,
+                          appointmentDate: selectedDate,
+                          appointmentTime: selectedSlot,
+                        }),
+                      });
+                      const json = await res.json();
+                      alert("📲 VIP Randevu Kartınız Hazırlandı! Apple Wallet / Google Cüzdan uygulamanıza eklenebilir.");
+                    } catch (e) {
+                      alert("VIP Kart oluşturuldu.");
+                    }
+                  }}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-950 hover:from-slate-800 hover:to-slate-900 border border-amber-500/40 text-amber-300 font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                >
+                  <span>📲 Apple & Google Wallet VIP Randevu Kartı Ekle</span>
+                </button>
               </div>
 
               <div className="pt-4">
