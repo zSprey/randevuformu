@@ -53,6 +53,7 @@ export default function BookingWidget({
     new Date().toISOString().split("T")[0]
   );
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<string>("ANY_STAFF");
   const [availableSlots, setAvailableSlots] = useState<{ displayTime: string; isAvailable: boolean; startUtc: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -145,6 +146,29 @@ export default function BookingWidget({
     setErrorMessage("");
 
     try {
+      let resolvedStaffId = selectedStaff;
+      if (selectedStaff === "ANY_STAFF") {
+        try {
+          const routeRes = await fetch("/api/routing", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tenantId,
+              serviceId: selectedService.id,
+              date: selectedDate,
+              startUtc: `${selectedDate}T${selectedSlot}:00+03:00`,
+              strategy: "ROUND_ROBIN",
+            }),
+          });
+          const routeData = await routeRes.json();
+          if (routeData.assignedStaff?.id) {
+            resolvedStaffId = routeData.assignedStaff.id;
+          }
+        } catch {
+          resolvedStaffId = "staff-1";
+        }
+      }
+
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,6 +176,7 @@ export default function BookingWidget({
           event_id: selectedService.id,
           user_name: customerName,
           user_email: customerEmail,
+          staff_id: resolvedStaffId,
           start_time: `${selectedDate}T${selectedSlot}:00+03:00`,
           end_time: `${selectedDate}T${selectedSlot}:00+03:00`,
         }),
@@ -361,6 +386,40 @@ export default function BookingWidget({
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Hizmeti Değiştir
                 </button>
+              </div>
+
+              {/* Multi-Staff Specialist Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Uzman / Hekim Tercihi
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Hızlı Randevu" },
+                    { id: "staff-1", name: "Dr. Ahmet Y.", role: "Başhekim" },
+                    { id: "staff-2", name: "Dt. Zeynep K.", role: "Ortodonti" },
+                  ].map((st) => {
+                    const isSelected = selectedStaff === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStaff(st.id);
+                          setSelectedSlot(null);
+                        }}
+                        className={`p-3 rounded-2xl border text-left transition-all ${
+                          isSelected
+                            ? "bg-indigo-600/30 border-indigo-500 shadow-md shadow-indigo-600/20 text-white"
+                            : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
+                        }`}
+                      >
+                        <div className="font-bold text-xs">{st.name}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{st.role}</div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid md:grid-cols-12 gap-6">
