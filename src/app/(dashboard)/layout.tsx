@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'Özet', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Takvim', href: '/calendar', icon: Calendar },
-    { name: 'Müşteriler', href: '/customers', icon: Users },
+    { name: 'Form Oluşturucu', href: '/forms', icon: Users },
     { name: 'Ayarlar', href: '/settings', icon: Settings },
   ];
 
