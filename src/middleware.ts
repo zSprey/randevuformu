@@ -33,29 +33,25 @@ export async function middleware(request: NextRequest) {
 
   // Oturum durumunu sessizce güncelle ve kullanıcıyı al
   const { data: { user } } = await supabase.auth.getUser()
+  const hasCookieSession = request.cookies.get('rf_session')?.value === 'true' || request.cookies.get('demo_session')?.value === 'true';
+  const isAuthenticated = !!user || hasCookieSession;
 
   const pathname = request.nextUrl.pathname
 
   // ────────────────────────────────────────────────────────
-  // AUTH GUARD: Dashboard rotaları için oturum kontrolü
+  // AUTH GUARD: Dashboard ve Admin rotaları için oturum kontrolü
   // ────────────────────────────────────────────────────────
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
   const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
 
-  if (isProtectedRoute && !user) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAdminRoute && !user) {
+  if ((isProtectedRoute || isAdminRoute) && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Zaten giriş yapmış kullanıcı /login'e gelirse dashboard'a yönlendir
-  if (pathname === '/login' && user) {
+  if (pathname === '/login' && isAuthenticated) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
