@@ -1,7 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Send } from "lucide-react";
+import React, { useState } from "react";
+import Link from "next/link";
+import {
+  Mail,
+  Send,
+  Calendar,
+  CheckCircle2,
+  AlertCircle,
+  Building2,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  Phone,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,155 +47,227 @@ export default function ContactPage() {
 
       if (response.ok) {
         setSubmitStatus("success");
-        (e.target as HTMLFormElement).reset();
       } else {
         setSubmitStatus("error");
         setErrorMessage(result.error || "Bir hata oluştu. Lütfen tekrar deneyin.");
       }
     } catch (error) {
       setSubmitStatus("error");
-      setErrorMessage("Bağlantı hatası oluştu. Lütfen internet bağlantınızı kontrol edin.");
+      setErrorMessage("Bağlantı hatası oluştu. Lütfen doğrudan e-posta gönderiniz.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Kurumsal İletişim
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          İş ortaklığı ve B2B çözümlerimiz için bizimle iletişime geçin.
-        </p>
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
+      {/* Background glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/15 blur-[140px] rounded-full" />
+        <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-purple-600/10 blur-[120px] rounded-full" />
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-white py-8 px-4 shadow-sm sm:rounded-lg sm:px-10 border border-gray-100">
-          {submitStatus === "success" ? (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
+      {/* Header */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 font-black text-lg text-white">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <span>randevuformu<span className="text-indigo-400">.com</span></span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/ornek"
+              className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+            >
+              Örnek Şablonlar
+            </Link>
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-105"
+            >
+              Giriş Yap
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 max-w-5xl mx-auto px-4 py-12 sm:py-16 w-full">
+        <div className="grid md:grid-cols-12 gap-8 items-start">
+          {/* Left Info Column */}
+          <div className="md:col-span-5 space-y-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                7/24 Kurumsal İletişim
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                Bizimle İletişime Geçin
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                İş ortaklığı, özel entegrasyonlar, kurumsal toplu paketler veya destek talepleriniz için ekibimizle anında görüşün.
+              </p>
+            </div>
+
+            {/* Direct Contact Card */}
+            <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Doğrudan E-Posta
+              </h3>
+              <a
+                href="mailto:randevuformuu@gmail.com"
+                className="flex items-center gap-3 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 hover:text-white hover:bg-indigo-500/20 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
+                  <Mail className="w-5 h-5" />
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">Mesajınız başarıyla iletildi</h3>
-                  <div className="mt-2 text-sm text-green-700">
-                    <p>En kısa sürede kurumsal satış ekibimiz sizinle iletişime geçecektir.</p>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setSubmitStatus("idle")}
-                      className="text-sm font-medium text-green-600 hover:text-green-500"
-                    >
-                      Yeni bir mesaj gönder
-                    </button>
-                  </div>
+                <div>
+                  <div className="text-xs font-bold">randevuformuu@gmail.com</div>
+                  <div className="text-[10px] text-slate-400">Ortalama yanıt süresi: &lt; 2 saat</div>
+                </div>
+              </a>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-3 text-xs text-slate-300">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-white">Çalışma Saatleri</div>
+                  <div className="text-[11px] text-slate-400">Hafta içi & Hafta sonu: 08:30 - 22:00</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-800">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-white">KVKK & Veri Güvenliği</div>
+                  <div className="text-[11px] text-slate-400">256-Bit SSL şifreleme ve güvenli iletişim</div>
                 </div>
               </div>
             </div>
-          ) : (
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {submitStatus === "error" && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Hata</h3>
-                      <div className="mt-2 text-sm text-red-700">
-                        <p>{errorMessage}</p>
-                      </div>
+          </div>
+
+          {/* Right Form Column */}
+          <div className="md:col-span-7">
+            <div className="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
+              {submitStatus === "success" ? (
+                <div className="p-8 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Mesajınız Alındı!</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+                    Talebiniz kurumsal destek ekibimize ulaştı. <strong>randevuformuu@gmail.com</strong> üzerinden en kısa sürede size geri dönüş yapacağız.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSubmitStatus("idle")}
+                    className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all"
+                  >
+                    Yeni Bir Mesaj Gönder
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Mesaj Bırakın</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Formu doldurarak bize hemen ulaşabilirsiniz.</p>
+                  </div>
+
+                  {submitStatus === "error" && (
+                    <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <span>{errorMessage}</span>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Ad Soyad
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700">
-                    Şirket Adı
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="company"
-                      name="company"
-                      type="text"
-                      required
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Kurumsal E-posta
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                  Mesajınız
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={4}
-                    required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSubmitting ? (
-                    "Gönderiliyor..."
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Gönder
-                    </>
                   )}
-                </button>
-              </div>
-            </form>
-          )}
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Ad Soyad *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      placeholder="Dr. Ahmet Yılmaz"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Şirket / Klinik Adı
+                    </label>
+                    <input
+                      type="text"
+                      name="company"
+                      placeholder="Yılmaz Diş Polikliniği"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      E-Posta Adresi *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="ahmet@klinik.com"
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Mesajınız *
+                    </label>
+                    <textarea
+                      name="message"
+                      rows={4}
+                      required
+                      placeholder="İşletmeniz ve entegrasyon talebiniz hakkında detaylar..."
+                      className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      "İletiliyor..."
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Mesajı Gönder
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-6 border-t border-white/5 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span>&copy; {new Date().getFullYear()} randevuformu.com — Tüm hakları saklıdır.</span>
+          <a href="mailto:randevuformuu@gmail.com" className="text-indigo-400 hover:underline">
+            randevuformuu@gmail.com
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

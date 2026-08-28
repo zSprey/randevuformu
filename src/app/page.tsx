@@ -18,7 +18,11 @@ import {
   Check,
   Star,
   Users,
-  CreditCard
+  CreditCard,
+  Mail,
+  ShieldCheck,
+  LayoutGrid,
+  FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -29,17 +33,18 @@ export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "randevuformu.com",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "offers": {
+    name: "randevuformu.com",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: {
       "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "TRY",
-      "description": "Temel randevu alma özellikleri tamamen ücretsiz."
+      price: "0",
+      priceCurrency: "TRY",
+      description: "Temel randevu alma özellikleri tamamen ücretsiz.",
     },
-    "description": "Diş hekimi, güzellik salonu, psikolog veya avukatlar için WhatsApp bildirimli, SMS hatırlatmalı ücretsiz online randevu yönetim sistemi.",
-    "url": "https://randevuformu.com"
+    description:
+      "Diş hekimi, güzellik salonu, psikolog veya avukatlar için WhatsApp bildirimli, SMS hatırlatmalı ücretsiz online randevu yönetim sistemi.",
+    url: "https://randevuformu.com",
   };
 
   return (
@@ -49,42 +54,72 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      {/* Top Notification Bar with Direct Contact Email */}
+      <div className="bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-950 border-b border-white/5 py-2 px-4 text-center text-xs text-slate-300 flex items-center justify-center gap-2">
+        <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+        <span>Kurumsal B2B & İş Ortaklığı İçin:</span>
+        <a
+          href="mailto:randevuformuu@gmail.com"
+          className="text-indigo-400 font-bold hover:text-indigo-300 underline underline-offset-4 flex items-center gap-1"
+        >
+          <Mail className="w-3 h-3" />
+          randevuformuu@gmail.com
+        </a>
+      </div>
+
       {/* Modern Glassmorphic Navbar */}
-      <header className="fixed top-0 w-full z-50 bg-[#0B0F17]/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <header className="sticky top-0 w-full z-50 bg-[#0B0F17]/80 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white p-2 rounded-xl group-hover:scale-105 transition-transform shadow-lg shadow-indigo-600/30">
               <CalendarDays className="w-6 h-6" />
             </div>
             <span className="font-extrabold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
-              randevuformu
+              randevuformu<span className="text-indigo-400">.com</span>
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-            <Link href="/dr-ahmet" className="hover:text-white transition-colors flex items-center gap-1.5">
-              <span>Canlı Demo</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">Örnek</span>
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-slate-300">
+            <Link
+              href="/ornek"
+              className="hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <span>Örnek Şablonlar</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+                Demo
+              </span>
             </Link>
-            <Link href="/dashboard" className="hover:text-white transition-colors">
-              Hizmet Veren Paneli
+            <Link href="/sektorler/diyetisyen" className="hover:text-white transition-colors">
+              Sektörler
             </Link>
-            <Link href="/admin" className="hover:text-white transition-colors flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-blue-400" />
-              Süper Admin
+            <Link href="/calendar" className="hover:text-white transition-colors">
+              Takvim & Randevular
+            </Link>
+            <Link href="/staff" className="hover:text-white transition-colors">
+              Ekip Yönetimi
             </Link>
             <Link href="/contact" className="hover:text-white transition-colors">
-              Kurumsal B2B
+              İletişim & B2B
+            </Link>
+            <Link
+              href="/admin/login"
+              className="hover:text-white transition-colors flex items-center gap-1 text-red-400"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Admin Girişi
             </Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors px-3 py-2">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-xs font-semibold text-slate-300 hover:text-white transition-colors px-3 py-2"
+            >
               Giriş Yap
             </Link>
             <Link
               href="/login"
-              className="text-sm font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-full hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
+              className="text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-full hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
             >
               Ücretsiz Başla
             </Link>
@@ -93,9 +128,8 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 pt-20">
-        <section className="relative pt-24 md:pt-32 pb-20 px-6 overflow-hidden">
-          {/* Vibrant Glow Backgrounds */}
+      <main className="flex-1">
+        <section className="relative pt-20 md:pt-28 pb-20 px-4 sm:px-6 overflow-hidden">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-indigo-600/30 via-purple-600/20 to-pink-600/10 blur-[140px] rounded-full -z-10 pointer-events-none" />
           <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/15 blur-[100px] rounded-full -z-10 pointer-events-none" />
 
@@ -114,7 +148,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-6"
+              className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-6"
             >
               Randevuları yönetmenin <br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
@@ -126,7 +160,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 font-normal leading-relaxed"
+              className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 font-normal leading-relaxed"
             >
               Telefon trafiğine ve çifte rezervasyon karmaşasına son verin. Danışanlarınız saniyeler içinde randevu alsın, Google Calendar ve SMS/WhatsApp anında senkronize olsun.
             </motion.p>
@@ -145,10 +179,10 @@ export default function Home() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                href="/dr-ahmet"
+                href="/ornek"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold text-slate-200 bg-white/10 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all hover:scale-105 active:scale-95 backdrop-blur-md"
               >
-                Canlı Randevu Sayfasını Gör
+                Canlı Örnek Şablonları Gör
               </Link>
             </motion.div>
           </div>
@@ -175,7 +209,9 @@ export default function Home() {
                           <Check className="w-3 h-3" />
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400">Diş Hekimi & Estetik Gülüş Tasarımı • randevuformu.com/dr-ahmet</p>
+                      <p className="text-xs text-slate-400">
+                        Diş Hekimi & Estetik Gülüş Tasarımı • randevuformu.com/ornek/dr-ahmet
+                      </p>
                     </div>
                   </div>
 
@@ -254,10 +290,10 @@ export default function Home() {
                     </div>
 
                     <Link
-                      href="/dr-ahmet"
+                      href="/ornek/dr-ahmet"
                       className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition-all"
                     >
-                      <span>{selectedTime} İçin Randevuyu Onayla</span>
+                      <span>{selectedTime} İçin Randevuyu Tamamla</span>
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -268,12 +304,12 @@ export default function Home() {
         </section>
 
         {/* Feature Highlights Grid */}
-        <section className="py-24 px-6 max-w-7xl mx-auto">
+        <section className="py-24 px-4 sm:px-6 max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-4">
               Neden Türkiye'nin En İyisi?
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto text-base">
+            <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
               Global randevu araçlarının Türkiye'deki eksiklerini (yerli POS, SMS, Türkçe dil ve KVKK) tek bir platformda çözdük.
             </p>
           </div>
@@ -285,7 +321,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Milisaniyelik Çakışma Koruması</h3>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Aynı saniyede 10 kişi randevu almaya çalışsa bile gelişmiş conflict resolution algoritmamız çifte randevuyu %100 engeller.
+                Aynı saniyede 10 kişi randevu almaya çalışsa bile gelişmiş concurrency lock algoritmamız çifte randevuyu %100 engeller.
               </p>
             </div>
 
@@ -293,9 +329,9 @@ export default function Home() {
               <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-6">
                 <MessageCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Otomatik E-Posta & Bildirimler</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Otomatik E-Posta & Takvim</h3>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Randevu onaylandığında veya iptal edildiğinde müşterinize ve size anında profesyonel HTML onay mailleri ve takvim davetleri gider.
+                Randevu onaylandığında veya iptal edildiğinde müşterinize ve size anında profesyonel HTML onay mailleri ve Google Takvim daveti gider.
               </p>
             </div>
 
@@ -303,56 +339,124 @@ export default function Home() {
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6">
                 <Shield className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Özel Subdomain ve Prestij</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Çoklu Personel & No-Code Form</h3>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Her işletmeye özel <code className="text-indigo-300">isletmeniz.randevuformu.com</code> subdomain adresi ve markanıza özel renk temaları verilir.
+                Birden fazla hekim veya personeli Round-Robin ile yönetin, özel form alanlarınızı sürükle-bırak kolaylığında oluşturun.
               </p>
             </div>
           </div>
         </section>
 
         {/* Quick Links Banner */}
-        <section className="py-12 px-6 max-w-7xl mx-auto">
+        <section className="py-12 px-4 sm:px-6 max-w-7xl mx-auto">
           <div className="p-8 rounded-3xl bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-slate-900 border border-indigo-500/20 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="text-2xl font-bold text-white mb-2">Platformun Tüm Bölümlerini Keşfedin</h3>
-              <p className="text-slate-400 text-sm">Aşağıdaki bağlantılar ile yönetim ve yönetici ekranlarına doğrudan erişin.</p>
+              <p className="text-slate-400 text-sm">
+                Aşağıdaki bağlantılar ile yönetim panellerine ve şablonlara doğrudan erişebilirsiniz.
+              </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard/calendar" className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all">
+              <Link
+                href="/calendar"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+              >
                 📅 Takvim Paneli
               </Link>
-              <Link href="/dashboard/settings" className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all">
-                ⚙️ İşletme Ayarları
+              <Link
+                href="/staff"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+              >
+                👥 Ekip Yönetimi
               </Link>
-              <Link href="/admin" className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-all shadow-md">
-                👑 Süper Admin
+              <Link
+                href="/forms"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+              >
+                📝 Form Oluşturucu
               </Link>
-              <Link href="/contact" className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-all">
-                ✉️ B2B İletişim
+              <Link
+                href="/settings"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+              >
+                ⚙️ Entegrasyonlar
+              </Link>
+              <Link
+                href="/contact"
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+              >
+                ✉️ İletişim
+              </Link>
+              <Link
+                href="/admin/login"
+                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-md"
+              >
+                👑 Super Admin
               </Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Modern Footer */}
-      <footer className="bg-[#070A0F] border-t border-white/10 py-12 px-6 mt-16">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 text-white p-1.5 rounded-lg">
-              <CalendarDays className="w-5 h-5" />
+      {/* Modern Footer with Direct Contact */}
+      <footer className="bg-[#070A0F] border-t border-white/10 py-12 px-4 sm:px-6 mt-16">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="bg-indigo-600 text-white p-2 rounded-xl">
+                <CalendarDays className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-lg text-white">randevuformu.com</span>
+                <p className="text-xs text-slate-400">Yeni Nesil Akıllı Randevu Yönetim Platformu</p>
+              </div>
             </div>
-            <span className="font-bold text-lg text-white">randevuformu.com</span>
+
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+              <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+              <div className="text-xs">
+                <span className="text-slate-400">Resmi İletişim: </span>
+                <a
+                  href="mailto:randevuformuu@gmail.com"
+                  className="font-bold text-indigo-300 hover:text-white underline"
+                >
+                  randevuformuu@gmail.com
+                </a>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-400">
-            <Link href="/dr-ahmet" className="hover:text-white">Örnek Sayfa</Link>
-            <Link href="/login" className="hover:text-white">Giriş Yap</Link>
-            <Link href="/dashboard" className="hover:text-white">Yönetim Paneli</Link>
-            <Link href="/admin" className="hover:text-white">Süper Admin</Link>
-            <Link href="/contact" className="hover:text-white">Kurumsal İletişim</Link>
+
+          <div className="flex flex-wrap items-center justify-between gap-6 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center gap-6">
+              <Link href="/ornek" className="hover:text-white transition-colors">
+                Örnek Şablonlar
+              </Link>
+              <Link href="/sektorler/diyetisyen" className="hover:text-white transition-colors">
+                Diyetisyen
+              </Link>
+              <Link href="/sektorler/veteriner" className="hover:text-white transition-colors">
+                Veteriner
+              </Link>
+              <Link href="/sektorler/avukat" className="hover:text-white transition-colors">
+                Avukat
+              </Link>
+              <Link href="/login" className="hover:text-white transition-colors">
+                Giriş Yap
+              </Link>
+              <Link href="/dashboard" className="hover:text-white transition-colors">
+                Yönetim Paneli
+              </Link>
+              <Link href="/contact" className="hover:text-white transition-colors">
+                Kurumsal İletişim
+              </Link>
+              <Link href="/admin/login" className="hover:text-red-400 transition-colors">
+                Super Admin
+              </Link>
+            </div>
+            <p className="text-slate-500">
+              &copy; {new Date().getFullYear()} randevuformu.com — Tüm hakları saklıdır.
+            </p>
           </div>
-          <p className="text-xs text-slate-500">&copy; {new Date().getFullYear()} randevuformu.com Tüm hakları saklıdır.</p>
         </div>
       </footer>
     </div>

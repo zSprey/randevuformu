@@ -287,6 +287,23 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
           </Link>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="mt-20 py-8 border-t border-white/5 text-center text-xs text-slate-500">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-indigo-400" />
+            <span>randevuformu.com — {sector.category} Çözümleri</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/ornek" className="hover:text-white transition-colors">Örnekler</Link>
+            <Link href="/contact" className="hover:text-white transition-colors">İletişim</Link>
+            <a href="mailto:randevuformuu@gmail.com" className="text-indigo-400 hover:underline">
+              randevuformuu@gmail.com
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

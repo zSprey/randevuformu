@@ -19,7 +19,10 @@ import {
   ShieldCheck,
   User,
   CreditCard,
-  Trash2
+  Trash2,
+  FileText,
+  Mail,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -92,14 +95,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch (e) {
       // ignore
     }
+    document.cookie = "rf_session=; path=/; max-age=0;";
+    document.cookie = "demo_session=; path=/; max-age=0;";
     router.push("/login");
   };
 
   const navItems = [
     { name: "Özet Gösterge", href: "/dashboard", icon: LayoutDashboard },
     { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
-    { name: "Form Oluşturucu", href: "/forms", icon: Users },
+    { name: "Ekip & Uzmanlar", href: "/staff", icon: Users },
+    { name: "Form Oluşturucu", href: "/forms", icon: FileText },
     { name: "İşletme Ayarları", href: "/settings", icon: Settings },
+    { name: "B2B İletişim", href: "/contact", icon: Mail },
   ];
 
   return (
@@ -123,7 +130,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
               <CalendarDays className="w-5 h-5" />
             </div>
-            <span className="text-white font-extrabold text-lg tracking-tight">randevuformu</span>
+            <span className="text-white font-extrabold text-lg tracking-tight">
+              randevuformu<span className="text-indigo-400">.com</span>
+            </span>
           </Link>
           <button
             type="button"
@@ -160,22 +169,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
           </nav>
 
-          <div className="mt-8 pt-4 border-t border-slate-800">
-            <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Hızlı Bağlantı
+          <div className="mt-8 pt-4 border-t border-slate-800 space-y-2">
+            <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Hızlı Önizleme
             </p>
-            <a
-              href="/dr-ahmet"
+            <Link
+              href="/ornek/dr-ahmet"
               target="_blank"
               className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-indigo-400 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
             >
-              <span>Canlı Randevu Sayfam</span>
+              <span>Örnek Randevu Sayfası</span>
               <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            </Link>
+
+            <Link
+              href="/admin/login"
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-red-400 bg-red-950/30 border border-red-800/40 hover:bg-red-900/40 transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Super Admin Gate
+              </span>
+              <span className="text-[10px] bg-red-500/20 px-1.5 py-0.5 rounded font-bold">musa</span>
+            </Link>
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-800">
+        {/* Support & Logout footer */}
+        <div className="p-4 border-t border-slate-800 space-y-2">
+          <a
+            href="mailto:randevuformuu@gmail.com"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60 transition-colors"
+          >
+            <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span className="truncate">randevuformuu@gmail.com</span>
+          </a>
+
           <button
             type="button"
             onClick={handleLogout}
@@ -201,22 +230,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <div>
               <h1 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                Hoş Geldiniz, Dr. Ahmet Yılmaz 👋
+                Hoş Geldiniz 👋
               </h1>
-              <p className="text-xs text-slate-400 hidden sm:block">randevuformu.com/dr-ahmet</p>
+              <p className="text-xs text-slate-400 hidden sm:block">randevuformu.com Yönetim Merkezi</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4 relative">
             {/* Quick Live Preview Link */}
-            <a
-              href="/dr-ahmet"
+            <Link
+              href="/ornek/dr-ahmet"
               target="_blank"
               className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Sayfamı Görüntüle</span>
-            </a>
+              <span>Örnek Form</span>
+            </Link>
 
             {/* Notification Bell with Active Dropdown */}
             <div className="relative">
@@ -329,7 +358,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }}
                 className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-sm flex items-center justify-center border border-indigo-400/40 shadow-md shadow-indigo-600/20 hover:scale-105 transition-transform"
               >
-                AY
+                RF
               </button>
 
               <AnimatePresence>
@@ -342,10 +371,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50"
                   >
                     <div className="p-3 border-b border-slate-800">
-                      <p className="font-bold text-xs text-white">Dr. Ahmet Yılmaz</p>
-                      <p className="text-[11px] text-slate-400">ahmet@yilmazdental.com</p>
+                      <p className="font-bold text-xs text-white">İşletme Hesabı</p>
+                      <p className="text-[11px] text-slate-400">randevuformuu@gmail.com</p>
                       <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
-                        Pro Plan
+                        Pro Aktif
                       </span>
                     </div>
 
@@ -356,27 +385,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
                       >
                         <User className="w-4 h-4 text-indigo-400" />
-                        Profil & Klinik Ayarları
+                        İşletme Ayarları
                       </Link>
                       <Link
-                        href="/admin"
+                        href="/staff"
                         onClick={() => setShowProfileMenu(false)}
                         className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
                       >
-                        <ShieldCheck className="w-4 h-4 text-blue-400" />
-                        Süper Yönetici Paneli
+                        <Users className="w-4 h-4 text-emerald-400" />
+                        Ekip Yönetimi
                       </Link>
-                      <a
-                        href="/dr-ahmet"
+                      <Link
+                        href="/admin/login"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-red-400" />
+                        Super Admin Girişi
+                      </Link>
+                      <Link
+                        href="/ornek/dr-ahmet"
                         target="_blank"
                         className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <CalendarDays className="w-4 h-4 text-emerald-400" />
-                          Canlı Profilim
+                          <CalendarDays className="w-4 h-4 text-indigo-400" />
+                          Örnek Randevu Sayfası
                         </span>
                         <ExternalLink className="w-3 h-3 text-slate-500" />
-                      </a>
+                      </Link>
                     </div>
 
                     <div className="pt-1 border-t border-slate-800">

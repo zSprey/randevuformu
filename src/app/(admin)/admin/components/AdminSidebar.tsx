@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   LayoutDashboard, 
@@ -13,7 +13,10 @@ import {
   Menu,
   X,
   CreditCard,
-  CalendarDays
+  CalendarDays,
+  ExternalLink,
+  ShieldCheck,
+  Mail
 } from "lucide-react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -23,19 +26,29 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const menuItems = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "İşletmeler", href: "/admin/businesses", icon: Building2 },
-  { name: "Kullanıcılar", href: "/admin/users", icon: Users },
-  { name: "Randevular", href: "/admin/appointments", icon: CalendarDays },
-  { name: "Finans", href: "/admin/finance", icon: CreditCard },
-  { name: "Ayarlar", href: "/admin/settings", icon: Settings },
+  { name: "Genel Bakış & Metrikler", href: "/admin", icon: LayoutDashboard },
+  { name: "Kayıtlı İşletmeler", href: "/admin", icon: Building2 },
+  { name: "Randevu Hacmi", href: "/admin", icon: CalendarDays },
+  { name: "Ekip Yönetimi", href: "/staff", icon: Users },
+  { name: "Form Alanları", href: "/forms", icon: Settings },
 ];
 
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const handleAdminLogout = async () => {
+    try {
+      await fetch("/api/admin/auth/check", { method: "POST" });
+    } catch (e) {
+      // ignore
+    }
+    document.cookie = "rf_superadmin_session=; path=/; max-age=0;";
+    window.location.href = "/admin/login";
+  };
 
   return (
     <>
@@ -44,7 +57,7 @@ export default function AdminSidebar() {
         className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md"
         onClick={toggleSidebar}
       >
-        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6 text-white" />}
       </button>
 
       {/* Overlay */}
@@ -61,17 +74,20 @@ export default function AdminSidebar() {
       {/* Sidebar */}
       <motion.aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex-shrink-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex-shrink-0 text-slate-100",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
-          <Link href="/admin" className="flex items-center gap-2 font-bold text-xl tracking-tight text-blue-600 dark:text-blue-500">
-            <span className="bg-blue-600 text-white p-1 rounded-md">
-              <Building2 className="w-5 h-5" />
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+          <Link href="/admin" className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
+            <span className="bg-red-600 text-white p-1.5 rounded-lg shadow-md shadow-red-600/30">
+              <ShieldCheck className="w-5 h-5" />
             </span>
-            SuperAdmin
+            <span>SuperAdmin</span>
           </Link>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+            musa
+          </span>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -82,33 +98,65 @@ export default function AdminSidebar() {
               <Link key={item.name} href={item.href}>
                 <span 
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer",
                     isActive 
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" 
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/50"
+                      ? "bg-red-600/20 text-red-300 border border-red-500/30" 
+                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   )}
                   onClick={() => setIsOpen(false)}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                   {item.name}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="active-nav"
-                      className="absolute left-0 w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-r-full"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
                 </span>
               </Link>
             );
           })}
+
+          <div className="pt-6 border-t border-slate-800 space-y-1">
+            <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              Hızlı Bağlantılar
+            </p>
+            <Link
+              href="/"
+              target="_blank"
+              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
+            >
+              <span>Ana Sayfa</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
+            >
+              <span>Tenant Paneli</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
+            >
+              <span>B2B İletişim</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <button className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 transition-colors">
-            <LogOut className="w-5 h-5" />
-            Çıkış Yap
+        <div className="p-4 border-t border-slate-800 space-y-2">
+          <a
+            href="mailto:randevuformuu@gmail.com"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] text-slate-400 hover:text-indigo-300 transition-colors"
+          >
+            <Mail className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="truncate">randevuformuu@gmail.com</span>
+          </a>
+
+          <button 
+            type="button"
+            onClick={handleAdminLogout}
+            className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Admin Oturumunu Kapat
           </button>
         </div>
       </motion.aside>
