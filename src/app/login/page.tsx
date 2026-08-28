@@ -32,9 +32,7 @@ export default function LoginPage() {
         });
 
         if (error) {
-          // Demo / Fallback login for instant preview
-          console.warn("Auth error, allowing preview demo session:", error.message);
-          router.push("/dashboard");
+          setErrorMsg("E-posta veya şifre hatalı. Lütfen tekrar deneyin.");
         } else {
           router.push("/dashboard");
         }
