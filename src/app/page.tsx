@@ -17,6 +17,7 @@ import {
   Scale,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PlatformComparison from "@/components/landing/PlatformComparison";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -567,67 +568,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 8. Comparison in 3 Clean Pillars */}
-        <section className="py-16 px-4 sm:px-6 max-w-5xl mx-auto border-t border-slate-800">
-          <div className="text-center mb-10 space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">
-              Geleneksel Yöntemler ile Karşılaştırma
-            </h2>
-            <p className="text-xs text-slate-400">
-              Neden yerli ve bütünleşik bir altyapıya geçmelisiniz?
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Eski Yöntem */}
-            <div className="p-5 rounded-xl bg-slate-900/40 border border-slate-800 text-xs space-y-3">
-              <span className="font-semibold text-slate-400">Telefon & Ajanda</span>
-              <ul className="space-y-2 text-slate-500">
-                <li>✕ Mesai dışı randevu kaybı</li>
-                <li>✕ Sıkça yaşanan çifte rezervasyon</li>
-                <li>✕ Manuel SMS veya arama yükü</li>
-                <li>✕ Kapora alamama ve gelinmeyen seanslar</li>
-              </ul>
-            </div>
-
-            {/* Yabancı Araçlar */}
-            <div className="p-5 rounded-xl bg-slate-900/40 border border-slate-800 text-xs space-y-3">
-              <span className="font-semibold text-slate-400">Calendly / Cal.com</span>
-              <ul className="space-y-2 text-slate-500">
-                <li>~ Sadece Stripe ($ Dolar) desteği</li>
-                <li>✕ Türkiye SMS ve WhatsApp entegrasyonu yok</li>
-                <li>✕ KVKK veri uyumluluğu eksik</li>
-                <li>✕ E-Fatura ve yerel vergi entegrasyonu yok</li>
-              </ul>
-            </div>
-
-            {/* randevuformu.com */}
-            <div className="p-5 rounded-xl bg-[#0B0F17] border border-slate-700 text-xs space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-white">randevuformu.com</span>
-                <span className="text-emerald-400 text-[10px] font-mono">Önerilen</span>
-              </div>
-              <ul className="space-y-2 text-slate-300">
-                <li className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Yerli İyzico sanal POS (₺) ve kapora</span>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Netgsm SMS OTP ve WhatsApp onayları</span>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Google & Outlook Takvim 2 yönlü sync</span>
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>%100 KVKK 6698 & GİB E-Arşiv uyumu</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        {/* 8. Enterprise Platform Comparison Matrix */}
+        <PlatformComparison />
 
         {/* 9. FAQ Accordion */}
         <section className="py-16 px-4 sm:px-6 max-w-3xl mx-auto border-t border-slate-800">
