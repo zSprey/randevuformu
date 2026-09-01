@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -27,6 +27,7 @@ import {
 } from "date-fns";
 import { tr } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 interface AppointmentItem {
   id: string;
@@ -40,62 +41,16 @@ interface AppointmentItem {
   notes?: string;
 }
 
-const initialAppointments: AppointmentItem[] = [
-  {
-    id: "1",
-    title: "İmplant Konsültasyonu",
-    customerName: "Caner Öztürk",
-    customerPhone: "0532 456 78 90",
-    date: new Date().toISOString(),
-    time: "10:00",
-    type: "treatment",
-    price: "Ücretsiz",
-    notes: "3D tomografi ve gülüş planlaması",
-  },
-  {
-    id: "2",
-    title: "Lazerli Beyazlatma",
-    customerName: "Ayşe Demir",
-    customerPhone: "0544 123 45 67",
-    date: new Date().toISOString(),
-    time: "14:30",
-    type: "checkup",
-    price: "₺3.000",
-    notes: "Tek seans beyazlatma",
-  },
-  {
-    id: "3",
-    title: "Kanal Tedavisi & Dolgu",
-    customerName: "Mehmet Kaya",
-    customerPhone: "0505 987 65 43",
-    date: addDays(new Date(), 2).toISOString(),
-    time: "11:00",
-    type: "treatment",
-    price: "₺1.200",
-    notes: "Sol üst azı dişi dolgusu",
-  },
-  {
-    id: "4",
-    title: "Gülüş Tasarımı Ön Muayene",
-    customerName: "Zeynep Arslan",
-    customerPhone: "0533 111 22 33",
-    date: addDays(new Date(), 4).toISOString(),
-    time: "16:00",
-    type: "checkup",
-    price: "₺1.500",
-    notes: "Zirkonyum kaplama konsültasyonu",
-  },
-];
-
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
-  const [appointments, setAppointments] = useState<AppointmentItem[]>(initialAppointments);
+  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Modals
   const [selectedApp, setSelectedApp] = useState<AppointmentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("İmplant Konsültasyonu");
+  const [newTitle, setNewTitle] = useState("Saç Kesimi & Yıkama");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
@@ -107,12 +62,56 @@ export default function CalendarPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const fetchRealAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*, services(name)");
+
+      if (data && !error) {
+        const mapped: AppointmentItem[] = data.map((a: any) => {
+          const dateIso = a.appointment_date
+            ? new Date(`${a.appointment_date}T${a.appointment_time || "10:00:00"}`).toISOString()
+            : a.start_utc || new Date().toISOString();
+
+          return {
+            id: a.id,
+            title: a.services?.name || a.customer_note || "Randevu",
+            customerName: a.customer_name || "Müşteri",
+            customerPhone: a.customer_phone || "",
+            date: dateIso,
+            time: a.appointment_time?.slice(0, 5) || "10:00",
+            type: "treatment",
+            price: "",
+            notes: a.customer_note || "",
+          };
+        });
+        setAppointments(mapped);
+      } else {
+        setAppointments([]);
+      }
+    } catch {
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealAppointments();
+  }, []);
+
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const today = () => setCurrentDate(new Date());
 
-  const handleAddAppointment = (e: React.FormEvent) => {
+  const handleAddAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newName.trim() || !newPhone.trim()) {
+      showToast("Lütfen ad ve telefon bilgilerini girin.");
+      return;
+    }
+
     const newApp: AppointmentItem = {
       id: `app_${Date.now()}`,
       title: newTitle,
@@ -121,14 +120,32 @@ export default function CalendarPage() {
       date: new Date(`${newDate}T${newTime}:00`).toISOString(),
       time: newTime,
       type: "treatment",
-      price: "₺1.000",
-      notes: "Takvim üzerinden doğrudan eklendi.",
+      price: "",
+      notes: "Takvim üzerinden eklendi.",
     };
-    setAppointments([...appointments, newApp]);
+
+    setAppointments((prev) => [...prev, newApp]);
     setShowAddModal(false);
     setNewName("");
     setNewPhone("");
     showToast("Yeni randevu takvime başarıyla işlendi!");
+
+    try {
+      await supabase.from("appointments").insert([
+        {
+          id: newApp.id,
+          customer_name: newName.trim(),
+          customer_phone: newPhone.trim(),
+          customer_note: newTitle,
+          appointment_date: newDate,
+          appointment_time: `${newTime}:00`,
+          status: "confirmed",
+          tenant_id: "byerman-id",
+        },
+      ]);
+    } catch (err) {
+      console.warn("Takvim veritabanına eklenirken hata:", err);
+    }
   };
 
   const monthStart = startOfMonth(currentDate);

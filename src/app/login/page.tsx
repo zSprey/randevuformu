@@ -250,7 +250,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="byerman veya e-posta adresi"
+                placeholder="Kullanıcı adınızı girin"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-all"
               />
             </div>
@@ -289,18 +289,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Fast Login / Demo Bypass */}
-        <div className="mt-6 pt-6 border-t border-white/10 text-center space-y-2">
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            className="w-full py-2.5 px-4 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-xs font-bold text-indigo-200 hover:text-white transition-all flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            Tek Tıkla Doğrudan Giriş Yap (Hızlı Erişim)
-          </button>
-        </div>
       </motion.div>
     </div>
   );

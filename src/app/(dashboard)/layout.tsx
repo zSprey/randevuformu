@@ -41,40 +41,7 @@ interface NotificationItem {
   unread: boolean;
 }
 
-const initialNotifications: NotificationItem[] = [
-  {
-    id: "n1",
-    title: "Yeni Randevu Alındı",
-    message: "Caner Öztürk - İmplant Konsültasyonu (Bugün 14:30)",
-    time: "5 dk önce",
-    type: "booking",
-    unread: true,
-  },
-  {
-    id: "n2",
-    title: "Online Ödeme Başarılı",
-    message: "₺3.000 tutarındaki Lazerli Beyazlatma ödemesi onaylandı.",
-    time: "1 saat önce",
-    type: "payment",
-    unread: true,
-  },
-  {
-    id: "n3",
-    title: "WhatsApp Hatırlatması İletildi",
-    message: "Burcu Çelik randevusu için otomatik SMS/WhatsApp gönderildi.",
-    time: "2 saat önce",
-    type: "system",
-    unread: false,
-  },
-  {
-    id: "n4",
-    title: "Google Calendar Senkronizasyonu",
-    message: "2 yeni randevu Google Takviminiz ile senkronize edildi.",
-    time: "Dün",
-    type: "system",
-    unread: false,
-  },
-];
+const initialNotifications: NotificationItem[] = [];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
