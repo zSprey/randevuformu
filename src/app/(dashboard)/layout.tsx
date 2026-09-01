@@ -206,7 +206,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               target="_blank"
               className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-indigo-300 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
             >
-              <span>randevuformu.com/{tenantSlug}</span>
+              <span>{tenantSlug === "byerman" ? "byermanrandevuformu.com" : `randevuformu.com/${tenantSlug}`}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 
@@ -400,7 +400,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   >
                     <div className="p-3 border-b border-slate-800">
                       <p className="font-bold text-xs text-white">{tenantName}</p>
-                      <p className="text-[11px] text-slate-400">/{tenantSlug}</p>
+                      <p className="text-[11px] text-slate-400">
+                        {tenantSlug === "byerman" ? "byermanrandevuformu.com" : `/${tenantSlug}`}
+                      </p>
                       <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30">
                         Canlı İşletme Hesabı
                       </span>

@@ -122,7 +122,14 @@ export async function middleware(request: NextRequest) {
   const hostHeader = (request.headers.get('host') || '').toLowerCase().split(':')[0] // remove port
   let subdomain = ''
 
-  if (hostHeader.endsWith('.randevuformu.com')) {
+  // Dedicated custom domain check for byermanrandevuformu.com & byerman.randevuformu.com
+  if (
+    hostHeader === 'byermanrandevuformu.com' ||
+    hostHeader === 'www.byermanrandevuformu.com' ||
+    hostHeader === 'byerman.randevuformu.com'
+  ) {
+    subdomain = 'byerman';
+  } else if (hostHeader.endsWith('.randevuformu.com')) {
     subdomain = hostHeader.replace('.randevuformu.com', '')
   } else if (hostHeader.endsWith('.localhost')) {
     subdomain = hostHeader.replace('.localhost', '')
