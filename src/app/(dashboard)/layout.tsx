@@ -202,11 +202,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Hızlı Canlı Önizleme
             </p>
             <Link
-              href={tenantSlug === "byerman" ? "https://byerman.randevuformu.com" : `/${tenantSlug}`}
+              href={`/${tenantSlug}`}
               target="_blank"
               className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-indigo-300 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
             >
-              <span>{tenantSlug === "byerman" ? "byerman.randevuformu.com" : `/${tenantSlug}`}</span>
+              <span>randevuformu.com/{tenantSlug}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 
