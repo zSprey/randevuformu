@@ -482,7 +482,9 @@ export default function DashboardPage() {
                       <span>Ara</span>
                     </a>
                     <a
-                      href={`https://wa.me/90${app.customer_phone?.replace(/[^0-9]/g, "")}?text=Merhaba%20${encodeURIComponent(app.customer_name || "")},%20Erman%20Usta%20randevunuz%20hakkinda.`}
+                      href={`https://wa.me/90${app.customer_phone?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                        `Merhaba Sayın ${app.customer_name}, ${app.appointment_date} saat ${app.appointment_time?.slice(0, 5)} için Erman Usta randevunuz onaylanmıştır. Sizi salonda bekliyoruz, sıhhatler olsun.`
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2.5 rounded-xl bg-green-950/60 hover:bg-green-800 text-green-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-green-700/50 transition-all cursor-pointer"

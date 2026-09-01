@@ -13,7 +13,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Loader2,
-  Sparkles
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -292,28 +293,33 @@ export default function ErmanBarberWidget({
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs sm:text-sm text-amber-200 space-y-2 text-left">
+            <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 space-y-1.5 text-left">
               <div>📍 <strong>Adres:</strong> By Erman Erkek Berberi Salonu</div>
-              <div className="flex items-center gap-2 text-emerald-300 font-semibold">
-                <span>📲 Hem sizin telefonunuza hem de <strong>Erman Usta&apos;ya (0538 480 90 01)</strong> anında SMS bildirimi iletilmiştir.</span>
+              <div className="text-slate-300">
+                ✨ Randevunuz sisteme işlendi. Randevunuzu tek tıkla Erman Usta&apos;nın WhatsApp&apos;ına iletmek için aşağıdaki yeşil butona basabilirsiniz.
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Büyük 1-Tık WhatsApp Onay Butonu */}
+            <div className="space-y-3">
               <a
-                href="tel:+905384809001"
-                className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Erman Usta&apos;yı Ara (0538 480 90 01)</span>
-              </a>
-              <a
-                href="https://wa.me/905384809001?text=Merhaba%20Erman%20Usta,%20randevumu%20aldım."
+                href={`https://wa.me/905384809001?text=${encodeURIComponent(
+                  `Merhaba Erman Usta, ben ${customerName} (${customerPhone}). ${daysList[selectedDateIndex]?.label} saat ${selectedSlot} için ${selectedService.name} randevumu siteden oluşturdum.`
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-3.5 px-4 rounded-2xl bg-green-700 hover:bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+                className="w-full py-4 sm:py-5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 hover:from-emerald-500 hover:to-green-500 text-white font-black text-base sm:text-lg flex items-center justify-center gap-3 shadow-2xl shadow-green-600/40 transition-all active:scale-[0.98] border border-green-400/50 animate-pulse cursor-pointer"
               >
-                <span>💬 WhatsApp&apos;tan Yaz</span>
+                <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
+                <span>💬 WhatsApp ile Erman Usta&apos;ya İlet (Tek Tık)</span>
+              </a>
+
+              <a
+                href="tel:+905384809001"
+                className="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all border border-slate-700 cursor-pointer"
+              >
+                <Phone className="w-4 h-4 text-emerald-400" />
+                <span>Telefonla Ara: 0538 480 90 01</span>
               </a>
             </div>
 
