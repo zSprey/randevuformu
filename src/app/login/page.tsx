@@ -19,11 +19,24 @@ function LoginFormContent() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Sayfa açıldığında eski sahte veya çerez kalıntılarını temizle (Doğrudan otomatik girişi engeller)
   useEffect(() => {
-    const mode = searchParams.get("mode");
-    const tab = searchParams.get("tab");
-    if (mode === "signup" || mode === "register" || tab === "register") {
-      setIsLogin(false);
+    if (typeof window !== "undefined") {
+      const isProd = window.location.protocol === "https:";
+      const domainStr = window.location.hostname.includes("randevuformu.com") ? "; domain=.randevuformu.com" : "";
+      const secureStr = isProd ? "; Secure" : "";
+
+      // Oturum çerezlerini sıfırla ki kullanıcı şifre girmeden panele girmesin
+      document.cookie = `rf_session=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+      document.cookie = `demo_session=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+      document.cookie = `rf_session=; path=/; max-age=0;`;
+      document.cookie = `demo_session=; path=/; max-age=0;`;
+
+      const mode = searchParams.get("mode");
+      const tab = searchParams.get("tab");
+      if (mode === "signup" || mode === "register" || tab === "register") {
+        setIsLogin(false);
+      }
     }
   }, [searchParams]);
 
@@ -37,13 +50,11 @@ function LoginFormContent() {
     const secureStr = isProd ? "; Secure" : "";
 
     document.cookie = `rf_session=true; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
-    document.cookie = `demo_session=true; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
     document.cookie = `rf_user=${username}; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
     document.cookie = `rf_tenant=${tenant}; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
 
     // Host-only cookie fallback
     document.cookie = `rf_session=true; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
-    document.cookie = `demo_session=true; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
     document.cookie = `rf_user=${username}; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
     document.cookie = `rf_tenant=${tenant}; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
 
@@ -90,23 +101,23 @@ function LoginFormContent() {
         console.warn("Session API call warning:", err);
       }
 
-      // 1. Special Tenant Auth: By Erman & Erman Kuaför (Özel Ücretli İşletme)
+      // 1. KESİN KURAL: By Erman Girişi Sadece Doğru Şifre ile Mümkündür
       if (isByErman) {
         if (password === "byerman123" || password === "ermankuafor123") {
           setAuthCookie("byerman", "byerman", "By Erman Hair Studio");
-          setSuccessMsg("Giriş başarılı! By Erman Hair Studio yönetim paneline yönlendiriliyorsunuz...");
+          setSuccessMsg("Giriş başarılı! Yönetim paneline yönlendiriliyorsunuz...");
           setTimeout(() => {
             window.location.href = "/dashboard";
           }, 500);
           return;
         } else {
-          setErrorMsg("Şifre hatalı! Lütfen kontrol edip tekrar deneyin.");
+          setErrorMsg("Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.");
           setLoading(false);
           return;
         }
       }
 
-      // 2. Normal Genel SaaS İşletme Girişi / Kaydı
+      // 2. Normal Genel SaaS İşletme Girişi
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@randevuformu.com`,
@@ -114,13 +125,9 @@ function LoginFormContent() {
         });
 
         if (error) {
-          if (error.message.includes("Email not confirmed")) {
-            setErrorMsg("E-posta adresiniz henüz onaylanmamış. Lütfen gelen kutunuzu kontrol edin.");
-          } else if (error.message.includes("Invalid login credentials")) {
-            setErrorMsg("Kullanıcı adı/e-posta veya şifre hatalı. Lütfen kontrol edip tekrar deneyin.");
-          } else {
-            setErrorMsg(error.message);
-          }
+          setErrorMsg("Kullanıcı adı veya şifre hatalı. Lütfen kontrol edip tekrar deneyin.");
+          setLoading(false);
+          return;
         } else {
           const userSlug = cleanIdentifier.replace(/[^a-z0-9]/gi, "").toLowerCase() || "default";
           setAuthCookie(cleanIdentifier, userSlug, "İşletme Yönetim Paneli");
@@ -130,7 +137,7 @@ function LoginFormContent() {
           }, 600);
         }
       } else {
-        // Kayıt Ol (Ücretsiz Başla)
+        // Kayıt Ol (Yeni İşletme Açılışı)
         const { data, error } = await supabase.auth.signUp({
           email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@randevuformu.com`,
           password,
@@ -144,6 +151,8 @@ function LoginFormContent() {
 
         if (error) {
           setErrorMsg(error.message);
+          setLoading(false);
+          return;
         } else {
           const bName = businessName.trim() || fullName.trim() || "Yeni İşletmem";
           const userSlug = bName.replace(/[^a-z0-9]/gi, "").toLowerCase() || "isletmem";
@@ -155,8 +164,7 @@ function LoginFormContent() {
         }
       }
     } catch (err: any) {
-      setAuthCookie();
-      window.location.href = "/dashboard";
+      setErrorMsg("Giriş yapılamadı. Lütfen bilgilerinizi kontrol edip tekrar deneyin.");
     } finally {
       setLoading(false);
     }

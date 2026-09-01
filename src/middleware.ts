@@ -93,19 +93,12 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
   const isLoginRoute = pathname === '/login';
 
-  if (isProtectedRoute || isLoginRoute) {
+  if (isProtectedRoute) {
     const rfSession = request.cookies.get('rf_session')?.value;
-    const demoSession = request.cookies.get('demo_session')?.value;
     const rfUser = request.cookies.get('rf_user')?.value;
-    const rfTenant = request.cookies.get('rf_tenant')?.value;
 
-    const hasCookieSession =
-      rfSession === 'true' ||
-      demoSession === 'true' ||
-      Boolean(rfUser) ||
-      Boolean(rfTenant);
-
-    let isAuthenticated = hasCookieSession;
+    // Kesin kural: Sadece aktif ve geçerli kullanıcı oturumu varsa giriş kabul edilir
+    let isAuthenticated = rfSession === 'true' && Boolean(rfUser);
 
     if (!isAuthenticated) {
       try {
@@ -135,14 +128,10 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (isProtectedRoute && !isAuthenticated) {
+    if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
-    }
-
-    if (isLoginRoute && isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 

@@ -75,10 +75,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isErman =
-        window.location.hostname.includes("byerman") ||
-        localStorage.getItem("rf_tenant") === "byerman" ||
-        localStorage.getItem("rf_user") === "byerman";
+      const isByErmanHost = window.location.hostname.includes("byerman");
+      const currentUser = localStorage.getItem("rf_user");
+      const currentTenant = localStorage.getItem("rf_tenant");
+
+      // By Erman modu SADECE açıkça byerman kullanıcı adı ve şifresiyle girildiyse veya byerman subdomaininde ise açılır
+      const isErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
 
       setIsErmanTenant(isErman);
     }

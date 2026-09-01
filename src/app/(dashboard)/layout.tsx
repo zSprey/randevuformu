@@ -55,20 +55,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     try {
-      const isByErman =
-        typeof window !== "undefined" &&
-        (window.location.hostname.includes("byerman") ||
-          localStorage.getItem("rf_tenant") === "byerman" ||
-          localStorage.getItem("rf_user") === "byerman");
+      const isByErmanHost = typeof window !== "undefined" && window.location.hostname.includes("byerman");
+      const currentUser = typeof window !== "undefined" ? localStorage.getItem("rf_user") : null;
+      const currentTenant = typeof window !== "undefined" ? localStorage.getItem("rf_tenant") : null;
+
+      // By Erman SADECE açıkça byerman kullanıcı adı ve şifresiyle girildiyse veya byerman subdomaininde ise aktiftir
+      const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
 
       if (isByErman) {
         setTenantSlug("byerman");
         setTenantName("By Erman Hair Studio");
       } else {
         const storedName = localStorage.getItem("rf_tenant_name");
-        const storedSlug = localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant");
-        if (storedName && storedName !== "By Erman Hair Studio") setTenantName(storedName);
-        if (storedSlug && storedSlug !== "byerman") setTenantSlug(storedSlug);
+        const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
+        setTenantName(storedName && storedName !== "By Erman Hair Studio" ? storedName : "İşletme Yönetim Paneli");
+        setTenantSlug(storedSlug && storedSlug !== "byerman" ? storedSlug : "dashboard");
       }
     } catch {}
   }, []);
@@ -86,12 +87,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-    } catch (e) {
-      // ignore
-    }
-    document.cookie = "rf_session=; path=/; max-age=0;";
-    document.cookie = "demo_session=; path=/; max-age=0;";
-    router.push("/login");
+    } catch {}
+    const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
+    const domainStr = typeof window !== "undefined" && window.location.hostname.includes("randevuformu.com") ? "; domain=.randevuformu.com" : "";
+    const secureStr = isProd ? "; Secure" : "";
+
+    document.cookie = `rf_session=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `demo_session=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `rf_user=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `rf_tenant=; path=/; max-age=0; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `rf_session=; path=/; max-age=0;`;
+    document.cookie = `demo_session=; path=/; max-age=0;`;
+    document.cookie = `rf_user=; path=/; max-age=0;`;
+    document.cookie = `rf_tenant=; path=/; max-age=0;`;
+
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+
+    window.location.href = "/login";
   };
 
   const navItems = [
