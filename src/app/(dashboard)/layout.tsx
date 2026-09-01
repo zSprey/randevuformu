@@ -267,7 +267,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3 sm:gap-4 relative">
             {/* Quick Live Preview Link */}
             <Link
-              href="/ornek/dr-ahmet"
+              href={`/${tenantSlug}`}
               target="_blank"
               className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
             >
@@ -432,7 +432,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         Super Admin Girişi
                       </Link>
                       <Link
-                        href="/ornek/dr-ahmet"
+                        href={`/${tenantSlug}`}
                         target="_blank"
                         className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
                       >

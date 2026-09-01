@@ -107,7 +107,7 @@ export default function BookingWidget({
       const defaultTimes = isByErman
         ? [
             "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-            "12:00", "12:30", "13:00", "13:30", "14:00", "14:45",
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
             "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
             "18:00", "18:30", "19:00", "19:30"
           ]
@@ -416,12 +416,20 @@ export default function BookingWidget({
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
                   Uzman / Hekim Tercihi
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Hızlı Randevu" },
-                    { id: "staff-1", name: "Dr. Ahmet Y.", role: "Başhekim" },
-                    { id: "staff-2", name: "Dt. Zeynep K.", role: "Ortodonti" },
-                  ].map((st) => {
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(businessSlug === "byerman" || businessSlug === "ermankuafor" || category?.toLowerCase().includes("kuaför")
+                    ? [
+                        { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Fark Etmez" },
+                        { id: "staff-1", name: "Erman Usta", role: "Baş Stilist & Kurucu" },
+                        { id: "staff-2", name: "Murat Usta", role: "Kuaför & Saç Tasarım" },
+                        { id: "staff-3", name: "Caner", role: "Sakal & Cilt Uzmanı" },
+                      ]
+                    : [
+                        { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Hızlı Randevu" },
+                        { id: "staff-1", name: "Dr. Ahmet Y.", role: "Başhekim" },
+                        { id: "staff-2", name: "Dt. Zeynep K.", role: "Ortodonti" },
+                      ]
+                  ).map((st) => {
                     const isSelected = selectedStaff === st.id;
                     return (
                       <button

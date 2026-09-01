@@ -4,7 +4,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 // ────────────────────────────────────────────────────────
 // Korumalı Rota Tanımları (Auth Guard)
 // ────────────────────────────────────────────────────────
-const PROTECTED_ROUTES = ['/dashboard', '/calendar', '/forms', '/settings', '/staff'];
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/calendar',
+  '/forms',
+  '/settings',
+  '/staff',
+  '/clients',
+  '/packages',
+  '/retention',
+  '/qr-stand',
+];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -59,40 +69,50 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────
   // 2. TENANT DASHBOARD AUTH GUARD (/dashboard, /calendar, vb.)
   // ────────────────────────────────────────────────────────
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://isymhicfyatamwiwyuhk.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Va5Rnrm_uAwrPjKK3ClIzQ_QhJrRadT',
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-  const hasCookieSession = request.cookies.get('rf_session')?.value === 'true' || request.cookies.get('demo_session')?.value === 'true';
-  const isAuthenticated = !!user || hasCookieSession;
-
   const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  const isLoginRoute = pathname === '/login';
 
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+  if (isProtectedRoute || isLoginRoute) {
+    const hasCookieSession = request.cookies.get('rf_session')?.value === 'true' || request.cookies.get('demo_session')?.value === 'true';
+    let isAuthenticated = hasCookieSession;
 
-  // Zaten giriş yapmış kullanıcı /login'e gelirse dashboard'a yönlendir
-  if (pathname === '/login' && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (!isAuthenticated) {
+      try {
+        const supabase = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://isymhicfyatamwiwyuhk.supabase.co',
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Va5Rnrm_uAwrPjKK3ClIzQ_QhJrRadT',
+          {
+            cookies: {
+              getAll() {
+                return request.cookies.getAll()
+              },
+              setAll(cookiesToSet) {
+                cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                supabaseResponse = NextResponse.next({ request })
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  supabaseResponse.cookies.set(name, value, options)
+                )
+              },
+            },
+          }
+        )
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) isAuthenticated = true;
+      } catch {
+        isAuthenticated = false;
+      }
+    }
+
+    if (isProtectedRoute && !isAuthenticated) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (isLoginRoute && isAuthenticated) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   // ────────────────────────────────────────────────────────
@@ -132,6 +152,11 @@ export async function middleware(request: NextRequest) {
       p.startsWith('/calendar') ||
       p.startsWith('/settings') ||
       p.startsWith('/staff') ||
+      p.startsWith('/clients') ||
+      p.startsWith('/packages') ||
+      p.startsWith('/retention') ||
+      p.startsWith('/qr-stand') ||
+      p.startsWith('/widget') ||
       p.includes('.')
 
     if (!isSystemPath) {
@@ -145,7 +170,9 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────
   // 4. GÜVENLİK BAŞLIKLARI
   // ────────────────────────────────────────────────────────
-  finalResponse.headers.set('X-Frame-Options', 'DENY')
+  if (!pathname.startsWith('/widget') && !pathname.startsWith('/tv')) {
+    finalResponse.headers.set('X-Frame-Options', 'DENY')
+  }
   finalResponse.headers.set('X-Content-Type-Options', 'nosniff')
   finalResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   finalResponse.headers.set('X-XSS-Protection', '1; mode=block')
