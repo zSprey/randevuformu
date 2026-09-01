@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import { slotLockManager } from "@/lib/engine/lockManager";
 import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
+import { sendDualBarberBookingSms } from "@/lib/sms/smsService";
 import {
   apiSuccess,
   apiBadRequest,
@@ -292,11 +293,41 @@ export async function POST(request: Request) {
       }
     }
 
+    // 8. Dual SMS Notification (Müşteri + Erman Usta: +90 538 480 90 01)
+    let smsResult = { customerSmsSent: false, barberSmsSent: false };
+    if (user_phone) {
+      try {
+        const appointmentDate = startTime.toLocaleDateString("tr-TR", {
+          timeZone: "Europe/Istanbul",
+          day: "numeric",
+          month: "long",
+          weekday: "long",
+        });
+        const appointmentTime = startTime.toLocaleTimeString("tr-TR", {
+          timeZone: "Europe/Istanbul",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        smsResult = await sendDualBarberBookingSms({
+          customerName: user_name,
+          customerPhone: user_phone,
+          appointmentDate,
+          appointmentTime,
+          serviceName: eventTitle || "Erkek Berberi Tıraş Hizmeti",
+          barberPhone: "905384809001",
+        });
+      } catch (smsErr) {
+        console.warn("[Bookings Dual SMS Warning]:", smsErr);
+      }
+    }
+
     return apiSuccess(
       {
         booking: createdBooking,
         meeting: meetingDetails,
         mailSent,
+        smsResult,
       },
       "Randevu başarıyla oluşturuldu.",
       201

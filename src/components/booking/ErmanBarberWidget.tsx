@@ -21,8 +21,6 @@ interface Service {
   id: string;
   name: string;
   duration_minutes: number;
-  price: number;
-  price_text: string;
   description: string;
 }
 
@@ -31,40 +29,30 @@ const CLASSIC_SERVICES: Service[] = [
     id: "srv-sac",
     name: "Saç Kesimi & Yıkama",
     duration_minutes: 30,
-    price: 350,
-    price_text: "350 ₺",
     description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
   },
   {
     id: "srv-sakal",
     name: "Sakal Tıraşı & Sıcak Havlu",
     duration_minutes: 30,
-    price: 200,
-    price_text: "200 ₺",
     description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
   },
   {
     id: "srv-komple",
     name: "Saç + Sakal (Komple Tıraş)",
     duration_minutes: 60,
-    price: 500,
-    price_text: "500 ₺",
     description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
   },
   {
     id: "srv-cocuk",
     name: "Çocuk Saç Kesimi",
     duration_minutes: 30,
-    price: 250,
-    price_text: "250 ₺",
     description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
   },
   {
     id: "srv-yikama",
     name: "Saç Yıkama & Fön",
     duration_minutes: 20,
-    price: 150,
-    price_text: "150 ₺",
     description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
   },
 ];
@@ -235,6 +223,25 @@ export default function ErmanBarberWidget({
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
           Sadece 3 adımda kolayca randevunuzu alın, beklemeden tıraş olun.
         </p>
+
+        {/* Erman Usta İletişim & Hızlı Arama Butonları */}
+        <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="tel:+905384809001"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+          >
+            <Phone className="w-4 h-4" />
+            <span>Telefonla Ara: 0538 480 90 01</span>
+          </a>
+          <a
+            href="https://wa.me/905384809001?text=Merhaba%20Erman%20Usta,%20randevu%20almak%20istiyorum."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white border border-green-500/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+          >
+            <span>💬 WhatsApp</span>
+          </a>
+        </div>
       </div>
 
       {/* 2. Success Screen */}
@@ -278,14 +285,36 @@ export default function ErmanBarberWidget({
                 <span className="text-base font-bold text-white">Erman Usta</span>
               </div>
               <div className="flex items-center justify-between pt-1">
-                <span className="text-sm text-slate-400">Ücret:</span>
-                <span className="text-lg font-black text-white">{selectedService.price_text}</span>
+                <span className="text-sm text-slate-400">İletişim Telefonu:</span>
+                <a href="tel:+905384809001" className="text-base font-bold text-emerald-400 hover:underline">
+                  0538 480 90 01
+                </a>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs sm:text-sm text-amber-200">
-              📍 <strong>Adres:</strong> By Erman Erkek Berberi Salonu <br />
-              Telefonunuza SMS & WhatsApp teyit mesajı gönderilmiştir.
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs sm:text-sm text-amber-200 space-y-2 text-left">
+              <div>📍 <strong>Adres:</strong> By Erman Erkek Berberi Salonu</div>
+              <div className="flex items-center gap-2 text-emerald-300 font-semibold">
+                <span>📲 Hem sizin telefonunuza hem de <strong>Erman Usta&apos;ya (0538 480 90 01)</strong> anında SMS bildirimi iletilmiştir.</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="tel:+905384809001"
+                className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Erman Usta&apos;yı Ara (0538 480 90 01)</span>
+              </a>
+              <a
+                href="https://wa.me/905384809001?text=Merhaba%20Erman%20Usta,%20randevumu%20aldım."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3.5 px-4 rounded-2xl bg-green-700 hover:bg-green-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <span>💬 WhatsApp&apos;tan Yaz</span>
+              </a>
             </div>
 
             <button
@@ -343,19 +372,19 @@ export default function ErmanBarberWidget({
                         </span>
                       </div>
 
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                        <span className={"text-xl sm:text-2xl font-black " + (isSelected ? "text-emerald-400" : "text-white")}>
-                          {srv.price_text}
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
+                        <span className="text-xs sm:text-sm font-bold text-slate-400 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+                          {srv.duration_minutes} Dk
                         </span>
                         <div
                           className={
-                            "w-6 h-6 rounded-full border-2 flex items-center justify-center " +
+                            "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all " +
                             (isSelected
-                              ? "bg-emerald-500 border-emerald-500 text-slate-950"
+                              ? "bg-emerald-500 border-emerald-500 text-slate-950 font-black text-sm"
                               : "border-slate-700 bg-slate-900")
                           }
                         >
-                          {isSelected && <span className="font-black text-xs">✓</span>}
+                          {isSelected && <span>✓</span>}
                         </div>
                       </div>
                     </button>
