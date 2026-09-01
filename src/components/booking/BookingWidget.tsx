@@ -194,8 +194,11 @@ export default function BookingWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_id: selectedService.id,
+          tenant_id: tenantId || "byerman-id",
           user_name: customerName,
           user_email: customerEmail,
+          user_phone: customerPhone,
+          notes: customerNotes,
           staff_id: resolvedStaffId,
           start_time: `${selectedDate}T${selectedSlot}:00+03:00`,
           end_time: `${selectedDate}T${selectedSlot}:00+03:00`,

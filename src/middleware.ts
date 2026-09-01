@@ -96,24 +96,50 @@ export async function middleware(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────
-  // 3. SUBDOMAIN ROUTING (dr-ahmet.randevuformu.com → /dr-ahmet)
+  // 3. SUBDOMAIN ROUTING (byerman.randevuformu.com → /byerman)
   // ────────────────────────────────────────────────────────
   const url = request.nextUrl
-  const hostname = request.headers.get('host') || ''
-  const isLocal = process.env.NODE_ENV === 'development'
-  const baseDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || (isLocal ? 'localhost:3000' : 'randevuformu.com')
+  const hostHeader = (request.headers.get('host') || '').toLowerCase().split(':')[0] // remove port
+  let subdomain = ''
 
-  let subdomain = hostname.replace(`.${baseDomain}`, '')
-  if (subdomain === hostname || subdomain === 'www') {
+  if (hostHeader.endsWith('.randevuformu.com')) {
+    subdomain = hostHeader.replace('.randevuformu.com', '')
+  } else if (hostHeader.endsWith('.localhost')) {
+    subdomain = hostHeader.replace('.localhost', '')
+  } else {
+    // Custom root domain or env fallback
+    const isLocal = process.env.NODE_ENV === 'development'
+    const baseDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || (isLocal ? 'localhost' : 'randevuformu.com')).toLowerCase().split(':')[0]
+    if (hostHeader.endsWith(`.${baseDomain}`)) {
+      subdomain = hostHeader.replace(`.${baseDomain}`, '')
+    }
+  }
+
+  if (subdomain === 'www' || subdomain === 'admin' || subdomain === hostHeader) {
     subdomain = ''
   }
 
   let finalResponse = supabaseResponse
 
   if (subdomain) {
-    const rewriteUrl = new URL(`/${subdomain}${url.pathname}`, request.url)
-    rewriteUrl.search = url.search
-    finalResponse = NextResponse.rewrite(rewriteUrl)
+    const p = url.pathname
+    const isSystemPath = 
+      p.startsWith('/api') || 
+      p.startsWith('/_next') || 
+      p.startsWith('/login') || 
+      p.startsWith('/admin') || 
+      p.startsWith('/dashboard') ||
+      p.startsWith('/calendar') ||
+      p.startsWith('/settings') ||
+      p.startsWith('/staff') ||
+      p.includes('.')
+
+    if (!isSystemPath) {
+      const targetPath = p === '/' ? `/${subdomain}` : (p.startsWith(`/${subdomain}`) ? p : `/${subdomain}${p}`)
+      const rewriteUrl = new URL(targetPath, request.url)
+      rewriteUrl.search = url.search
+      finalResponse = NextResponse.rewrite(rewriteUrl)
+    }
   }
 
   // ────────────────────────────────────────────────────────
