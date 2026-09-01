@@ -242,7 +242,7 @@ export default function DashboardPage() {
                   required
                   value={newCustomerName}
                   onChange={(e) => setNewCustomerName(e.target.value)}
-                  placeholder="Örn: Mehmet Amca veya Ahmet Yılmaz"
+                  placeholder="Müşteri adı ve soyadı"
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                   required
                   value={newCustomerPhone}
                   onChange={(e) => setNewCustomerPhone(e.target.value)}
-                  placeholder="0538 480 90 01"
+                  placeholder="05XX XXX XX XX"
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500"
                 />
               </div>

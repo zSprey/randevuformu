@@ -169,7 +169,7 @@ export default function ErmanBarberWidget({
     }
 
     if (!customerPhone.trim() || customerPhone.length < 10) {
-      setErrorMessage("Lütfen geçerli bir telefon numarası girin (Örn: 0505 070 40 24).");
+      setErrorMessage("Lütfen geçerli bir telefon numarası girin.");
       return;
     }
 
@@ -512,7 +512,7 @@ export default function ErmanBarberWidget({
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Örn: Mehmet Amca veya Ahmet Yılmaz"
+                    placeholder="Adınızı ve soyadınızı girin"
                     className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 text-white placeholder-slate-500 text-base sm:text-lg font-bold focus:border-emerald-500 focus:outline-none transition-all"
                   />
                 </div>
@@ -529,7 +529,7 @@ export default function ErmanBarberWidget({
                     required
                     value={customerPhone}
                     onChange={handlePhoneChange}
-                    placeholder="0505 070 40 24"
+                    placeholder="05XX XXX XX XX"
                     className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 text-white placeholder-slate-500 text-base sm:text-lg font-bold focus:border-emerald-500 focus:outline-none transition-all"
                   />
                 </div>
@@ -546,7 +546,7 @@ export default function ErmanBarberWidget({
                   type="text"
                   value={customerNote}
                   onChange={(e) => setCustomerNote(e.target.value)}
-                  placeholder="Örn: Yanlar kısa olsun, ense düz"
+                  placeholder="Varsa özel isteğiniz veya notunuz"
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-sm focus:border-emerald-500 focus:outline-none transition-all"
                 />
               </div>
