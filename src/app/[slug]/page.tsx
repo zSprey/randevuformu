@@ -9,6 +9,56 @@ import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 
+const ERMAN_USTA_DATA = {
+  id: "byerman-id",
+  name: "Erman Usta - Erkek Berberi",
+  slug: "byerman",
+  category: "Erkek Berberi",
+  description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
+  services: [
+    {
+      id: "srv-sac",
+      name: "Saç Kesimi & Yıkama",
+      duration_minutes: 30,
+      price_text: "₺350",
+      price: 350,
+      description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
+    },
+    {
+      id: "srv-sakal",
+      name: "Sakal Tıraşı & Sıcak Havlu",
+      duration_minutes: 30,
+      price_text: "₺200",
+      price: 200,
+      description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
+    },
+    {
+      id: "srv-komple",
+      name: "Saç + Sakal (Komple Tıraş)",
+      duration_minutes: 60,
+      price_text: "₺500",
+      price: 500,
+      description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
+    },
+    {
+      id: "srv-cocuk",
+      name: "Çocuk Saç Kesimi",
+      duration_minutes: 30,
+      price_text: "₺250",
+      price: 250,
+      description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
+    },
+    {
+      id: "srv-yikama",
+      name: "Saç Yıkama & Fön",
+      duration_minutes: 20,
+      price_text: "₺150",
+      price: 150,
+      description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
+    },
+  ],
+};
+
 interface PageProps {
   params: Promise<{ slug: string }> | { slug: string };
 }
@@ -16,13 +66,15 @@ interface PageProps {
 export default function BusinessBookingPage({ params }: PageProps) {
   const resolvedParams = "then" in params ? use(params as Promise<{ slug: string }>) : params;
   const slug = resolvedParams?.slug || "dr-ahmet";
+  const isErman = slug === "byerman" || slug === "ermankuafor";
 
-  const [loading, setLoading] = useState(true);
-  const [business, setBusiness] = useState<any>(null);
+  const [loading, setLoading] = useState(!isErman);
+  const [business, setBusiness] = useState<any>(isErman ? ERMAN_USTA_DATA : null);
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
     async function loadBusinessData() {
+      if (isErman) return;
       try {
         const { data, error } = await supabase
           .from("businesses")
