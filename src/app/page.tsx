@@ -115,8 +115,8 @@ export default function Home() {
 
   const faqs = [
     {
-      q: "Calendly veya Cal.com yerine neden randevuformu.com tercih edilmeli?",
-      a: "randevuformu.com, Türkiye'deki işletmelerin gerçek ihtiyaçlarına göre tasarlandı. Yerli İyzico sanal POS ile kapora tahsilatı, Netgsm ile SMS OTP doğrulaması, WhatsApp bildirimleri, Türkçe zaman dilimi ve 6698 Sayılı KVKK veri mevzuatına tam uyum sunar.",
+      q: "randevuformu.com işletmeme ne tür kolaylıklar sağlar?",
+      a: "Telefon trafiğinizi sonlandırır. Müşterileriniz web sitenizden veya Instagram biyografinizden 7/24 anında randevu alabilir, randevular SMS ve WhatsApp ile doğrulanır, Google ve Outlook takviminizle çakışmasız senkronize çalışır.",
     },
     {
       q: "Randevu çakışması (çifte rezervasyon) nasıl engelleniyor?",
