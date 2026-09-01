@@ -72,9 +72,16 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    google: 'googlefa628ba0ea483542',
+    other: {
+      'google-site-verification': ['googlefa628ba0ea483542', 'fa628ba0ea483542'],
+    },
+  },
   other: {
     'revisit-after': '1 days',
     'geo.region': 'TR',
+    'google-site-verification': 'googlefa628ba0ea483542',
   },
 };
 
@@ -117,6 +124,8 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
+        <meta name="google-site-verification" content="googlefa628ba0ea483542" />
+        <meta name="google-site-verification" content="fa628ba0ea483542" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
