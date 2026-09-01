@@ -19,8 +19,24 @@ export default function LoginPage() {
   const [successMsg, setSuccessMsg] = useState("");
 
   const setAuthCookie = () => {
-    document.cookie = "rf_session=true; path=/; max-age=86400; SameSite=Lax";
-    document.cookie = "demo_session=true; path=/; max-age=86400; SameSite=Lax";
+    const oneYear = 60 * 60 * 24 * 365;
+    const isProd = typeof window !== "undefined" && window.location.protocol === "https:";
+    const domainStr =
+      typeof window !== "undefined" && window.location.hostname.includes("randevuformu.com")
+        ? "; domain=.randevuformu.com"
+        : "";
+    const secureStr = isProd ? "; Secure" : "";
+
+    document.cookie = `rf_session=true; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `demo_session=true; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `rf_user=byerman; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
+    document.cookie = `rf_tenant=byerman; path=/; max-age=${oneYear}; SameSite=Lax${domainStr}${secureStr}`;
+
+    // Host-only cookie fallback
+    document.cookie = `rf_session=true; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
+    document.cookie = `demo_session=true; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
+    document.cookie = `rf_user=byerman; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
+    document.cookie = `rf_tenant=byerman; path=/; max-age=${oneYear}; SameSite=Lax${secureStr}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,6 +48,17 @@ export default function LoginPage() {
     try {
       const cleanIdentifier = email.trim().toLowerCase();
 
+      // Call server-side session creator for HTTP-level cookies
+      try {
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier: cleanIdentifier, password }),
+        });
+      } catch (err) {
+        console.warn("Session API call warning:", err);
+      }
+
       // 1. Special Tenant Auth: By Erman & Erman Kuaför
       if (
         (cleanIdentifier === "byerman" ||
@@ -40,8 +67,6 @@ export default function LoginPage() {
       ) {
         if (password === "byerman123" || password === "ermankuafor123") {
           setAuthCookie();
-          document.cookie = "rf_user=byerman; path=/; max-age=86400; SameSite=Lax";
-          document.cookie = "rf_tenant=byerman; path=/; max-age=86400; SameSite=Lax";
           try {
             localStorage.setItem("rf_tenant", "byerman");
             localStorage.setItem("rf_tenant_name", "By Erman Hair Studio");
@@ -49,8 +74,8 @@ export default function LoginPage() {
           } catch {}
           setSuccessMsg("Giriş başarılı! By Erman Hair Studio yönetim paneline yönlendiriliyorsunuz...");
           setTimeout(() => {
-            router.push("/dashboard");
-          }, 800);
+            window.location.href = "/dashboard";
+          }, 500);
           return;
         } else {
           setErrorMsg("Şifre hatalı! Lütfen kontrol edip tekrar deneyin.");
@@ -66,8 +91,6 @@ export default function LoginPage() {
       ) {
         if (password === "ermankuafor123" || password === "byerman123") {
           setAuthCookie();
-          document.cookie = "rf_user=byerman; path=/; max-age=86400; SameSite=Lax";
-          document.cookie = "rf_tenant=byerman; path=/; max-age=86400; SameSite=Lax";
           try {
             localStorage.setItem("rf_tenant", "byerman");
             localStorage.setItem("rf_tenant_name", "By Erman Hair Studio");
@@ -75,8 +98,8 @@ export default function LoginPage() {
           } catch {}
           setSuccessMsg("Giriş başarılı! By Erman Hair Studio yönetim paneline yönlendiriliyorsunuz...");
           setTimeout(() => {
-            router.push("/dashboard");
-          }, 800);
+            window.location.href = "/dashboard";
+          }, 500);
           return;
         } else {
           setErrorMsg("Şifre hatalı! Lütfen kontrol edip tekrar deneyin.");
