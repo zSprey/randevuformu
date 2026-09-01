@@ -23,6 +23,27 @@ export async function middleware(request: NextRequest) {
   const lowerPathname = pathname.toLowerCase()
 
   // ────────────────────────────────────────────────────────
+  // 0. GOOGLE SEARCH CONSOLE & INDEXNOW INSTANT AUTO-VERIFICATION
+  // ────────────────────────────────────────────────────────
+  if (lowerPathname.startsWith('/google') && lowerPathname.endsWith('.html')) {
+    const fileName = pathname.replace('/', '');
+    return new NextResponse(`google-site-verification: ${fileName}`, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=86400',
+      },
+    });
+  }
+
+  if (lowerPathname === '/randevuformu-indexnow.txt') {
+    return new NextResponse('randevuformu2026indexnowkey', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  // ────────────────────────────────────────────────────────
   // 1. SUPER ADMIN AUTH GATEWAY (/admin, /admiN, /admin/login)
   // ────────────────────────────────────────────────────────
   if (lowerPathname === '/admin' || lowerPathname.startsWith('/admin/')) {
