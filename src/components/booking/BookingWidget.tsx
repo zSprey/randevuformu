@@ -84,8 +84,16 @@ export default function BookingWidget({
       if (data.slots && data.slots.length > 0) {
         setAvailableSlots(data.slots);
       } else {
-        // Fallback default slots if API response is empty
-        const defaultTimes = ["09:00", "09:45", "10:30", "11:15", "14:00", "14:45", "15:30", "16:15", "17:00"];
+        const isByErman = businessSlug === "byerman" || businessSlug === "ermankuafor";
+        const defaultTimes = isByErman
+          ? [
+              "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+              "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+              "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+              "18:00", "18:30", "19:00", "19:30"
+            ]
+          : ["09:00", "09:45", "10:30", "11:15", "14:00", "14:45", "15:30", "16:15", "17:00"];
+
         setAvailableSlots(
           defaultTimes.map((t) => ({
             displayTime: t,
@@ -95,7 +103,15 @@ export default function BookingWidget({
         );
       }
     } catch (err) {
-      const defaultTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+      const isByErman = businessSlug === "byerman" || businessSlug === "ermankuafor";
+      const defaultTimes = isByErman
+        ? [
+            "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+            "12:00", "12:30", "13:00", "13:30", "14:00", "14:45",
+            "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+            "18:00", "18:30", "19:00", "19:30"
+          ]
+        : ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
       setAvailableSlots(
         defaultTimes.map((t) => ({
           displayTime: t,
