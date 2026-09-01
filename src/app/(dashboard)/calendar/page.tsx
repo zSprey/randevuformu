@@ -64,32 +64,34 @@ export default function CalendarPage() {
 
   const fetchRealAppointments = async () => {
     try {
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*, services(name)");
+      const res = await fetch("/api/appointments", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.appointments && data.appointments.length > 0) {
+          const mapped: AppointmentItem[] = data.appointments.map((a: any) => {
+            const dateIso = a.appointment_date
+              ? new Date(`${a.appointment_date}T${a.appointment_time || "10:00:00"}`).toISOString()
+              : new Date().toISOString();
 
-      if (data && !error) {
-        const mapped: AppointmentItem[] = data.map((a: any) => {
-          const dateIso = a.appointment_date
-            ? new Date(`${a.appointment_date}T${a.appointment_time || "10:00:00"}`).toISOString()
-            : a.start_utc || new Date().toISOString();
-
-          return {
-            id: a.id,
-            title: a.services?.name || a.customer_note || "Randevu",
-            customerName: a.customer_name || "Müşteri",
-            customerPhone: a.customer_phone || "",
-            date: dateIso,
-            time: a.appointment_time?.slice(0, 5) || "10:00",
-            type: "treatment",
-            price: "",
-            notes: a.customer_note || "",
-          };
-        });
-        setAppointments(mapped);
-      } else {
-        setAppointments([]);
+            return {
+              id: a.id,
+              title: a.services?.name || a.customer_note || "Randevu",
+              customerName: a.customer_name || "Müşteri",
+              customerPhone: a.customer_phone || "",
+              date: dateIso,
+              time: a.appointment_time?.slice(0, 5) || "10:00",
+              type: "treatment",
+              price: "",
+              notes: a.customer_note || "",
+            };
+          });
+          setAppointments(mapped);
+          return;
+        }
       }
+
+      // Fallback
+      setAppointments([]);
     } catch {
       setAppointments([]);
     } finally {
@@ -131,20 +133,20 @@ export default function CalendarPage() {
     showToast("Yeni randevu takvime başarıyla işlendi!");
 
     try {
-      await supabase.from("appointments").insert([
-        {
-          id: newApp.id,
+      await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           customer_name: newName.trim(),
           customer_phone: newPhone.trim(),
           customer_note: newTitle,
+          service_name: newTitle,
           appointment_date: newDate,
           appointment_time: `${newTime}:00`,
-          status: "confirmed",
-          tenant_id: "byerman-id",
-        },
-      ]);
+        }),
+      });
     } catch (err) {
-      console.warn("Takvim veritabanına eklenirken hata:", err);
+      console.warn("Takvim API eklenirken hata:", err);
     }
   };
 

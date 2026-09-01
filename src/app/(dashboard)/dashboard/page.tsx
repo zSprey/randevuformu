@@ -90,13 +90,22 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase
+      const res = await fetch("/api/appointments", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.appointments) {
+          setAppointments(data.appointments);
+          return;
+        }
+      }
+
+      // Fallback to Supabase
+      const { data } = await supabase
         .from("appointments")
         .select("*, services(name, price_text)")
-        .order("appointment_date", { ascending: false })
-        .order("appointment_time", { ascending: true });
+        .order("appointment_date", { ascending: false });
 
-      if (data && !error) {
+      if (data && data.length > 0) {
         setAppointments(data);
       } else {
         setAppointments([]);
@@ -119,10 +128,11 @@ export default function DashboardPage() {
     );
 
     try {
-      await supabase
-        .from("appointments")
-        .update({ status: newStatus })
-        .eq("id", id);
+      await fetch("/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
     } catch (e) {
       console.warn("Durum güncellenirken hata:", e);
     }
@@ -150,11 +160,12 @@ export default function DashboardPage() {
       id: `app_${Date.now()}`,
       customer_name: newCustomerName.trim(),
       customer_phone: newCustomerPhone.trim(),
-      customer_note: "Erman Usta panelinden manuel eklendi.",
+      customer_note: newServiceName || "Saç Kesimi & Yıkama",
+      service_name: newServiceName || "Saç Kesimi & Yıkama",
       appointment_date: newDate,
       appointment_time: `${newTime}:00`,
       status: "confirmed",
-      tenant_id: "byerman-id",
+      services: { name: newServiceName || "Saç Kesimi & Yıkama" },
     };
 
     // UI'ı anında güncelle
@@ -164,11 +175,15 @@ export default function DashboardPage() {
     setNewCustomerPhone("");
     showToast("Yeni randevu takvime başarıyla kaydedildi!");
 
-    // Veritabanına kaydet
+    // Global Store'a kaydet
     try {
-      await supabase.from("appointments").insert([newAppPayload]);
+      await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAppPayload),
+      });
     } catch (err) {
-      console.warn("Veritabanına manuel randevu eklenirken hata:", err);
+      console.warn("Manuel randevu eklenirken hata:", err);
     }
   };
 

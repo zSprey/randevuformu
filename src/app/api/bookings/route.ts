@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { slotLockManager } from "@/lib/engine/lockManager";
 import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
 import { sendDualBarberBookingSms } from "@/lib/sms/smsService";
+import { getStoredAppointments, saveNewAppointment } from "@/lib/storage/appointmentsStore";
 import {
   apiSuccess,
   apiBadRequest,
@@ -27,23 +28,7 @@ const transporter = nodemailer.createTransport({
 // GET: Fetch bookings for a specific event or tenant
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get("eventId");
-    const tenantId = searchParams.get("tenantId");
-
-    let bookings: any[] = [];
-    try {
-      const { data: appData, error: appErr } = await supabase.from("appointments").select("*");
-      if (!appErr && appData) {
-        bookings = appData;
-      } else {
-        const { data: bData } = await supabase.from("bookings").select("*");
-        if (bData) bookings = bData;
-      }
-    } catch {
-      bookings = [];
-    }
-
+    const bookings = await getStoredAppointments();
     return apiSuccess({ bookings: bookings || [] });
   } catch (error: any) {
     return handleApiError(error, "Randevular getirilirken bir hata oluştu.");
@@ -198,53 +183,40 @@ export async function POST(request: Request) {
         maxCapacity: capacity,
       },
       async () => {
-        // 1. Try unified appointments table (production primary)
+        // 1. Always save to persistent Edge Config Appointments Store
+        try {
+          const storedApp = {
+            id: bookingUniqueId,
+            customer_name: user_name,
+            customer_phone: user_phone || "",
+            customer_note: notes || eventTitle || "Saç Kesimi & Yıkama",
+            appointment_date: startTime.toISOString().split("T")[0],
+            appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
+            status: "confirmed" as const,
+            services: { name: notes || eventTitle || "Saç Kesimi & Yıkama" },
+            created_at: new Date().toISOString(),
+          };
+          await saveNewAppointment(storedApp);
+        } catch (err) {
+          console.warn("[Bookings] Error saving to appointmentsStore:", err);
+        }
+
+        // 2. Also attempt Supabase appointments table
         try {
           const appointmentInsertData = {
             customer_name: user_name,
-            customer_email: user_email,
             customer_phone: user_phone || "",
             customer_note: notes || "",
             appointment_date: startTime.toISOString().split("T")[0],
             appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
-            start_utc: startTime.toISOString(),
-            end_utc: endTime.toISOString(),
-            status: "CONFIRMED",
-            meeting_url: meetingDetails.meetingUrl || null,
+            status: "confirmed",
           };
 
-          const { data: insertedApp, error: appError } = await supabase
-            .from("appointments")
-            .insert([appointmentInsertData])
-            .select()
-            .maybeSingle();
-
-          if (!appError && insertedApp) {
-            return {
-              ...bookingPayload,
-              id: insertedApp.id || bookingPayload.id,
-            };
-          }
+          await supabase.from("appointments").insert([appointmentInsertData]);
         } catch (e) {
           console.warn("[Bookings] Appointments table insert skipped:", e);
         }
 
-        // 2. Try bookings table
-        try {
-          const { data: insertedBooking, error: bookingError } = await supabase
-            .from("bookings")
-            .insert([bookingPayload])
-            .select()
-            .maybeSingle();
-
-          if (!bookingError && insertedBooking) {
-            return insertedBooking;
-          }
-        } catch (e) {
-          console.warn("[Bookings] Bookings table insert skipped:", e);
-        }
-
-        // 3. Resilient fallback: Return committed booking payload
         return bookingPayload;
       },
       true // Auto release lock on success since booking is committed
