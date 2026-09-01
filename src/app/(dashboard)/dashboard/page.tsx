@@ -123,6 +123,17 @@ export default function DashboardPage() {
   }, []);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
+    if (newStatus === "cancelled") {
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await fetch(`/api/appointments?id=${id}`, { method: "DELETE" });
+      } catch (e) {
+        console.warn("Randevu silinirken hata:", e);
+      }
+      showToast("Randevu başarıyla silindi.");
+      return;
+    }
+
     setAppointments((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
     );
@@ -142,8 +153,6 @@ export default function DashboardPage() {
         ? "Koltukta / Tıraşta"
         : newStatus === "completed"
         ? "Tamamlandı"
-        : newStatus === "cancelled"
-        ? "İptal Edildi"
         : "Onaylandı";
 
     showToast(`Randevu durumu güncellendi: ${statusText}`);

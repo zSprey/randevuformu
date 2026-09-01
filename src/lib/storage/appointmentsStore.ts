@@ -165,3 +165,38 @@ export async function updateAppointmentStatus(id: string, newStatus: StoredAppoi
 
   return true;
 }
+
+// 4. DELETE APPOINTMENT
+export async function deleteAppointment(id: string): Promise<boolean> {
+  const current = await getStoredAppointments();
+  const updated = current.filter((a) => a.id !== id);
+
+  try {
+    await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${VERCEL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            operation: "upsert",
+            key: "byerman_appointments",
+            value: updated,
+          },
+        ],
+      }),
+    });
+  } catch (e) {
+    console.warn("[EdgeConfig] Delete error:", e);
+  }
+
+  try {
+    await supabase.from("appointments").delete().eq("id", id);
+  } catch {
+    // Ignore
+  }
+
+  return true;
+}

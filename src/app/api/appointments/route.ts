@@ -3,6 +3,7 @@ import {
   getStoredAppointments,
   saveNewAppointment,
   updateAppointmentStatus,
+  deleteAppointment,
   StoredAppointment,
 } from "@/lib/storage/appointmentsStore";
 
@@ -57,6 +58,21 @@ export async function PATCH(req: NextRequest) {
 
     await updateAppointmentStatus(id, status);
     return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ success: false, error: "ID parametresi zorunludur." }, { status: 400 });
+    }
+
+    await deleteAppointment(id);
+    return NextResponse.json({ success: true, message: "Randevu başarıyla silindi." });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
