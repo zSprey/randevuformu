@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, ArrowLeft, Loader2, Sparkles, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import BookingWidget from "@/components/booking/BookingWidget";
+import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 
@@ -40,58 +41,50 @@ export default function BusinessBookingPage({ params }: PageProps) {
             setIsDemo(false);
             setBusiness({
               id: "byerman-id",
-              name: "By Erman Hair Studio & Men Grooming",
+              name: "Erman Usta - Erkek Berberi",
               slug: slug,
-              category: "VIP Kuaför & Saç Tasarım",
-              description: "Kişiye özel saç kesimi, sakal tasarımı, keratin ve cilt bakımı. Her 30 dakikada bir açık randevu imkanı.",
+              category: "Erkek Berberi",
+              description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
               services: [
                 {
-                  id: "ek-1",
-                  name: "Saç Kesimi, Yıkama & Şekillendirme",
+                  id: "srv-sac",
+                  name: "Saç Kesimi & Yıkama",
                   duration_minutes: 30,
                   price_text: "₺350",
                   price: 350,
-                  description: "Yüz tipine özel modern kesim, saç yıkama ve fön işlemi.",
+                  description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
                 },
                 {
-                  id: "ek-2",
-                  name: "Sakal Tıraşı & Buharlı Sıcak Havlu",
+                  id: "srv-sakal",
+                  name: "Sakal Tıraşı & Sıcak Havlu",
                   duration_minutes: 30,
                   price_text: "₺200",
                   price: 200,
-                  description: "Ustura ile sakal hattı tasarımı, buharlı yumuşatma ve sıcak havlu kompresi.",
+                  description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
                 },
                 {
-                  id: "ek-3",
-                  name: "Saç & Sakal VIP Bakım Paketi",
+                  id: "srv-komple",
+                  name: "Saç + Sakal (Komple Tıraş)",
                   duration_minutes: 60,
                   price_text: "₺500",
                   price: 500,
-                  description: "Saç kesimi, sakal tıraşı, saç yıkama, fön ve canlandırıcı yüz maskesi.",
+                  description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
                 },
                 {
-                  id: "ek-4",
-                  name: "Saç Boyama & Beyaz Kamuflaj",
+                  id: "srv-cocuk",
+                  name: "Çocuk Saç Kesimi",
                   duration_minutes: 30,
-                  price_text: "₺600",
-                  price: 600,
-                  description: "Doğal görünümü koruyan tonlama ve beyaz kapatma işlemi.",
+                  price_text: "₺250",
+                  price: 250,
+                  description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
                 },
                 {
-                  id: "ek-5",
-                  name: "Keratin Saç Botoksu & Bakım Maskesi",
-                  duration_minutes: 60,
-                  price_text: "₺850",
-                  price: 850,
-                  description: "Yıpranmış telleri onaran, kabarmayı önleyen keratin terapisi.",
-                },
-                {
-                  id: "ek-6",
-                  name: "Cilt Bakımı, Kil Maskesi & Ozon Buharı",
-                  duration_minutes: 30,
-                  price_text: "₺300",
-                  price: 300,
-                  description: "Gözenek temizleme, siyah nokta arındırma ve nemlendirici masaj.",
+                  id: "srv-yikama",
+                  name: "Saç Yıkama & Fön",
+                  duration_minutes: 20,
+                  price_text: "₺150",
+                  price: 150,
+                  description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
                 },
               ],
             });
@@ -147,58 +140,50 @@ export default function BusinessBookingPage({ params }: PageProps) {
           setIsDemo(false);
           setBusiness({
             id: "byerman-id",
-            name: "By Erman Hair Studio & Men Grooming",
+            name: "Erman Usta - Erkek Berberi",
             slug: slug,
-            category: "VIP Kuaför & Saç Tasarım",
-            description: "Kişiye özel saç kesimi, sakal tasarımı, keratin ve cilt bakımı. Her 30 dakikada bir açık randevu imkanı.",
+            category: "Erkek Berberi",
+            description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
             services: [
               {
-                id: "ek-1",
-                name: "Saç Kesimi, Yıkama & Şekillendirme",
+                id: "srv-sac",
+                name: "Saç Kesimi & Yıkama",
                 duration_minutes: 30,
                 price_text: "₺350",
                 price: 350,
-                description: "Yüz tipine özel modern kesim, saç yıkama ve fön işlemi.",
+                description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
               },
               {
-                id: "ek-2",
-                name: "Sakal Tıraşı & Buharlı Sıcak Havlu",
+                id: "srv-sakal",
+                name: "Sakal Tıraşı & Sıcak Havlu",
                 duration_minutes: 30,
                 price_text: "₺200",
                 price: 200,
-                description: "Ustura ile sakal hattı tasarımı, buharlı yumuşatma ve sıcak havlu kompresi.",
+                description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
               },
               {
-                id: "ek-3",
-                name: "Saç & Sakal VIP Bakım Paketi",
+                id: "srv-komple",
+                name: "Saç + Sakal (Komple Tıraş)",
                 duration_minutes: 60,
                 price_text: "₺500",
                 price: 500,
-                description: "Saç kesimi, sakal tıraşı, saç yıkama, fön ve canlandırıcı yüz maskesi.",
+                description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
               },
               {
-                id: "ek-4",
-                name: "Saç Boyama & Beyaz Kamuflaj",
+                id: "srv-cocuk",
+                name: "Çocuk Saç Kesimi",
                 duration_minutes: 30,
-                price_text: "₺600",
-                price: 600,
-                description: "Doğal görünümü koruyan tonlama ve beyaz kapatma işlemi.",
+                price_text: "₺250",
+                price: 250,
+                description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
               },
               {
-                id: "ek-5",
-                name: "Keratin Saç Botoksu & Bakım Maskesi",
-                duration_minutes: 60,
-                price_text: "₺850",
-                price: 850,
-                description: "Yıpranmış telleri onaran, kabarmayı önleyen keratin terapisi.",
-              },
-              {
-                id: "ek-6",
-                name: "Cilt Bakımı, Kil Maskesi & Ozon Buharı",
-                duration_minutes: 30,
-                price_text: "₺300",
-                price: 300,
-                description: "Gözenek temizleme, siyah nokta arındırma ve nemlendirici masaj.",
+                id: "srv-yikama",
+                name: "Saç Yıkama & Fön",
+                duration_minutes: 20,
+                price_text: "₺150",
+                price: 150,
+                description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
               },
             ],
           });
@@ -253,7 +238,12 @@ export default function BusinessBookingPage({ params }: PageProps) {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto w-full">
-        {business?.services && business.services.length > 0 ? (
+        {slug === "byerman" || slug === "ermankuafor" ? (
+          <ErmanBarberWidget
+            businessSlug={slug}
+            tenantId={business?.id || "byerman-id"}
+          />
+        ) : business?.services && business.services.length > 0 ? (
           <BookingWidget
             businessName={business.name}
             businessSlug={business.slug}

@@ -50,51 +50,51 @@ const fallbackAppointments = [
     id: "app-1",
     customer_name: "Ahmet Yılmaz",
     customer_phone: "0532 456 78 90",
-    customer_note: "Modern saç kesimi ve fön",
+    customer_note: "Yanlar kısa, ense düz makine kesimi",
     appointment_date: new Date().toISOString().split("T")[0],
     appointment_time: "10:00:00",
-    status: "confirmed",
-    services: { name: "Saç Kesimi, Yıkama & Şekillendirme", price_text: "₺350" },
+    status: "seated",
+    services: { name: "Saç Kesimi & Yıkama", price_text: "₺350" },
   },
   {
     id: "app-2",
     customer_name: "Burak Demir",
     customer_phone: "0544 123 45 67",
-    customer_note: "Ustura sakal hattı ve buharlı sıcak havlu",
+    customer_note: "Ustura sakal ve sıcak havlu",
     appointment_date: new Date().toISOString().split("T")[0],
     appointment_time: "10:30:00",
     status: "confirmed",
-    services: { name: "Sakal Tıraşı & Buharlı Sıcak Havlu", price_text: "₺200" },
+    services: { name: "Sakal Tıraşı & Sıcak Havlu", price_text: "₺200" },
   },
   {
     id: "app-3",
     customer_name: "Caner Öztürk",
     customer_phone: "0505 987 65 43",
-    customer_note: "Komple VIP saç & sakal bakım",
+    customer_note: "Komple saç + sakal tıraşı",
     appointment_date: new Date().toISOString().split("T")[0],
     appointment_time: "11:00:00",
     status: "confirmed",
-    services: { name: "Saç & Sakal VIP Bakım Paketi", price_text: "₺500" },
+    services: { name: "Saç + Sakal (Komple Tıraş)", price_text: "₺500" },
   },
   {
     id: "app-4",
-    customer_name: "Mert Kaya",
+    customer_name: "Mehmet Amca",
     customer_phone: "0533 555 44 33",
-    customer_note: "Doğal tonlama ve beyaz kamuflaj",
+    customer_note: "Torunu getirecek, çocuk saç tıraşı",
     appointment_date: new Date().toISOString().split("T")[0],
     appointment_time: "11:30:00",
     status: "confirmed",
-    services: { name: "Saç Boyama & Beyaz Kamuflaj", price_text: "₺600" },
+    services: { name: "Çocuk Saç Kesimi", price_text: "₺250" },
   },
   {
     id: "app-5",
-    customer_name: "Serkan Aydın",
+    customer_name: "Hasan Çelik",
     customer_phone: "0555 333 22 11",
-    customer_note: "Gözenek temizleme ve ozon buharı",
+    customer_note: "Yıkama ve fön işlemi",
     appointment_date: new Date().toISOString().split("T")[0],
     appointment_time: "12:00:00",
-    status: "confirmed",
-    services: { name: "Cilt Bakımı, Kil Maskesi & Ozon Buharı", price_text: "₺300" },
+    status: "completed",
+    services: { name: "Saç Yıkama & Fön", price_text: "₺150" },
   },
 ];
 
@@ -456,47 +456,65 @@ export default function DashboardPage() {
                       <div className="text-[11px] text-slate-400">{app.customer_phone}</div>
                     </div>
                   </div>
-                  {app.status === "confirmed" ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                      <CheckCircle2 className="w-3 h-3" /> Onaylandı
+                  {app.status === "seated" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-700 animate-pulse">
+                      🪑 Koltukta / Tıraşta
                     </span>
-                  ) : app.status === "pending" ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-800 animate-pulse">
-                      <Clock className="w-3 h-3" /> Beklemede
+                  ) : app.status === "completed" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Tamamlandı
+                    </span>
+                  ) : app.status === "cancelled" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-950/80 text-red-300 border border-red-700">
+                      <XCircle className="w-3.5 h-3.5" /> İptal Edildi
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800">
-                      <XCircle className="w-3 h-3" /> İptal
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-950/80 text-amber-300 border border-amber-700">
+                      <Clock className="w-3.5 h-3.5" /> Bekleniyor
                     </span>
                   )}
                 </div>
 
                 <div className="flex justify-between text-xs pt-1 border-t border-slate-900">
-                  <span className="text-slate-400">Hizmet:</span>
-                  <span className="font-semibold text-slate-200">{app.services?.name || "Ön Muayene"}</span>
+                  <span className="text-slate-400">Tıraş Hizmeti:</span>
+                  <span className="font-semibold text-slate-200">{app.services?.name || "Saç Kesimi"}</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-400">Tarih & Saat:</span>
                   <span className="font-bold text-indigo-400">{app.appointment_date} {app.appointment_time?.slice(0, 5)}</span>
                 </div>
+                {app.customer_note && (
+                  <div className="text-[11px] text-amber-200/90 bg-amber-950/30 p-2 rounded-xl border border-amber-800/30">
+                    📝 Not: {app.customer_note}
+                  </div>
+                )}
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-900">
-                  {app.status !== "confirmed" && (
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-900 flex-wrap">
+                  {app.status !== "seated" && app.status !== "completed" && app.status !== "cancelled" && (
                     <button
                       type="button"
-                      onClick={() => handleUpdateStatus(app.id, "confirmed")}
-                      className="px-3 py-1.5 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-500/30 text-xs font-semibold"
+                      onClick={() => handleUpdateStatus(app.id, "seated")}
+                      className="px-3 py-1.5 bg-blue-600/20 text-blue-300 hover:bg-blue-600 hover:text-white rounded-xl border border-blue-500/30 text-xs font-bold"
                     >
-                      Onayla
+                      🪑 Koltukta
+                    </button>
+                  )}
+                  {app.status !== "completed" && app.status !== "cancelled" && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(app.id, "completed")}
+                      className="px-3 py-1.5 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-500/30 text-xs font-bold"
+                    >
+                      ✓ Tamamlandı
                     </button>
                   )}
                   {app.status !== "cancelled" && (
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(app.id, "cancelled")}
-                      className="px-3 py-1.5 bg-red-600/20 text-red-300 hover:bg-red-600 hover:text-white rounded-lg border border-red-500/30 text-xs font-semibold"
+                      className="px-2.5 py-1.5 bg-red-600/20 text-red-300 hover:bg-red-600 hover:text-white rounded-xl border border-red-500/30 text-xs font-bold"
                     >
-                      İptal Et
+                      ✕ İptal
                     </button>
                   )}
                 </div>
@@ -551,37 +569,50 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-5 py-4 text-slate-400 font-mono">{app.customer_phone}</td>
                     <td className="px-5 py-4">
-                      {app.status === "confirmed" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" /> Onaylandı
+                      {app.status === "seated" ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-950/80 text-blue-300 border border-blue-700 animate-pulse">
+                          🪑 Koltukta / Tıraşta
                         </span>
-                      ) : app.status === "pending" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-800">
-                          <Clock className="w-3 h-3" /> Beklemede
+                      ) : app.status === "completed" ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Tamamlandı
+                        </span>
+                      ) : app.status === "cancelled" ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-950/80 text-red-300 border border-red-700">
+                          <XCircle className="w-3.5 h-3.5" /> İptal Edildi
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800">
-                          <XCircle className="w-3 h-3" /> İptal
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-950/80 text-amber-300 border border-amber-700">
+                          <Clock className="w-3.5 h-3.5" /> Bekleniyor
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right space-x-2">
-                      {app.status !== "confirmed" && (
+                    <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                      {app.status !== "seated" && app.status !== "completed" && app.status !== "cancelled" && (
                         <button
                           type="button"
-                          onClick={() => handleUpdateStatus(app.id, "confirmed")}
-                          className="px-2.5 py-1 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-500/30 text-[11px] font-semibold transition-colors"
+                          onClick={() => handleUpdateStatus(app.id, "seated")}
+                          className="px-3 py-1.5 bg-blue-600/20 text-blue-300 hover:bg-blue-600 hover:text-white rounded-xl border border-blue-500/30 text-xs font-bold transition-all shadow-sm"
                         >
-                          Onayla
+                          🪑 Geldi / Koltukta
+                        </button>
+                      )}
+                      {app.status !== "completed" && app.status !== "cancelled" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateStatus(app.id, "completed")}
+                          className="px-3 py-1.5 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                        >
+                          ✓ Tamamlandı
                         </button>
                       )}
                       {app.status !== "cancelled" && (
                         <button
                           type="button"
                           onClick={() => handleUpdateStatus(app.id, "cancelled")}
-                          className="px-2.5 py-1 bg-red-600/20 text-red-300 hover:bg-red-600 hover:text-white rounded-lg border border-red-500/30 text-[11px] font-semibold transition-colors"
+                          className="px-2.5 py-1.5 bg-red-600/20 text-red-300 hover:bg-red-600 hover:text-white rounded-xl border border-red-500/30 text-xs font-bold transition-all"
                         >
-                          İptal Et
+                          ✕ İptal
                         </button>
                       )}
                     </td>

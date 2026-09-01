@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { Calendar, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import BookingWidget from "@/components/booking/BookingWidget";
+import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 
 interface OrnekPageProps {
@@ -128,13 +129,17 @@ export default async function OrnekDetailPage({ params }: OrnekPageProps) {
       </div>
 
       <main className="flex-1 py-10 px-4 flex items-center justify-center">
-        <BookingWidget
-          businessName={businessName}
-          businessSlug={slug}
-          category={category}
-          services={defaultServices}
-          tenantId="demo-tenant"
-        />
+        {isErman ? (
+          <ErmanBarberWidget businessSlug={slug} tenantId="byerman-id" />
+        ) : (
+          <BookingWidget
+            businessName={businessName}
+            businessSlug={slug}
+            category={category}
+            services={defaultServices}
+            tenantId="demo-tenant"
+          />
+        )}
       </main>
 
       <footer className="py-6 text-center text-xs text-slate-500 border-t border-white/5">
