@@ -27,8 +27,9 @@ export async function getStoredAppointments(): Promise<StoredAppointment[]> {
     });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data?.byerman_appointments)) {
-        edgeApps = data.byerman_appointments;
+      const list = data?.items?.byerman_appointments || data?.byerman_appointments;
+      if (Array.isArray(list)) {
+        edgeApps = list;
       }
     }
   } catch (e) {
