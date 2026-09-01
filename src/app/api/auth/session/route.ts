@@ -28,11 +28,15 @@ export async function POST(req: NextRequest) {
     const isRandevuFormuDomain = host.includes("randevuformu.com");
     const cookieDomain = isRandevuFormuDomain ? ".randevuformu.com" : undefined;
 
+    const userTenant = isByErman
+      ? "byerman"
+      : (body.tenant || body.businessName || identifier || "default").replace(/[^a-z0-9_-]/gi, "").toLowerCase() || "default";
+
     const res = NextResponse.json({
       success: true,
       user: {
         username: isByErman ? "byerman" : identifier || "user",
-        tenant: isByErman ? "byerman" : "default",
+        tenant: userTenant,
       },
     });
 
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
     res.cookies.set("rf_session", "true", cookieOptions);
     res.cookies.set("demo_session", "true", cookieOptions);
     res.cookies.set("rf_user", isByErman ? "byerman" : identifier || "user", cookieOptions);
-    res.cookies.set("rf_tenant", isByErman ? "byerman" : "default", cookieOptions);
+    res.cookies.set("rf_tenant", userTenant, cookieOptions);
 
     return res;
   } catch (error: any) {

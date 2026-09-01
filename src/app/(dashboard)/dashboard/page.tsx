@@ -56,8 +56,8 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // By Erman Özel Modu (Subdomain, localStorage veya login cookie kontrolü)
-  const [isErmanTenant, setIsErmanTenant] = useState(true);
+  // By Erman Özel Modu (Yalnızca By Erman Kuaför için aktiftir, genel kullanıcılar için kapalıdır)
+  const [isErmanTenant, setIsErmanTenant] = useState(false);
   const [filterDate, setFilterDate] = useState<"today" | "tomorrow" | "all">("today");
 
   // Modal State
@@ -78,11 +78,8 @@ export default function DashboardPage() {
       const isErman =
         window.location.hostname.includes("byerman") ||
         localStorage.getItem("rf_tenant") === "byerman" ||
-        localStorage.getItem("rf_tenant_slug") === "byerman" ||
-        document.cookie.includes("rf_tenant=byerman") ||
-        document.cookie.includes("rf_user=byerman");
+        localStorage.getItem("rf_user") === "byerman";
 
-      // Eğer By Erman ortamındaysa veya genel kullanıcı berber modunu istiyorsa
       setIsErmanTenant(isErman);
     }
   }, []);

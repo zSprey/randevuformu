@@ -206,7 +206,7 @@ export default function Home() {
               Giriş Yap
             </Link>
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="text-xs font-semibold bg-white text-slate-950 px-3.5 py-2 rounded-xl hover:bg-slate-200 transition-colors shadow-sm"
             >
               Ücretsiz Başla
@@ -280,7 +280,7 @@ export default function Home() {
               </nav>
               <div className="pt-2 border-t border-slate-800">
                 <Link
-                  href="/login"
+                  href="/login?mode=signup"
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full block py-2.5 rounded-xl bg-white text-slate-950 text-xs font-semibold text-center"
                 >
@@ -293,31 +293,29 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        {/* 3. Spacious, Breathable Hero Section */}
-        <section className="pt-16 sm:pt-24 pb-16 px-4 sm:px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Minimalist Subdued Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-              <span>Tek tıkla randevu, sıfır telefon trafiği</span>
-            </div>
+        {/* 3. Hero Section (Radical Minimalist & Value-Driven) */}
+        <section className="pt-24 pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium text-indigo-400 mb-6 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Yeni Nesil Randevu & Rezervasyon Platformu
+          </div>
 
-            {/* Clear Primary Headline */}
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.12] mb-6">
-              Telefon trafiğini sonlandırın. <br />
-              <span className="text-slate-400">Randevularınızı tek ekrandan yönetin.</span>
-            </h1>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.15]">
+            Müşterileriniz Kolayca Randevu Alsın,{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-300 to-indigo-200">
+              İşiniz Büyüsün.
+            </span>
+          </h1>
 
-            {/* Subtitle */}
-            <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto mb-8 font-normal leading-relaxed">
-              Web sitenizden, Instagram&apos;dan veya WhatsApp&apos;tan 7/24 rezervasyon kabul edin.
-              Takviminiz, SMS teyitleriniz ve danışan kayıtlarınız sıfır çakışmayla otomatik senkronize kalsın.
-            </p>
+          <p className="mt-6 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
+            Telefon trafiğine son verin. Danışanlarınıza veya müşterilerinize sadece 30 saniyede randevu alabilecekleri şık, güvenli ve sade bir deneyim sunun.
+          </p>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Quick Action CTA */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
               <Link
-                href="/login"
+                href="/login?mode=signup"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-slate-950 px-6 py-3 rounded-xl font-medium text-sm hover:bg-slate-200 transition-colors shadow-sm"
               >
                 Ücretsiz Hesap Aç

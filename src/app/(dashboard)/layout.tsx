@@ -50,15 +50,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
-  const [tenantName, setTenantName] = useState("By Erman Hair Studio");
-  const [tenantSlug, setTenantSlug] = useState("byerman");
+  const [tenantName, setTenantName] = useState("İşletme Yönetim Paneli");
+  const [tenantSlug, setTenantSlug] = useState("dashboard");
 
   useEffect(() => {
     try {
-      const storedSlug = localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant");
-      const storedName = localStorage.getItem("rf_tenant_name");
-      if (storedSlug) setTenantSlug(storedSlug);
-      if (storedName) setTenantName(storedName);
+      const isByErman =
+        typeof window !== "undefined" &&
+        (window.location.hostname.includes("byerman") ||
+          localStorage.getItem("rf_tenant") === "byerman" ||
+          localStorage.getItem("rf_user") === "byerman");
+
+      if (isByErman) {
+        setTenantSlug("byerman");
+        setTenantName("By Erman Hair Studio");
+      } else {
+        const storedName = localStorage.getItem("rf_tenant_name");
+        const storedSlug = localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant");
+        if (storedName && storedName !== "By Erman Hair Studio") setTenantName(storedName);
+        if (storedSlug && storedSlug !== "byerman") setTenantSlug(storedSlug);
+      }
     } catch {}
   }, []);
 
