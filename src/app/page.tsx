@@ -17,7 +17,6 @@ import {
   Scale,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import PlatformComparison from "@/components/landing/PlatformComparison";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -565,9 +564,6 @@ export default function Home() {
             </Link>
           </div>
         </section>
-
-        {/* 8. Enterprise Platform Comparison Matrix */}
-        <PlatformComparison />
 
         {/* 9. FAQ Accordion */}
         <section className="py-16 px-4 sm:px-6 max-w-3xl mx-auto border-t border-slate-800">

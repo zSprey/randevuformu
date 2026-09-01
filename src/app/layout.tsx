@@ -8,43 +8,57 @@ export const viewport: Viewport = {
   themeColor: '#4f46e5',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1, // Mobil cihazlarda input zoom'unu engeller (formlar için iyi bir UX)
+  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://randevuformu.com'),
   title: {
-    default: "randevuformu.com | Türkiye'nin En Kolay Randevu Sistemi",
+    default: "randevuformu.com | Yeni Nesil Online Randevu & Rezervasyon Sistemi",
     template: "%s | randevuformu.com"
   },
-  description: "Diş hekimi, güzellik salonu, psikolog veya avukatlar için WhatsApp bildirimli, SMS hatırlatmalı ücretsiz online randevu yönetim sistemi ve randevu formu oluşturucu.",
-  keywords: ["randevu sistemi", "online randevu", "randevu formu", "doktor randevu programı", "güzellik salonu randevu", "randevu takip yazılımı", "ücretsiz randevu scripti", "whatsapp randevu sistemi"],
+  description: "İşletmeniz için 30 saniyede online randevu sistemi kurun. Berber, kuaför, güzellik salonu, diş hekimi, diyetisyen ve klinikler için WhatsApp ve SMS onaylı randevu formu platformu.",
+  keywords: [
+    "randevu sistemi",
+    "online randevu",
+    "randevu formu",
+    "kuaför randevu programı",
+    "berber randevu sistemi",
+    "doktor randevu programı",
+    "güzellik salonu randevu sistemi",
+    "diyetisyen randevu yazılımı",
+    "ücretsiz randevu formu",
+    "whatsapp randevu sistemi",
+    "randevuformu"
+  ],
   authors: [{ name: "randevuformu.com" }],
   creator: "randevuformu.com",
   publisher: "randevuformu.com",
+  applicationName: "randevuformu.com",
+  category: "BusinessApplication",
   alternates: {
-    canonical: '/',
+    canonical: 'https://randevuformu.com',
   },
   openGraph: {
     type: "website",
     locale: "tr_TR",
     url: "https://randevuformu.com",
-    title: "randevuformu.com | 30 Saniyede Online Randevu Sistemi Kurun",
-    description: "İşletmeniz için telefon trafiğini bitirin. Müşterileriniz 7/24 randevu alsın, sistem anında WhatsApp ile onaylasın.",
+    title: "randevuformu.com | Yeni Nesil Online Randevu & Rezervasyon Sistemi",
+    description: "İşletmeniz için 30 saniyede online randevu sistemi kurun. WhatsApp ve SMS onaylı randevu formu platformu.",
     siteName: "randevuformu.com",
     images: [
       {
-        url: "/og-image.jpg", // Daha sonra public klasörüne bir OG görseli eklenecek
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "randevuformu.com Önizleme",
+        alt: "randevuformu.com - Online Randevu Sistemi",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "randevuformu.com | Türkiye'nin En Kolay Randevu Sistemi",
-    description: "İşletmeniz için 30 saniyede online randevu sistemi kurun.",
+    title: "randevuformu.com | Yeni Nesil Online Randevu & Rezervasyon Sistemi",
+    description: "İşletmeniz için 30 saniyede online randevu sistemi kurun. WhatsApp ve SMS onaylı randevu formu platformu.",
     creator: "@randevuformu",
   },
   robots: {
@@ -58,6 +72,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  other: {
+    'revisit-after': '1 days',
+    'geo.region': 'TR',
+  },
 };
 
 export default function RootLayout({
@@ -65,8 +83,45 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://randevuformu.com/#webapp",
+        "name": "randevuformu.com",
+        "url": "https://randevuformu.com",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "description": "İşletmeniz için 30 saniyede online randevu sistemi kurun. WhatsApp ve SMS onaylı randevu formu platformu.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "TRY",
+          "availability": "https://schema.org/InStock"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://randevuformu.com/#organization",
+        "name": "randevuformu.com",
+        "url": "https://randevuformu.com",
+        "logo": "https://randevuformu.com/og-image.jpg",
+        "description": "Türkiye'nin en kolay online randevu ve rezervasyon yönetim yazılımı.",
+        "sameAs": []
+      }
+    ]
+  };
+
   return (
     <html lang="tr">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${inter.className} bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white`}>
         {children}
       </body>
