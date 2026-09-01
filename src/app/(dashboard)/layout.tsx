@@ -83,6 +83,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
+  const [tenantName, setTenantName] = useState("By Erman Hair Studio");
+  const [tenantSlug, setTenantSlug] = useState("byerman");
+
+  useEffect(() => {
+    try {
+      const storedSlug = localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant");
+      const storedName = localStorage.getItem("rf_tenant_name");
+      if (storedSlug) setTenantSlug(storedSlug);
+      if (storedName) setTenantName(storedName);
+    } catch {}
+  }, []);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
@@ -191,11 +202,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Hızlı Canlı Önizleme
             </p>
             <Link
-              href="/ornek/dr-ahmet"
+              href={`/${tenantSlug}`}
               target="_blank"
               className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-indigo-300 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
             >
-              <span>Örnek Randevu Sayfası</span>
+              <span>Canlı Randevu Sayfanız (/{tenantSlug})</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 
@@ -373,9 +384,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setShowProfileMenu(!showProfileMenu);
                   setShowNotifications(false);
                 }}
-                className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-sm flex items-center justify-center border border-indigo-400/40 shadow-lg shadow-indigo-600/25 hover:scale-105 transition-transform"
+                className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center border border-indigo-400/40 shadow-lg shadow-indigo-600/25 hover:scale-105 transition-transform uppercase"
               >
-                RF
+                {tenantName ? tenantName.slice(0, 2) : "BE"}
               </button>
 
               <AnimatePresence>
@@ -388,10 +399,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-2 z-50"
                   >
                     <div className="p-3 border-b border-slate-800">
-                      <p className="font-bold text-xs text-white">İşletme Hesabı</p>
-                      <p className="text-[11px] text-slate-400">randevuformuu@gmail.com</p>
-                      <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30">
-                        Pro Aktif
+                      <p className="font-bold text-xs text-white">{tenantName}</p>
+                      <p className="text-[11px] text-slate-400">/{tenantSlug}</p>
+                      <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30">
+                        Canlı İşletme Hesabı
                       </span>
                     </div>
 

@@ -52,26 +52,28 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // 3. Define standard default working hours (Monday-Saturday: 09:00-18:00, Sunday off)
+    // 3. Define standard working hours (Erman Kuaför: 09:00-20:00 every 30 mins)
     const dateParts = date.split("-").map(Number);
     const targetDateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0));
     const dayOfWeek = targetDateObj.getUTCDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+    const isErmanKuafor = slug === "byerman" || slug === "ermankuafor";
+
     const workingHours = {
       dayOfWeek,
       startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:30",
-      breakEndTime: "13:30",
-      isOffDay: dayOfWeek === 0, // Sunday off
+      endTime: isErmanKuafor ? "20:00" : "18:00",
+      breakStartTime: isErmanKuafor ? undefined : "12:30",
+      breakEndTime: isErmanKuafor ? undefined : "13:30",
+      isOffDay: isErmanKuafor ? false : dayOfWeek === 0, // Erman Kuaför open every day
     };
 
     // 4. Calculate available slots
     const slots = calculateAvailableSlots({
       date,
       durationMinutes: duration,
-      bufferTimeBeforeMinutes: 5,
-      bufferTimeAfterMinutes: 5,
+      bufferTimeBeforeMinutes: isErmanKuafor ? 0 : 5,
+      bufferTimeAfterMinutes: isErmanKuafor ? 0 : 5,
       workingHours,
       existingBookings,
       slotIntervalMinutes: 30,

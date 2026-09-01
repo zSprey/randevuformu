@@ -30,9 +30,64 @@ export default function LoginPage() {
     setSuccessMsg("");
 
     try {
+      const cleanIdentifier = email.trim().toLowerCase();
+
+      // 1. Special Tenant Auth: By Erman & Erman Kuaför
+      if (
+        (cleanIdentifier === "byerman" ||
+         cleanIdentifier === "byerman@randevuformu.com" ||
+         cleanIdentifier === "byerman@gmail.com")
+      ) {
+        if (password === "byerman123" || password === "ermankuafor123") {
+          setAuthCookie();
+          document.cookie = "rf_user=byerman; path=/; max-age=86400; SameSite=Lax";
+          document.cookie = "rf_tenant=byerman; path=/; max-age=86400; SameSite=Lax";
+          try {
+            localStorage.setItem("rf_tenant", "byerman");
+            localStorage.setItem("rf_tenant_name", "By Erman Hair Studio");
+            localStorage.setItem("rf_tenant_slug", "byerman");
+          } catch {}
+          setSuccessMsg("Giriş başarılı! By Erman Hair Studio yönetim paneline yönlendiriliyorsunuz...");
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 800);
+          return;
+        } else {
+          setErrorMsg("Şifre hatalı! Lütfen kontrol edip tekrar deneyin.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (
+        (cleanIdentifier === "ermankuafor" ||
+         cleanIdentifier === "ermankuafor@randevuformu.com" ||
+         cleanIdentifier === "ermankuafor@gmail.com")
+      ) {
+        if (password === "ermankuafor123" || password === "byerman123") {
+          setAuthCookie();
+          document.cookie = "rf_user=byerman; path=/; max-age=86400; SameSite=Lax";
+          document.cookie = "rf_tenant=byerman; path=/; max-age=86400; SameSite=Lax";
+          try {
+            localStorage.setItem("rf_tenant", "byerman");
+            localStorage.setItem("rf_tenant_name", "By Erman Hair Studio");
+            localStorage.setItem("rf_tenant_slug", "byerman");
+          } catch {}
+          setSuccessMsg("Giriş başarılı! By Erman Hair Studio yönetim paneline yönlendiriliyorsunuz...");
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 800);
+          return;
+        } else {
+          setErrorMsg("Şifre hatalı! Lütfen kontrol edip tekrar deneyin.");
+          setLoading(false);
+          return;
+        }
+      }
+
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@randevuformu.com`,
           password,
         });
 
@@ -42,7 +97,7 @@ export default function LoginPage() {
               "E-posta adresiniz henüz onaylanmamış. Gelen kutunuzdaki onay linkine tıklayabilir veya aşağıdaki 'Tek Tıkla Giriş Yap' butonuyla anında devam edebilirsiniz."
             );
           } else if (error.message.includes("Invalid login credentials")) {
-            setErrorMsg("E-posta veya şifre hatalı. Lütfen kontrol edip tekrar deneyin.");
+            setErrorMsg("Kullanıcı adı/e-posta veya şifre hatalı. Lütfen kontrol edip tekrar deneyin.");
           } else {
             setErrorMsg(error.message);
           }
@@ -55,7 +110,7 @@ export default function LoginPage() {
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@randevuformu.com`,
           password,
           options: {
             data: {
@@ -187,15 +242,15 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1 ml-1">E-posta Adresi</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1 ml-1">Kullanıcı Adı veya E-posta</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="doktor@klinik.com"
+                placeholder="byerman veya e-posta adresi"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-all"
               />
             </div>

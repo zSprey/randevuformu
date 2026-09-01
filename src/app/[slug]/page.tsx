@@ -36,7 +36,66 @@ export default function BusinessBookingPage({ params }: PageProps) {
           // Check if this matches a known showcase demo slug
           const matchedSector = Object.values(SEKTOR_DATA).find((s) => s.exampleSlug === slug);
 
-          if (matchedSector || slug === "dr-ahmet" || slug === "studio-nova") {
+          if (slug === "byerman" || slug === "ermankuafor") {
+            setIsDemo(false);
+            setBusiness({
+              id: "byerman-id",
+              name: "By Erman Hair Studio & Men Grooming",
+              slug: slug,
+              category: "VIP Kuaför & Saç Tasarım",
+              description: "Kişiye özel saç kesimi, sakal tasarımı, keratin ve cilt bakımı. Her 30 dakikada bir açık randevu imkanı.",
+              services: [
+                {
+                  id: "ek-1",
+                  name: "Saç Kesimi, Yıkama & Şekillendirme",
+                  duration_minutes: 30,
+                  price_text: "₺350",
+                  price: 350,
+                  description: "Yüz tipine özel modern kesim, saç yıkama ve fön işlemi.",
+                },
+                {
+                  id: "ek-2",
+                  name: "Sakal Tıraşı & Buharlı Sıcak Havlu",
+                  duration_minutes: 30,
+                  price_text: "₺200",
+                  price: 200,
+                  description: "Ustura ile sakal hattı tasarımı, buharlı yumuşatma ve sıcak havlu kompresi.",
+                },
+                {
+                  id: "ek-3",
+                  name: "Saç & Sakal VIP Bakım Paketi",
+                  duration_minutes: 60,
+                  price_text: "₺500",
+                  price: 500,
+                  description: "Saç kesimi, sakal tıraşı, saç yıkama, fön ve canlandırıcı yüz maskesi.",
+                },
+                {
+                  id: "ek-4",
+                  name: "Saç Boyama & Beyaz Kamuflaj",
+                  duration_minutes: 30,
+                  price_text: "₺600",
+                  price: 600,
+                  description: "Doğal görünümü koruyan tonlama ve beyaz kapatma işlemi.",
+                },
+                {
+                  id: "ek-5",
+                  name: "Keratin Saç Botoksu & Bakım Maskesi",
+                  duration_minutes: 60,
+                  price_text: "₺850",
+                  price: 850,
+                  description: "Yıpranmış telleri onaran, kabarmayı önleyen keratin terapisi.",
+                },
+                {
+                  id: "ek-6",
+                  name: "Cilt Bakımı, Kil Maskesi & Ozon Buharı",
+                  duration_minutes: 30,
+                  price_text: "₺300",
+                  price: 300,
+                  description: "Gözenek temizleme, siyah nokta arındırma ve nemlendirici masaj.",
+                },
+              ],
+            });
+          } else if (matchedSector || slug === "dr-ahmet" || slug === "studio-nova") {
             setIsDemo(true);
             setBusiness({
               id: "demo-id",

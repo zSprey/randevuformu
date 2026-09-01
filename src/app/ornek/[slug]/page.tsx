@@ -28,36 +28,88 @@ export default async function OrnekDetailPage({ params }: OrnekPageProps) {
   const { slug } = await params;
   const sector = Object.values(SEKTOR_DATA).find((s) => s.exampleSlug === slug);
 
-  // Fallback if not specifically found in SEKTOR_DATA
-  const businessName = sector?.exampleName || "Dr. Ahmet Yılmaz Diş Kliniği";
-  const category = sector?.category || "Örnek Hizmet";
+  // Check if By Erman / Erman Kuaför
+  const isErman = slug === "byerman" || slug === "ermankuafor";
+  const businessName = isErman ? "By Erman Hair Studio" : (sector?.exampleName || "Dr. Ahmet Yılmaz Diş Kliniği");
+  const category = isErman ? "VIP Kuaför & Saç Tasarım" : (sector?.category || "Örnek Hizmet");
 
-  const defaultServices = [
-    {
-      id: "srv-1",
-      name: "Genel Muayene & Teşhis",
-      duration_minutes: 30,
-      price_text: "750 ₺",
-      price: 750,
-      description: "Detaylı ön inceleme ve tedavi planı oluşturulması.",
-    },
-    {
-      id: "srv-2",
-      name: "VIP Seans / Kapsamlı Bakım",
-      duration_minutes: 60,
-      price_text: "1.500 ₺",
-      price: 1500,
-      description: "Özel uzman konsültasyonu ve tam kapsamlı seans.",
-    },
-    {
-      id: "srv-3",
-      name: "Hızlı Kontrol Randevusu",
-      duration_minutes: 20,
-      price_text: "Ücretsiz",
-      price: 0,
-      description: "Önceki işlemin rutin durum değerlendirmesi.",
-    },
-  ];
+  const defaultServices = isErman
+    ? [
+        {
+          id: "ek-1",
+          name: "Saç Kesimi, Yıkama & Şekillendirme",
+          duration_minutes: 30,
+          price_text: "₺350",
+          price: 350,
+          description: "Yüz tipine özel modern kesim, saç yıkama ve fön işlemi.",
+        },
+        {
+          id: "ek-2",
+          name: "Sakal Tıraşı & Buharlı Sıcak Havlu",
+          duration_minutes: 30,
+          price_text: "₺200",
+          price: 200,
+          description: "Ustura ile sakal hattı tasarımı, buharlı yumuşatma ve sıcak havlu kompresi.",
+        },
+        {
+          id: "ek-3",
+          name: "Saç & Sakal VIP Bakım Paketi",
+          duration_minutes: 60,
+          price_text: "₺500",
+          price: 500,
+          description: "Saç kesimi, sakal tıraşı, saç yıkama, fön ve canlandırıcı yüz maskesi.",
+        },
+        {
+          id: "ek-4",
+          name: "Saç Boyama & Beyaz Kamuflaj",
+          duration_minutes: 30,
+          price_text: "₺600",
+          price: 600,
+          description: "Doğal görünümü koruyan tonlama ve beyaz kapatma işlemi.",
+        },
+        {
+          id: "ek-5",
+          name: "Keratin Saç Botoksu & Bakım Maskesi",
+          duration_minutes: 60,
+          price_text: "₺850",
+          price: 850,
+          description: "Yıpranmış telleri onaran, kabarmayı önleyen keratin terapisi.",
+        },
+        {
+          id: "ek-6",
+          name: "Cilt Bakımı, Kil Maskesi & Ozon Buharı",
+          duration_minutes: 30,
+          price_text: "₺300",
+          price: 300,
+          description: "Gözenek temizleme, siyah nokta arındırma ve nemlendirici masaj.",
+        },
+      ]
+    : [
+        {
+          id: "srv-1",
+          name: "Genel Muayene & Teşhis",
+          duration_minutes: 30,
+          price_text: "750 ₺",
+          price: 750,
+          description: "Detaylı ön inceleme ve tedavi planı oluşturulması.",
+        },
+        {
+          id: "srv-2",
+          name: "VIP Seans / Kapsamlı Bakım",
+          duration_minutes: 60,
+          price_text: "1.500 ₺",
+          price: 1500,
+          description: "Özel uzman konsültasyonu ve tam kapsamlı seans.",
+        },
+        {
+          id: "srv-3",
+          name: "Hızlı Kontrol Randevusu",
+          duration_minutes: 20,
+          price_text: "Ücretsiz",
+          price: 0,
+          description: "Önceki işlemin rutin durum değerlendirmesi.",
+        },
+      ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
