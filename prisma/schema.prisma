@@ -1,0 +1,153 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"] // tstzrange ve gist için altyapı
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [btree_gist] // PostgreSQL seviyesinde çifte rezervasyon engelleme için
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  isEmailVerified Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  business        Business?
+  tokens          VerificationToken[]
+}
+
+model Business {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name                   String
+  slug                   String   @unique
+  category               String   // kuaför, dis-hekimi, avukat vb.
+  
+  // Modül 1: WhatsApp İletişim Hattı
+  whatsappNumber         String?
+  isWhatsappActive       Boolean  @default(true)
+  whatsappDefaultMessage String?  @default("Merhaba, randevu almak istiyorum.")
+
+  // Modül 3: Dinamik İndirim & Yield Management
+  isDynamicDiscountActive Boolean @default(false)
+  dynamicDiscountPercent  Int     @default(15) // %15 indirim
+  discountThresholdHours  Int     @default(4)  // Son 4 saat kala devreye girer
+  
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  services               Service[]
+  appointments           Appointment[]
+  waitlist               WaitlistEntry[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  name        String
+  price       Float
+  durationMin Int      @default(30) // Dakika cinsinden
+  
+  appointments Appointment[]
+  waitlist     WaitlistEntry[]
+}
+
+model Appointment {
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id])
+  serviceId      String
+  service        Service  @relation(fields: [serviceId], references: [id])
+  
+  customerName   String
+  customerPhone  String
+  
+  // PostgreSQL tsrange ile atomik zaman çakışması kontrolü
+  startTime      DateTime
+  endTime        DateTime
+  
+  status         AppointmentStatus @default(PENDING) // PENDING, CONFIRMED, CANCELLED, COMPLETED, NOSHOW
+  
+  // Ödeme ve Kapora (Modül 5 & FinOps)
+  isDepositPaid  Boolean @default(false)
+  totalAmount    Float
+  discountApplied Boolean @default(false)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  notes          AppointmentNote?
+}
+
+// Modül 6: Personel Sesli Not & AI Klinik Özeti (Audio-to-CRM)
+model AppointmentNote {
+  id                String      @id @default(cuid())
+  appointmentId     String      @unique
+  appointment       Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  
+  audioUrl          String?     // AWS S3 veya R2 linki
+  structuredSummary String?     // Whisper & LLM çıktısı JSON veya Markdown
+  
+  createdAt         DateTime    @default(now())
+}
+
+// Modül 5: Gelmeyen Müşteri Risk Radarı
+model CustomerReputation {
+  id             String   @id @default(cuid())
+  customerPhone  String   @unique
+  completedCount Int      @default(0)
+  noShowCount    Int      @default(0)
+  riskScore      Float    @default(0.0) // 0-100 arası risk (100 = kesin no-show)
+  
+  updatedAt      DateTime @updatedAt
+}
+
+// Modül 4: Akıllı Bekleme Listesi (Waitlist Autopilot)
+model WaitlistEntry {
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId      String
+  service        Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  customerPhone  String
+  targetDate     DateTime @db.Date
+  timeRange      String   // "Öğleden Sonra", "14:00-16:00" gibi
+  status         WaitlistStatus @default(WAITING) // WAITING, NOTIFIED, BOOKED, EXPIRED
+
+  createdAt      DateTime @default(now())
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NOSHOW
+}
+
+enum WaitlistStatus {
+  WAITING
+  NOTIFIED
+  BOOKED
+  EXPIRED
+}
