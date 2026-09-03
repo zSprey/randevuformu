@@ -1,88 +1,98 @@
 // components/panel/appointment-card.tsx
 'use client';
 
-import { Clock, Phone } from 'lucide-react';
+import { Clock, Phone, User, Mic } from 'lucide-react';
 
-interface AppointmentCardProps {
+// Prisma'dan gelen verinin tipini basitleştirilmiş olarak tanımlıyoruz
+interface AppointmentProps {
   appointment: {
     id: string;
     customerName: string;
     customerPhone: string;
-    startTime: Date | string;
-    endTime: Date | string;
+    startTime: Date;
     status: string;
-    totalAmount?: number | null;
-    service?: {
+    service: {
       name: string;
-      price: number;
       durationMin: number;
-    } | null;
+    };
     notes?: {
-      audioUrl?: string | null;
       structuredSummary?: string | null;
     } | null;
   };
 }
 
-export function AppointmentCard({ appointment }: AppointmentCardProps) {
-  const start = new Date(appointment.startTime);
-  const end = new Date(appointment.endTime);
+export function AppointmentCard({ appointment }: AppointmentProps) {
+  const timeString = new Date(appointment.startTime).toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
-  const timeStr = `${start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
-
-  const statusMap: Record<string, { label: string; bg: string; text: string }> = {
-    CONFIRMED: { label: 'Onaylandı', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-    PENDING: { label: 'Onay Bekliyor', bg: 'bg-amber-50', text: 'text-amber-700' },
-    CANCELLED: { label: 'İptal Edildi', bg: 'bg-red-50', text: 'text-red-700' },
-    COMPLETED: { label: 'Tamamlandı', bg: 'bg-blue-50', text: 'text-blue-700' },
-    NOSHOW: { label: 'Gelmedi', bg: 'bg-zinc-100', text: 'text-zinc-600' },
+  // Duruma göre rozet renkleri
+  const statusColors: Record<string, string> = {
+    PENDING: 'bg-amber-100 text-amber-800',
+    CONFIRMED: 'bg-emerald-100 text-emerald-800',
+    COMPLETED: 'bg-zinc-100 text-zinc-800',
+    NOSHOW: 'bg-red-100 text-red-800',
   };
 
-  const currentStatus = statusMap[appointment.status] || {
-    label: appointment.status,
-    bg: 'bg-zinc-50',
-    text: 'text-zinc-700',
+  const statusLabels: Record<string, string> = {
+    PENDING: 'Onay Bekliyor',
+    CONFIRMED: 'Onaylandı',
+    COMPLETED: 'Tamamlandı',
+    NOSHOW: 'Gelmeyen (No-Show)',
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <article className="flex flex-col justify-between gap-4 rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+      
+      {/* Sol: Saat ve Müşteri Bilgisi */}
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 font-mono font-bold tabular-nums">
-          {start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+        <div className="flex flex-col items-center justify-center rounded-lg bg-zinc-50 p-3 border border-zinc-100">
+          <Clock className="mb-1 h-5 w-5 text-zinc-400" />
+          <span className="font-mono text-[16px] font-bold tabular-nums text-zinc-900">{timeString}</span>
         </div>
+        
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-zinc-900">{appointment.customerName}</h4>
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${currentStatus.bg} ${currentStatus.text}`}>
-              {currentStatus.label}
+          <h3 className="font-semibold text-zinc-900">{appointment.customerName}</h3>
+          <div className="flex items-center gap-3 text-sm text-zinc-500">
+            <span className="flex items-center gap-1">
+              <User className="h-4 w-4" />
+              {appointment.service.name} ({appointment.service.durationMin} dk)
             </span>
-          </div>
-          <p className="text-sm text-zinc-600">{appointment.service?.name || 'Genel Randevu'}</p>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-            <span className="flex items-center gap-1 font-mono tabular-nums">
-              <Clock className="h-3.5 w-3.5" />
-              {timeStr}
-            </span>
-            <a
-              href={`tel:${appointment.customerPhone}`}
-              className="flex items-center gap-1 font-mono tabular-nums hover:text-zinc-900"
-            >
-              <Phone className="h-3.5 w-3.5" />
-              {appointment.customerPhone}
+            <a href={`tel:${appointment.customerPhone}`} className="flex items-center gap-1 hover:text-zinc-900">
+              <Phone className="h-4 w-4" />
+              <span className="font-mono tabular-nums">{appointment.customerPhone}</span>
             </a>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-zinc-100">
-        <div className="text-right">
-          <span className="block font-mono text-lg font-bold tabular-nums text-zinc-900">
-            ₺{appointment.totalAmount || appointment.service?.price || 0}
-          </span>
-          <span className="text-[11px] text-zinc-500">Yerinde Ödeme</span>
+      {/* Sağ: Aksiyonlar ve Rozetler */}
+      <div className="flex flex-col items-end gap-3">
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColors[appointment.status] || statusColors.PENDING}`}>
+          {statusLabels[appointment.status] || 'Belirsiz'}
+        </span>
+        
+        <div className="flex gap-2">
+          {appointment.status === 'COMPLETED' ? (
+            <button className="flex min-h-[36px] items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100">
+              {appointment.notes?.structuredSummary ? "Klinik Özeti Gör" : <><Mic className="h-4 w-4"/> Sesli Not Ekle</>}
+            </button>
+          ) : (
+            <>
+              <button className="min-h-[36px] rounded-lg border border-zinc-200 px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50">
+                Düzenle
+              </button>
+              {appointment.status === 'PENDING' && (
+                <button className="min-h-[36px] rounded-lg bg-zinc-900 px-3 text-sm font-medium text-white transition-opacity hover:opacity-90">
+                  Onayla
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
