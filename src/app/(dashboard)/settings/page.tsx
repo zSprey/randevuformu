@@ -34,16 +34,16 @@ export default function SettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State
-  const [fullName, setFullName] = useState("Dr. Ahmet Yılmaz");
-  const [email, setEmail] = useState("ahmet@yilmazdental.com");
-  const [phone, setPhone] = useState("0532 456 78 90");
-  const [title, setTitle] = useState("Diş Hekimi & Estetik Gülüş Uzmanı");
-  const [bio, setBio] = useState("10+ yıllık tecrübe ile zirkonyum, lamine ve implant tedavilerinde uzman.");
+  const [fullName, setFullName] = useState("İşletme Yetkilisi");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [title, setTitle] = useState("Yetkili");
+  const [bio, setBio] = useState("");
 
   // Clinic Settings
-  const [clinicName, setClinicName] = useState("Yılmaz Diş Polikliniği");
-  const [clinicSlug, setClinicSlug] = useState("dr-ahmet");
-  const [clinicAddress, setClinicAddress] = useState("Bağdat Caddesi No:142 Kadıköy / İstanbul");
+  const [clinicName, setClinicName] = useState("İşletmem");
+  const [clinicSlug, setClinicSlug] = useState("isletme");
+  const [clinicAddress, setClinicAddress] = useState("");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
 
   // Modül 1: WhatsApp İletişim Hattı
@@ -77,10 +77,34 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadSettings() {
       if (typeof window === "undefined") return;
-      const tenant = localStorage.getItem("rf_tenant") || "default";
-      const res = await getBusinessSettings(tenant);
+
+      const isByErmanHost = window.location.hostname.includes("byerman");
+      const currentUser = localStorage.getItem("rf_user");
+      const currentTenant = localStorage.getItem("rf_tenant") || "default";
+      const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+
+      if (isByErman) {
+        setClinicName("By Erman Hair Studio");
+        setClinicSlug("byerman");
+        setFullName("Erman Güler");
+        setTitle("Master Barber");
+      } else {
+        const storedName = localStorage.getItem("rf_tenant_name");
+        const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
+        if (storedName && storedName !== "İşletme Yönetim Paneli" && !storedName.includes("Ahmet Yılmaz")) {
+          setClinicName(storedName);
+        } else if (storedSlug && storedSlug !== "default" && storedSlug !== "dashboard") {
+          setClinicName(storedSlug.charAt(0).toUpperCase() + storedSlug.slice(1));
+        }
+        if (storedSlug && storedSlug !== "dashboard") {
+          setClinicSlug(storedSlug);
+        }
+      }
+
+      const res = await getBusinessSettings(currentTenant);
       if (res.success && res.business) {
         setBusinessId(res.business.id);
+        if (res.business.name) setClinicName(res.business.name);
         if (res.business.whatsappNumber) setWhatsappNumber(res.business.whatsappNumber);
         setIsWhatsappActive(res.business.isWhatsappActive);
         if (res.business.whatsappDefaultMessage) setWhatsappDefaultMessage(res.business.whatsappDefaultMessage);

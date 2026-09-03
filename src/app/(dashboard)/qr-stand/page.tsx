@@ -22,15 +22,48 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function QrStandPage() {
-  const [businessName, setBusinessName] = useState("Dr. Ahmet Yılmaz Diş Kliniği");
-  const [businessSlug, setBusinessSlug] = useState("dr-ahmet");
+  const [businessName, setBusinessName] = useState("İşletme Adı");
+  const [businessSlug, setBusinessSlug] = useState("isletme");
   const [tagline, setTagline] = useState("Sıra Beklemeden Randevunuzu Alın");
   const [subtext, setSubtext] = useState("Telefonunuzun kamerasını QR koda doğrultun.");
   const [showWifi, setShowWifi] = useState(true);
-  const [wifiSsid, setWifiSsid] = useState("YilmazKlinik_Misafir");
-  const [wifiPass, setWifiPass] = useState("Klinik2026");
+  const [wifiSsid, setWifiSsid] = useState("Misafir_Wifi");
+  const [wifiPass, setWifiPass] = useState("2026");
   const [standTheme, setStandTheme] = useState<"dark" | "light" | "gold" | "indigo">("light");
   const [qrColor, setQrColor] = useState("4f46e5");
+
+  // Otomatik İşletme Adı ve Slug Yükleme
+  React.useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+
+      const isByErmanHost = window.location.hostname.includes("byerman");
+      const currentUser = localStorage.getItem("rf_user");
+      const currentTenant = localStorage.getItem("rf_tenant");
+      const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+
+      if (isByErman) {
+        setBusinessName("By Erman Hair Studio");
+        setBusinessSlug("byerman");
+        setWifiSsid("ByErman_Misafir");
+        return;
+      }
+
+      const storedName = localStorage.getItem("rf_tenant_name");
+      const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
+
+      if (storedName && storedName !== "İşletme Yönetim Paneli" && !storedName.includes("Ahmet Yılmaz")) {
+        setBusinessName(storedName);
+        if (storedSlug) setBusinessSlug(storedSlug);
+        setWifiSsid(`${storedName.replace(/[^a-zA-Z0-9]/g, "")}_Misafir`);
+      } else if (storedSlug && storedSlug !== "default" && storedSlug !== "dashboard") {
+        const formatted = storedSlug.charAt(0).toUpperCase() + storedSlug.slice(1);
+        setBusinessName(formatted);
+        setBusinessSlug(storedSlug);
+        setWifiSsid(`${formatted}_Misafir`);
+      }
+    } catch {}
+  }, []);
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
