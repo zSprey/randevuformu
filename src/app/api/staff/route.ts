@@ -20,31 +20,8 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      // Return default list if table query error in development
-      return apiSuccess({
-        staff: [
-          {
-            id: "staff-1",
-            tenant_id: tenantId,
-            display_name: "Dr. Ahmet Yılmaz",
-            email: "ahmet@yilmazdental.com",
-            phone: "0532 456 78 90",
-            role: "OWNER",
-            is_active: true,
-            title: "Başhekim & Diş Cerrahı",
-          },
-          {
-            id: "staff-2",
-            tenant_id: tenantId,
-            display_name: "Dt. Zeynep Kaya",
-            email: "zeynep@yilmazdental.com",
-            phone: "0533 111 22 33",
-            role: "STAFF",
-            is_active: true,
-            title: "Ortodonti Uzmanı",
-          },
-        ],
-      });
+      // Tablo boş veya henüz veri yoksa kesinlikle sahte veri dönme, temiz boş liste dön
+      return apiSuccess({ staff: [] });
     }
 
     return apiSuccess({ staff: staffList || [] });
