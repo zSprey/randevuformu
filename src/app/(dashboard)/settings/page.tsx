@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   Bell,
@@ -15,12 +15,22 @@ import {
   CalendarDays,
   Sparkles,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  MessageCircle,
+  Zap,
+  Percent,
+  Clock,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  updateBusinessWhatsapp,
+  updateYieldManagementSettings,
+  getBusinessSettings
+} from "@/app/actions/business-settings";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("whatsapp");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State
@@ -36,6 +46,19 @@ export default function SettingsPage() {
   const [clinicAddress, setClinicAddress] = useState("Bağdat Caddesi No:142 Kadıköy / İstanbul");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
 
+  // Modül 1: WhatsApp İletişim Hattı
+  const [businessId, setBusinessId] = useState("cl_demo_business_123");
+  const [whatsappNumber, setWhatsappNumber] = useState("+905551234567");
+  const [isWhatsappActive, setIsWhatsappActive] = useState(true);
+  const [whatsappDefaultMessage, setWhatsappDefaultMessage] = useState("Merhaba, randevu almak istiyorum.");
+  const [isSavingWhatsapp, setIsSavingWhatsapp] = useState(false);
+
+  // Modül 3: Dinamik İndirim (Yield Management)
+  const [isDynamicDiscountActive, setIsDynamicDiscountActive] = useState(true);
+  const [dynamicDiscountPercent, setDynamicDiscountPercent] = useState(20);
+  const [discountThresholdHours, setDiscountThresholdHours] = useState(4);
+  const [isSavingYield, setIsSavingYield] = useState(false);
+
   // Notifications Toggles
   const [smsEnabled, setSmsEnabled] = useState(true);
   const [whatsappEnabled, setWhatsappEnabled] = useState(true);
@@ -48,18 +71,66 @@ export default function SettingsPage() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
+
+  useEffect(() => {
+    async function loadSettings() {
+      if (typeof window === "undefined") return;
+      const tenant = localStorage.getItem("rf_tenant") || "default";
+      const res = await getBusinessSettings(tenant);
+      if (res.success && res.business) {
+        setBusinessId(res.business.id);
+        if (res.business.whatsappNumber) setWhatsappNumber(res.business.whatsappNumber);
+        setIsWhatsappActive(res.business.isWhatsappActive);
+        if (res.business.whatsappDefaultMessage) setWhatsappDefaultMessage(res.business.whatsappDefaultMessage);
+        setIsDynamicDiscountActive(res.business.isDynamicDiscountActive);
+        setDynamicDiscountPercent(res.business.dynamicDiscountPercent);
+        setDiscountThresholdHours(res.business.discountThresholdHours);
+      }
+    }
+    loadSettings();
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     showToast("Ayarlarınız başarıyla kaydedildi ve senkronize edildi!");
   };
 
+  const handleSaveWhatsapp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingWhatsapp(true);
+    const fd = new FormData();
+    fd.append("businessId", businessId);
+    fd.append("whatsappNumber", whatsappNumber);
+    fd.append("isWhatsappActive", String(isWhatsappActive));
+    fd.append("whatsappDefaultMessage", whatsappDefaultMessage);
+
+    const res = await updateBusinessWhatsapp(fd);
+    setIsSavingWhatsapp(false);
+    showToast(res.message);
+  };
+
+  const handleSaveYield = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingYield(true);
+    const fd = new FormData();
+    fd.append("businessId", businessId);
+    fd.append("isDynamicDiscountActive", String(isDynamicDiscountActive));
+    fd.append("dynamicDiscountPercent", String(dynamicDiscountPercent));
+    fd.append("discountThresholdHours", String(discountThresholdHours));
+
+    const res = await updateYieldManagementSettings(fd);
+    setIsSavingYield(false);
+    showToast(res.message);
+  };
+
   const tabs = [
+    { id: "whatsapp", name: "WhatsApp Hattı (Modül 1)", icon: MessageCircle },
+    { id: "yield", name: "Dinamik İndirim Motoru (Modül 3)", icon: Zap },
     { id: "profile", name: "Profil & Uzman Bilgileri", icon: User },
     { id: "clinic", name: "Klinik & Rezervasyon Sayfası", icon: Building },
-    { id: "notifications", name: "SMS & WhatsApp Bildirimleri", icon: Bell },
+    { id: "notifications", name: "SMS & E-Posta Bildirimleri", icon: Bell },
     { id: "integrations", name: "Takvim & Entegrasyonlar", icon: CalendarDays },
     { id: "billing", name: "Paket & Faturalandırma", icon: CreditCard },
   ];
@@ -116,6 +187,210 @@ export default function SettingsPage() {
 
         {/* Form Content Area */}
         <div className="flex-1 bg-slate-900 rounded-3xl border border-slate-800 shadow-xl p-6 sm:p-8">
+          {/* TAB: WHATSAPP (MODÜL 1) */}
+          {activeTab === "whatsapp" && (
+            <form onSubmit={handleSaveWhatsapp} className="space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-emerald-400" />
+                    Doğrudan WhatsApp İletişim Hattı
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Müşterilerinizin randevu sayfasındaki sabit WhatsApp butonuna bastığında ulaşacağı işletme numarası
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-300">
+                    {isWhatsappActive ? "Aktif" : "Pasif"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsWhatsappActive(!isWhatsappActive)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${
+                      isWhatsappActive ? "bg-emerald-600" : "bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                        isWhatsappActive ? "left-7" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  İşletme WhatsApp Telefon Numarası
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="+905551234567"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono tabular-nums text-[16px] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Uluslararası formatta ülke koduyla birlikte giriniz (Örn: +905551234567)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Müşteri Açılış Mesajı Şablonu
+                </label>
+                <textarea
+                  rows={3}
+                  value={whatsappDefaultMessage}
+                  onChange={(e) => setWhatsappDefaultMessage(e.target.value)}
+                  placeholder="Merhaba, randevu almak istiyorum."
+                  className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  maxLength={250}
+                />
+                <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+                  <span>Müşteri butona bastığında WhatsApp metin kutusuna otomatik doldurulur.</span>
+                  <span>{whatsappDefaultMessage.length}/250</span>
+                </div>
+              </div>
+
+              {/* Canlı Önizleme Kartı */}
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-3">
+                  Müşteri Randevu Sayfası Önizlemesi
+                </span>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <div className="text-xs text-slate-300">
+                    Kayan Buton Konumu: <strong className="text-white font-mono">Sağ Alt (Mobil Safe-Area Uyumlu)</strong>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-white font-semibold text-xs shadow">
+                    <MessageCircle className="h-4 w-4" />
+                    <span>Hızlı İletişim</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingWhatsapp}
+                  className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+                >
+                  {isSavingWhatsapp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  WhatsApp Bilgilerini Kaydet
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB: YIELD MANAGEMENT (MODÜL 3) */}
+          {activeTab === "yield" && (
+            <form onSubmit={handleSaveYield} className="space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-400" />
+                    Günün Boş Saatleri Dinamik İndirim Motoru
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Son dakikaya kalan boş randevu slotlarına otomatik indirim tanımlayarak boş koltuk maliyetini sıfırlayın
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-300">
+                    {isDynamicDiscountActive ? "Aktif" : "Pasif"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDynamicDiscountActive(!isDynamicDiscountActive)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${
+                      isDynamicDiscountActive ? "bg-amber-600" : "bg-slate-700"
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                        isDynamicDiscountActive ? "left-7" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Uygulanacak İndirim Yüzdesi (%)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={5}
+                      max={50}
+                      value={dynamicDiscountPercent}
+                      onChange={(e) => setDynamicDiscountPercent(Number(e.target.value))}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono tabular-nums text-[16px] min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                    />
+                    <span className="text-xl font-bold font-mono text-amber-400">%</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">Örn: %15 veya %20 indirim</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Devreye Girme Eşiği (Saat Kala)
+                  </label>
+                  <select
+                    value={discountThresholdHours}
+                    onChange={(e) => setDiscountThresholdHours(Number(e.target.value))}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs min-h-[44px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value={2}>Randevuya Son 2 Saat Kala</option>
+                    <option value={4}>Randevuya Son 4 Saat Kala (Önerilen)</option>
+                    <option value={6}>Randevuya Son 6 Saat Kala</option>
+                    <option value={12}>Randevuya Son 12 Saat Kala</option>
+                    <option value={24}>Randevuya Son 24 Saat Kala (Aynı Gün)</option>
+                  </select>
+                  <p className="text-[11px] text-slate-400 mt-1">Boş kalan slot kaç saat kala indirimli etiketlensin?</p>
+                </div>
+              </div>
+
+              {/* Önizleme Rozet Alanı */}
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Müşterinin Göreceği Saat Rozeti Önizlemesi
+                </span>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
+                  <div className="relative flex flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-zinc-900 shadow-sm">
+                    <span className="font-mono text-[16px] font-bold tabular-nums">14:30</span>
+                    <span className="absolute -top-2.5 -right-2.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                      -%{dynamicDiscountPercent} Fırsat
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 leading-relaxed">
+                    Randevu saati yaklaştığında takvimdeki slotun üzerine otomatik olarak{" "}
+                    <span className="text-amber-400 font-semibold">-%{dynamicDiscountPercent} Fırsat</span> rozeti
+                    iliştirilir ve sepette anında indirim uygulanır.
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingYield}
+                  className="px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-600/30 transition-all flex items-center gap-2 disabled:opacity-50 min-h-[44px]"
+                >
+                  {isSavingYield ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  İndirim Motorunu Güncelle
+                </button>
+              </div>
+            </form>
+          )}
+
           {/* TAB 1: PROFILE */}
           {activeTab === "profile" && (
             <form onSubmit={handleSave} className="space-y-6">

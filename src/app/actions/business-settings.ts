@@ -21,6 +21,37 @@ const YieldSettingsSchema = z.object({
 });
 
 /**
+ * İşletme Ayarlarını Getir (WhatsApp ve Yield Management)
+ */
+export async function getBusinessSettings(identifier: string) {
+  try {
+    if (!identifier) return { success: false, business: null };
+
+    const business = await prisma.business.findFirst({
+      where: {
+        OR: [{ id: identifier }, { slug: identifier }],
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        whatsappNumber: true,
+        isWhatsappActive: true,
+        whatsappDefaultMessage: true,
+        isDynamicDiscountActive: true,
+        dynamicDiscountPercent: true,
+        discountThresholdHours: true,
+      },
+    });
+
+    return { success: true, business };
+  } catch (error) {
+    console.warn('Get business settings fallback:', error);
+    return { success: false, business: null };
+  }
+}
+
+/**
  * İşletme WhatsApp Hattı Bilgilerini Güncelle
  */
 export async function updateBusinessWhatsapp(formData: FormData) {
