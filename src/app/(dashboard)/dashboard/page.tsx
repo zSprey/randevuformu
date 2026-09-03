@@ -86,24 +86,62 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const getTenantParam = () => {
+    if (typeof window === "undefined") return "default";
+    const isByErmanHost = window.location.hostname.includes("byerman");
+    const currentUser = localStorage.getItem("rf_user");
+    const currentTenant = localStorage.getItem("rf_tenant");
+    const isErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+    return isErman ? "byerman" : (currentTenant || currentUser || "default");
+  };
+
   const fetchDashboardData = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch("/api/appointments", { cache: "no-store" });
+      const isByErmanHost = typeof window !== "undefined" && window.location.hostname.includes("byerman");
+      const currentUser = typeof window !== "undefined" ? localStorage.getItem("rf_user") : null;
+      const currentTenant = typeof window !== "undefined" ? localStorage.getItem("rf_tenant") : null;
+      const isErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+
+      const tenantParam = isErman ? "byerman" : (currentTenant || currentUser || "default");
+
+      // Güvenlik & İzolasyon: Eğer normal bir işletme ise By Erman verileri ASLA çekilemez
+      const res = await fetch(`/api/appointments?tenant=${encodeURIComponent(tenantParam)}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.appointments) {
-          setAppointments(data.appointments);
+          if (!isErman) {
+            // Sadece bu işletmeye ait olanları göster
+            const tenantFiltered = data.appointments.filter(
+              (a: any) =>
+                a.tenant === tenantParam ||
+                a.tenant_id === tenantParam ||
+                a.business_id === tenantParam
+            );
+            setAppointments(tenantFiltered);
+          } else {
+            setAppointments(data.appointments);
+          }
           return;
         }
       }
 
-      // Fallback to Supabase
-      const { data } = await supabase
+      // Fallback to Supabase with strict tenant filter
+      let query = supabase
         .from("appointments")
         .select("*, services(name, price_text)")
         .order("appointment_date", { ascending: false });
 
+      if (isErman) {
+        query = query.or("tenant.eq.byerman,tenant_id.eq.byerman,business_id.eq.byerman");
+      } else if (tenantParam && tenantParam !== "default") {
+        query = query.or(`tenant.eq.${tenantParam},tenant_id.eq.${tenantParam},business_id.eq.${tenantParam}`);
+      } else {
+        setAppointments([]);
+        return;
+      }
+
+      const { data } = await query;
       if (data && data.length > 0) {
         setAppointments(data);
       } else {
@@ -122,10 +160,11 @@ export default function DashboardPage() {
   }, []);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const tenantParam = getTenantParam();
     if (newStatus === "cancelled") {
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       try {
-        await fetch(`/api/appointments?id=${id}`, { method: "DELETE" });
+        await fetch(`/api/appointments?id=${id}&tenant=${encodeURIComponent(tenantParam)}`, { method: "DELETE" });
       } catch (e) {
         console.warn("Randevu silinirken hata:", e);
       }
@@ -141,7 +180,7 @@ export default function DashboardPage() {
       await fetch("/api/appointments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: newStatus }),
+        body: JSON.stringify({ id, status: newStatus, tenant: tenantParam }),
       });
     } catch (e) {
       console.warn("Durum güncellenirken hata:", e);
@@ -164,16 +203,21 @@ export default function DashboardPage() {
       return;
     }
 
+    const tenantParam = getTenantParam();
+
     const newAppPayload = {
       id: `app_${Date.now()}`,
+      tenant: tenantParam,
+      tenant_id: tenantParam,
+      business_id: tenantParam,
       customer_name: newCustomerName.trim(),
       customer_phone: newCustomerPhone.trim(),
-      customer_note: newServiceName || "Saç Kesimi & Yıkama",
-      service_name: newServiceName || "Saç Kesimi & Yıkama",
+      customer_note: newServiceName || "Genel Randevu",
+      service_name: newServiceName || "Genel Randevu",
       appointment_date: newDate,
       appointment_time: `${newTime}:00`,
       status: "confirmed",
-      services: { name: newServiceName || "Saç Kesimi & Yıkama" },
+      services: { name: newServiceName || "Genel Randevu" },
     };
 
     // UI'ı anında güncelle

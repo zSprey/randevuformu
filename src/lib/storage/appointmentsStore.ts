@@ -6,6 +6,9 @@ const EDGE_CONFIG_READ_URL = process.env.EDGE_CONFIG || "";
 
 export interface StoredAppointment {
   id: string;
+  tenant?: string;
+  tenant_id?: string;
+  business_id?: string;
   customer_name: string;
   customer_phone: string;
   customer_note?: string;
@@ -16,8 +19,18 @@ export interface StoredAppointment {
   created_at?: string;
 }
 
-// 1. GET ALL APPOINTMENTS
-export async function getStoredAppointments(): Promise<StoredAppointment[]> {
+// 1. GET STORED APPOINTMENTS (STRICT MULTI-TENANT ISOLATION)
+export async function getStoredAppointments(tenant?: string): Promise<StoredAppointment[]> {
+  const cleanTenant = (tenant || "").trim().toLowerCase();
+  
+  // Güvenlik Kuralı: Eğer bir tenant belirtilmemişse, başka işletmelerin verisi sızmasın diye boş döner
+  if (!cleanTenant) {
+    return [];
+  }
+
+  const isErman = cleanTenant === "byerman";
+  const storageKey = isErman ? "byerman_appointments" : `${cleanTenant}_appointments`;
+
   let edgeApps: StoredAppointment[] = [];
 
   // A. Try Edge Config (Instant Global Read)
@@ -27,38 +40,53 @@ export async function getStoredAppointments(): Promise<StoredAppointment[]> {
     });
     if (res.ok) {
       const data = await res.json();
-      const list = data?.items?.byerman_appointments || data?.byerman_appointments;
+      const list = data?.items?.[storageKey] || data?.[storageKey];
       if (Array.isArray(list)) {
-        edgeApps = list;
+        edgeApps = list.map((item) => ({
+          ...item,
+          tenant: item.tenant || cleanTenant,
+          tenant_id: item.tenant_id || cleanTenant,
+        }));
       }
     }
   } catch (e) {
     console.warn("[EdgeConfig] Read error:", e);
   }
 
-  // B. Try Supabase
+  // B. Try Supabase (Filtreli Veritabanı Sorgusu)
   let dbApps: StoredAppointment[] = [];
   try {
-    const { data } = await supabase
+    let query = supabase
       .from("appointments")
       .select("*, services(name, price_text)")
       .order("appointment_date", { ascending: false });
 
+    if (isErman) {
+      query = query.or("tenant.eq.byerman,tenant_id.eq.byerman,business_id.eq.byerman");
+    } else {
+      query = query.or(`tenant.eq.${cleanTenant},tenant_id.eq.${cleanTenant},business_id.eq.${cleanTenant}`);
+    }
+
+    const { data } = await query;
+
     if (data && data.length > 0) {
       dbApps = data.map((d: any) => ({
         id: d.id,
+        tenant: d.tenant || d.tenant_id || d.business_id || cleanTenant,
+        tenant_id: d.tenant_id || d.tenant || d.business_id || cleanTenant,
+        business_id: d.business_id,
         customer_name: d.customer_name,
         customer_phone: d.customer_phone,
         customer_note: d.customer_note || "",
         appointment_date: d.appointment_date,
         appointment_time: d.appointment_time,
         status: d.status || "confirmed",
-        services: d.services || { name: d.customer_note || "Saç Kesimi & Yıkama" },
+        services: d.services || { name: d.customer_note || "Genel Randevu" },
         created_at: d.created_at,
       }));
     }
   } catch {
-    // Graceful
+    // Graceful fallback
   }
 
   // Merge by id (Edge Config + DB)
@@ -77,11 +105,14 @@ export async function getStoredAppointments(): Promise<StoredAppointment[]> {
   });
 }
 
-// 2. SAVE NEW APPOINTMENT
+// 2. SAVE NEW APPOINTMENT (ISOLATED BY TENANT)
 export async function saveNewAppointment(app: StoredAppointment): Promise<boolean> {
-  // A. Read current
-  const current = await getStoredAppointments();
-  const updated = [app, ...current.filter((x) => x.id !== app.id)];
+  const tenantKey = (app.tenant || app.tenant_id || app.business_id || "byerman").toLowerCase();
+  const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
+
+  // A. Read current for this tenant only
+  const current = await getStoredAppointments(tenantKey);
+  const updated = [{ ...app, tenant: tenantKey, tenant_id: tenantKey }, ...current.filter((x) => x.id !== app.id)];
 
   // B. Write to Edge Config
   try {
@@ -97,7 +128,7 @@ export async function saveNewAppointment(app: StoredAppointment): Promise<boolea
           items: [
             {
               operation: "upsert",
-              key: "byerman_appointments",
+              key: storageKey,
               value: updated,
             },
           ],
@@ -112,10 +143,13 @@ export async function saveNewAppointment(app: StoredAppointment): Promise<boolea
     console.warn("[EdgeConfig] Write exception:", err);
   }
 
-  // C. Try Supabase as secondary
+  // C. Write to Supabase with tenant column
   try {
     await supabase.from("appointments").insert([
       {
+        tenant: tenantKey,
+        tenant_id: tenantKey,
+        business_id: app.business_id || tenantKey,
         customer_name: app.customer_name,
         customer_phone: app.customer_phone,
         customer_note: app.customer_note || "",
@@ -132,8 +166,15 @@ export async function saveNewAppointment(app: StoredAppointment): Promise<boolea
 }
 
 // 3. UPDATE APPOINTMENT STATUS
-export async function updateAppointmentStatus(id: string, newStatus: StoredAppointment["status"]): Promise<boolean> {
-  const current = await getStoredAppointments();
+export async function updateAppointmentStatus(
+  id: string,
+  newStatus: StoredAppointment["status"],
+  tenant?: string
+): Promise<boolean> {
+  const tenantKey = (tenant || "byerman").toLowerCase();
+  const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
+
+  const current = await getStoredAppointments(tenantKey);
   const updated = current.map((a) => (a.id === id ? { ...a, status: newStatus } : a));
 
   try {
@@ -147,7 +188,7 @@ export async function updateAppointmentStatus(id: string, newStatus: StoredAppoi
         items: [
           {
             operation: "upsert",
-            key: "byerman_appointments",
+            key: storageKey,
             value: updated,
           },
         ],
@@ -167,8 +208,11 @@ export async function updateAppointmentStatus(id: string, newStatus: StoredAppoi
 }
 
 // 4. DELETE APPOINTMENT
-export async function deleteAppointment(id: string): Promise<boolean> {
-  const current = await getStoredAppointments();
+export async function deleteAppointment(id: string, tenant?: string): Promise<boolean> {
+  const tenantKey = (tenant || "byerman").toLowerCase();
+  const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
+
+  const current = await getStoredAppointments(tenantKey);
   const updated = current.filter((a) => a.id !== id);
 
   try {
@@ -182,7 +226,7 @@ export async function deleteAppointment(id: string): Promise<boolean> {
         items: [
           {
             operation: "upsert",
-            key: "byerman_appointments",
+            key: storageKey,
             value: updated,
           },
         ],
