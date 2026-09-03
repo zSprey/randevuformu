@@ -81,3 +81,23 @@ body {
     page-break-inside: avoid;
   }
 }
+
+/* app/globals.css sonuna eklenecekler */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-safe {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Kırık beyaz kurumsal arka plan ve yüksek kontrast metinler */
+body {
+  @apply bg-zinc-50 text-zinc-900 antialiased;
+}
+
+/* Rakamların genişliklerinin eşit olmasını (titrememesini) sağlayan yapı */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
