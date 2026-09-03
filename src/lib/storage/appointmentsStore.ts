@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-const EDGE_CONFIG_ID = process.env.EDGE_CONFIG_ID || "ecfg_kiwkhtkcczbjkryud908trzdlgc6";
+const EDGE_CONFIG_ID = process.env.EDGE_CONFIG_ID || "";
 const VERCEL_TOKEN = process.env.VERCEL_BEARER_TOKEN || "";
 const EDGE_CONFIG_READ_URL = process.env.EDGE_CONFIG || "";
 

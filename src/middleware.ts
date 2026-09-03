@@ -103,8 +103,8 @@ export async function middleware(request: NextRequest) {
     if (!isAuthenticated) {
       try {
         const supabase = createServerClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://isymhicfyatamwiwyuhk.supabase.co',
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_Va5Rnrm_uAwrPjKK3ClIzQ_QhJrRadT',
+          process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
           {
             cookies: {
               getAll() {

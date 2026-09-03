@@ -7,9 +7,9 @@ import {
   handleApiError,
 } from "@/lib/apiResponse";
 
-// Expected Super Admin Credentials
-const SUPER_ADMIN_USER = process.env.SUPER_ADMIN_USER || "musa";
-const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "6872Fatma";
+// Expected Super Admin Credentials (Strictly from Environment Variables)
+const SUPER_ADMIN_USER = process.env.SUPER_ADMIN_USER || "admin";
+const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "";
 
 export async function POST(req: NextRequest) {
   try {

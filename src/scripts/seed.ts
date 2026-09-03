@@ -27,8 +27,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  supabaseUrl = 'https://isymhicfyatamwiwyuhk.supabase.co';
-  supabaseAnonKey = 'sb_publishable_Va5Rnrm_uAwrPjKK3ClIzQ_QhJrRadT';
+  throw new Error('NEXT_PUBLIC_SUPABASE_URL ve NEXT_PUBLIC_SUPABASE_ANON_KEY ortam değişkenleri tanımlanmalıdır.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);

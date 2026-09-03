@@ -13,7 +13,7 @@ const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes lockout
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "randevuformu_superadmin_secret_key_2026_x99";
+const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || process.env.NEXTAUTH_SECRET || "";
 
 export class BruteForceGuard {
   private static cleanup() {
