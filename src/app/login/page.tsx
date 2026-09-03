@@ -192,7 +192,7 @@ function LoginFormContent() {
             </span>
           </Link>
           <p className="text-slate-400 text-sm">
-            {isLogin ? "Yönetim Paneline Giriş Yapın" : "30 Saniyede Ücretsiz Hesabınızı Açın"}
+            {isLogin ? "Yönetim Paneline Giriş Yapın" : "Yeni İşletme Kayıtları (Kilitli)"}
           </p>
         </div>
 
@@ -212,13 +212,15 @@ function LoginFormContent() {
           <button
             type="button"
             onClick={() => { setIsLogin(false); setErrorMsg(""); }}
-            className={`py-2 text-sm font-semibold rounded-xl transition-all ${
+            className={`py-2 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               !isLogin
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white"
+                ? "bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-md"
+                : "text-slate-500 hover:text-slate-300"
             }`}
           >
-            Kayıt Ol
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Kayıt Ol</span>
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">Kilitli</span>
           </button>
         </div>
 
@@ -236,92 +238,87 @@ function LoginFormContent() {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Adınız ve Soyadınız
-                </label>
+        {/* Form or Locked Notice */}
+        {!isLogin ? (
+          <div className="p-6 rounded-2xl bg-slate-950/90 border border-amber-500/30 text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-white">Yeni Kayıtlar Geçici Olarak Kilitlidir</h3>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+                RandevuFormu platformu şu anda kontrollü kapasite ile hizmet vermektedir. Yeni işletme alımları yalnızca özel davetiye ve kurumsal onay ile gerçekleştirilmektedir.
+              </p>
+            </div>
+
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => { setIsLogin(true); setErrorMsg(""); }}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <span>Mevcut Hesabınızla Giriş Yapın</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <Link
+                href="/contact"
+                className="block w-full py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-all min-h-[44px] flex items-center justify-center"
+              >
+                Kurumsal Davetiye Talebi İletin
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Kullanıcı Adı veya E-posta
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Adınız Soyadınız"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Kullanıcı adınızı girin"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-[16px] min-h-[44px] transition-all"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  İşletme veya Salon Adınız
-                </label>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Şifre
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="text"
+                  type="password"
                   required
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Örn: Aksoy Danışmanlık veya Özlem Kuaför"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-[16px] min-h-[44px] transition-all"
                 />
               </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              {isLogin ? "Kullanıcı Adı veya E-posta" : "E-posta Adresiniz"}
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Kullanıcı adınızı girin"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-all"
-              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Şifre
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition-all"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? (
-              "İşleniyor..."
-            ) : isLogin ? (
-              <>
-                Giriş Yap <ArrowRight className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                Ücretsiz Başla <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
+            >
+              {loading ? (
+                "İşleniyor..."
+              ) : (
+                <>
+                  Giriş Yap <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        )}
       </motion.div>
     </div>
   );

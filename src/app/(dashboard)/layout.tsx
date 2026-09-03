@@ -202,17 +202,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span>{tenantSlug === "byerman" ? "byerman.randevuformu.com" : `randevuformu.com/${tenantSlug}`}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
-
-            <Link
-              href="/admin/login"
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-red-300 bg-red-950/30 border border-red-800/40 hover:bg-red-900/40 transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
-                Super Admin Gate
-              </span>
-              <span className="text-[10px] bg-red-500/20 px-1.5 py-0.5 rounded font-bold">musa</span>
-            </Link>
           </div>
         </div>
 
