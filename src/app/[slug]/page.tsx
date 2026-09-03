@@ -9,6 +9,7 @@ import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
+import { CustomerChatbot } from "@/components/ai/CustomerChatbot";
 
 const ERMAN_USTA_DATA = {
   id: "byerman-id",
@@ -330,6 +331,12 @@ export default function BusinessBookingPage({ params }: PageProps) {
           defaultMessage={`Merhaba, ${business.name || 'işletmeniz'} için randevu almak istiyorum.`}
         />
       )}
+
+      {/* Modül 2: Müşteri AI Randevu Asistanı Chatbotu */}
+      <CustomerChatbot
+        businessSlug={slug}
+        businessName={business?.name || (isErman ? "Erman Usta" : "Randevu Asistanı")}
+      />
     </div>
   );
 }

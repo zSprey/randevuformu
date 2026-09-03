@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import { Calendar, Users, TrendingUp } from 'lucide-react';
 import { AppointmentCard } from '@/components/panel/appointment-card';
+import { BusinessAiAssistant } from '@/components/panel/BusinessAiAssistant';
 
 // Faz 5: Demo için sabit Business ID (Gerçekte Auth session'dan gelecek)
 const DEMO_BUSINESS_ID = "cl_demo_business_123"; 
@@ -81,6 +82,11 @@ export default async function PanelPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* AI İşletme Asistanı Widget'ı (Modül 2) */}
+      <div className="mb-8">
+        <BusinessAiAssistant businessId={DEMO_BUSINESS_ID} />
       </div>
 
       {/* Randevu Listesi */}
