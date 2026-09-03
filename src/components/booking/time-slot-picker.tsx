@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { WaitlistModal } from '@/components/booking/WaitlistModal';
 
 // Demo verisi (Faz 3'te veritabanından gelecek)
 const availableSlots = [
@@ -59,6 +60,11 @@ export function TimeSlotPicker() {
       >
         Devam Et
       </button>
+
+      {/* Modül 4: Akıllı Bekleme Listesi (Dolu gün veya alternatif saat arayanlar için) */}
+      <div className="pt-2 border-t border-zinc-100">
+        <WaitlistModal businessId="cl_demo_business_123" />
+      </div>
     </div>
   );
 }
