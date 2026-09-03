@@ -47,6 +47,8 @@ model Business {
   services               Service[]
   appointments           Appointment[]
   waitlist               WaitlistEntry[]
+  loyaltyProgram         LoyaltyProgram?
+  customerLoyalties      CustomerLoyalty[]
 }
 
 model Service {
@@ -135,6 +137,29 @@ model VerificationToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+// Sadakat Programı (Damga Kartı)
+model LoyaltyProgram {
+  id                String   @id @default(cuid())
+  businessId        String   @unique
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  targetStampCount  Int      @default(10) // 10 damgada 1 ödül
+  rewardDescription String   @default("1 Seans Ücretsiz Bakım")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CustomerLoyalty {
+  id                 String   @id @default(cuid())
+  businessId         String
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customerPhone      String
+  currentStamps      Int      @default(0)
+  totalRewardsEarned Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  @@unique([businessId, customerPhone])
 }
 
 enum AppointmentStatus {
