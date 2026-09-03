@@ -117,14 +117,14 @@ export default function ContactPage() {
                 Doğrudan E-Posta
               </h3>
               <a
-                href="mailto:randevuformuu@gmail.com"
+                href="mailto:destek@randevuformu.com"
                 className="flex items-center gap-3 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 hover:text-white hover:bg-indigo-500/20 transition-all group"
               >
                 <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold">randevuformuu@gmail.com</div>
+                  <div className="text-xs font-bold">destek@randevuformu.com</div>
                   <div className="text-[10px] text-slate-400">Ortalama yanıt süresi: &lt; 2 saat</div>
                 </div>
               </a>
@@ -163,7 +163,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-xl font-bold text-white">Mesajınız Alındı!</h3>
                   <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-                    Talebiniz kurumsal destek ekibimize ulaştı. <strong>randevuformuu@gmail.com</strong> üzerinden en kısa sürede size geri dönüş yapacağız.
+                    Talebiniz kurumsal destek ekibimize ulaştı. <strong>destek@randevuformu.com</strong> üzerinden en kısa sürede size geri dönüş yapacağız.
                   </p>
                   <button
                     type="button"
@@ -263,8 +263,8 @@ export default function ContactPage() {
       <footer className="py-6 border-t border-white/5 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span>&copy; {new Date().getFullYear()} randevuformu.com — Tüm hakları saklıdır.</span>
-          <a href="mailto:randevuformuu@gmail.com" className="text-indigo-400 hover:underline">
-            randevuformuu@gmail.com
+          <a href="mailto:destek@randevuformu.com" className="text-indigo-400 hover:underline">
+            destek@randevuformu.com
           </a>
         </div>
       </footer>

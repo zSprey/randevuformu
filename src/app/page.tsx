@@ -158,10 +158,10 @@ export default function Home() {
         <span className="text-slate-300">Türkiye&apos;nin yeni nesil randevu altyapısı</span>
         <span className="text-slate-600">•</span>
         <a
-          href="mailto:randevuformuu@gmail.com"
+          href="mailto:destek@randevuformu.com"
           className="text-slate-300 hover:text-white underline underline-offset-4 transition-colors"
         >
-          Kurumsal Destek: randevuformuu@gmail.com
+          Kurumsal Destek: destek@randevuformu.com
         </a>
       </div>
 
@@ -630,7 +630,7 @@ export default function Home() {
               Modern işletmeler için akıllı randevu ve danışan yönetim altyapısı.
             </p>
             <p className="text-slate-500 text-[11px]">
-              Destek: <a href="mailto:randevuformuu@gmail.com" className="text-slate-400 hover:text-white underline">randevuformuu@gmail.com</a>
+              Destek: <a href="mailto:destek@randevuformu.com" className="text-slate-400 hover:text-white underline">destek@randevuformu.com</a>
             </p>
           </div>
 

@@ -341,8 +341,8 @@ export default function MarketplaceDiscoveryPage() {
       <footer className="py-8 border-t border-white/5 text-center text-xs text-slate-500 mt-16">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>&copy; {new Date().getFullYear()} randevuformu.com — Türkiye'nin Lider Randevu Ağı</span>
-          <a href="mailto:randevuformuu@gmail.com" className="text-indigo-400 hover:underline">
-            randevuformuu@gmail.com
+          <a href="mailto:destek@randevuformu.com" className="text-indigo-400 hover:underline">
+            destek@randevuformu.com
           </a>
         </div>
       </footer>

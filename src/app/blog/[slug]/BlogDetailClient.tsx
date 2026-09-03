@@ -363,8 +363,8 @@ export default function BlogDetailClient({ post, relatedPosts }: BlogDetailClien
             <Link href="/blog" className="hover:text-white transition-colors">
               Blog Dizini
             </Link>
-            <a href="mailto:randevuformuu@gmail.com" className="text-indigo-400 hover:underline">
-              randevuformuu@gmail.com
+            <a href="mailto:destek@randevuformu.com" className="text-indigo-400 hover:underline">
+              destek@randevuformu.com
             </a>
           </div>
         </div>
