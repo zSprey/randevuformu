@@ -22,25 +22,46 @@ import {
   Flame,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { INITIAL_BLOG_POSTS } from "@/lib/blogData";
+import { INITIAL_BLOG_POSTS, BlogPost } from "@/lib/blogData";
 
 export default function BlogCatalogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>(INITIAL_BLOG_POSTS);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
+  // Buluttan otonom üretilen yeni makaleleri dinamik getir
+  React.useEffect(() => {
+    async function fetchDynamicPosts() {
+      try {
+        const res = await fetch("/api/blog");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.posts && data.posts.length > 0) {
+            setPosts(data.posts);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch dynamic blog posts:", err);
+      }
+    }
+    fetchDynamicPosts();
+  }, []);
+
   const categories = [
     "ALL",
     "Diş Hekimliği",
     "Beslenme & Diyet",
     "Güzellik & Kuaför",
+    "Veteriner Hekimlik",
+    "Fizyoterapi & Pilates",
     "Psikoloji & Terapi",
     "Hukuk & Danışmanlık",
   ];
 
-  const filteredPosts = INITIAL_BLOG_POSTS.filter((post) => {
+  const filteredPosts = posts.filter((post) => {
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,7 +72,7 @@ export default function BlogCatalogPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const featuredPost = INITIAL_BLOG_POSTS[0];
+  const featuredPost = posts[0] || INITIAL_BLOG_POSTS[0];
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();

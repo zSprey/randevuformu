@@ -2,7 +2,10 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { INITIAL_BLOG_POSTS } from "@/lib/blogData";
+import { getBlogPostBySlug, getAllBlogPosts } from "@/lib/blogStore";
 import BlogDetailClient from "./BlogDetailClient";
+
+export const dynamicParams = true;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -16,7 +19,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = INITIAL_BLOG_POSTS.find((p) => p.slug === slug);
+  const post = await getBlogPostBySlug(slug);
 
   if (!post) {
     return { title: "Makale Bulunamadı | randevuformu.com" };
@@ -41,13 +44,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = INITIAL_BLOG_POSTS.find((p) => p.slug === slug);
+  const post = await getBlogPostBySlug(slug);
 
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = INITIAL_BLOG_POSTS.filter((p) => p.slug !== post.slug).slice(0, 3);
+  const allPosts = await getAllBlogPosts();
+  const relatedPosts = allPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
 
   // Article JSON-LD Schema
   const articleJsonLd = {
@@ -57,7 +61,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
     description: post.excerpt,
     image: post.featuredImage,
     datePublished: "2026-08-28T00:00:00+03:00",
-    dateModified: "2026-08-28T00:00:00+03:00",
+    dateModified: new Date().toISOString(),
     author: {
       "@type": "Organization",
       name: "randevuformu.com Ekibi",
