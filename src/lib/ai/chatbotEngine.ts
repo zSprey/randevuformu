@@ -59,13 +59,110 @@ export function getForbiddenReply(businessName: string): string {
 }
 
 // ────────────────────────────────────────────────────────
-// 2. MÜŞTERİ CHATBOTU (İşletme Temasına & Randevuya Özel)
+// 2. PLATFORM REHBER CHATBOTU (randevuformu.com Ana Sayfası)
+// ────────────────────────────────────────────────────────
+export async function processPlatformMessage(message: string): Promise<CustomerChatResponse> {
+  const lower = message.toLowerCase().trim();
+
+  if (isForbiddenTopic(lower)) {
+    return {
+      reply: "Ben randevuformu.com platform asistanıyım. Kurallarımız gereği siyaset, yazılım/kodlama veya platformumuz dışındaki konularda yanıt verememekteyim.\n\nrandevuformu.com'un özellikleri, randevu formu açma adımları veya paketler hakkında size nasıl yardımcı olabilirim?",
+      quickActions: ["Nasıl form açarım?", "Ücretli mi?", "Özellikler neler?"],
+      isBlockedTopic: true,
+    };
+  }
+
+  // LLM Denemesi
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey && !groqKey.includes('test')) {
+    try {
+      const systemPrompt = `Sen randevuformu.com platformunun resmi Türkçe rehber asistanısın.
+Platform özellikleri: 7/24 online randevu formu, Google & Outlook çift yönlü takvim senkronizasyonu, otomatik SMS ve WhatsApp teyitleri, İyzico ile kapora/ödeme alma, QR masa standı ve çoklu uzman yönetimi.
+KURALLAR:
+1. SADECE randevuformu.com platformu, özellikleri, üyelik ve işletmelere faydaları hakkında konuş.
+2. ASLA siyaset, partiler veya politikaya girme.
+3. ASLA yazılım, kodlama veya programlama teknik sorularına girme.
+4. ASLA genel felsefe, şiir veya konu dışı sorulara cevap verme.
+5. Samimi, kurumsal ve kısa Türkçe yanıt ver. Ziyaretçiyi 'Ücretsiz Başlayın' veya 'Canlı Demo'ya yönlendir.`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message },
+          ],
+          max_tokens: 220,
+          temperature: 0.3,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiReply = data.choices?.[0]?.message?.content?.trim();
+        if (aiReply) {
+          return {
+            reply: aiReply,
+            quickActions: ["Ücretsiz Başlayın", "Canlı Demolar", "Sektörleri İncele"],
+          };
+        }
+      }
+    } catch {}
+  }
+
+  // Yüksek Zekalı Kural Tabanlı Yanıtlar
+  if (lower.includes('nasıl') || lower.includes('nasil') || lower.includes('kur') || lower.includes('kayıt') || lower.includes('başla') || lower.includes('form aç')) {
+    return {
+      reply: "randevuformu.com ile randevu formu açmak çok kolaydır! Sağ üstteki 'Ücretsiz Başlayın' butonuna tıklayarak 1 dakika içinde işletme hesabınızı oluşturabilir, hizmetlerinizi ekleyip randevu linkinizi Instagram biyografinize veya web sitenize ekleyebilirsiniz.",
+      quickActions: ["Ücretsiz Başlayın", "Canlı Demoyu Gör", "Özellikler Neler?"],
+    };
+  }
+
+  if (lower.includes('ücret') || lower.includes('ucret') || lower.includes('fiyat') || lower.includes('paket') || lower.includes('kaç para') || lower.includes('paralı')) {
+    return {
+      reply: "randevuformu.com'un temel randevu alma, takvim yönetimi ve form özellikleri tamamen ücretsizdir! İhtiyacınıza göre SMS paketleri veya kurumsal entegrasyonlar için esnek paketlerimizden yararlanabilirsiniz.",
+      quickActions: ["Ücretsiz Başlayın", "Özellikleri Gör", "B2B İletişim"],
+    };
+  }
+
+  if (lower.includes('whatsapp') || lower.includes('sms') || lower.includes('onay') || lower.includes('hatırlat') || lower.includes('bildirim')) {
+    return {
+      reply: "Evet, müşteriniz randevu oluşturduğu anda otomatik WhatsApp ve SMS onay mesajı gönderilir. Ayrıca randevuya 2 saat kala otomatik hatırlatma iletilerek randevuya gelinmeme (no-show) oranı %85 azaltılır.",
+      quickActions: ["Canlı Demo", "Nasıl Başlarım?", "Takvim Eşitleme"],
+    };
+  }
+
+  if (lower.includes('sektör') || lower.includes('kimler') || lower.includes('kullanabilir') || lower.includes('doktor') || lower.includes('kuaför') || lower.includes('diyetisyen')) {
+    return {
+      reply: "randevuformu.com; diş hekimleri, klinikler, kuaför & berberler, güzellik merkezleri, diyetisyenler, avukatlar, psikologlar, veterinerler ve randevuyla çalışan tüm işletmeler için özel olarak tasarlanmıştır.",
+      quickActions: ["Sektörleri Gör", "Canlı Demolar", "Ücretsiz Başlayın"],
+    };
+  }
+
+  return {
+    reply: "Merhaba! Ben randevuformu.com platform rehberiyim. Randevu sistemimizin özellikleri, takvim senkronizasyonu veya 1 dakikada ücretsiz form açma adımları hakkında size nasıl yardımcı olabilirim?",
+    quickActions: ["Nasıl form açarım?", "Ücretli mi?", "WhatsApp onayları nasıl çalışır?", "Canlı Demolar"],
+  };
+}
+
+// ────────────────────────────────────────────────────────
+// 3. MÜŞTERİ CHATBOTU (İşletme Temasına & Randevuya Özel)
 // ────────────────────────────────────────────────────────
 export async function processCustomerMessage(
   message: string,
   businessSlugOrId: string
 ): Promise<CustomerChatResponse> {
   const lower = message.toLowerCase().trim();
+
+  // Ana sayfa platform asistanı isteği ise platform motorunu çalıştır
+  if (businessSlugOrId === 'platform' || businessSlugOrId === 'randevuformu') {
+    return processPlatformMessage(message);
+  }
 
   // İşletme bilgilerini çek
   let business: any = null;

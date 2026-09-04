@@ -368,8 +368,8 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Müşteri AI Chatbot Asistanı */}
-      <ChatbotWidget mode="customer" />
+      {/* Platform Danışman AI Chatbot */}
+      <ChatbotWidget mode="platform" />
     </div>
   );
 }

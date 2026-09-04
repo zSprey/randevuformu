@@ -134,7 +134,7 @@ export default function Hero() {
             >
               <span className="inline-flex items-center gap-2 text-[12px] font-medium text-[#0062FF] bg-[#0062FF]/[0.06] border border-[#0062FF]/[0.12] px-3 py-1.5 rounded-lg">
                 <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-                Atomik Slot Korumalı Randevu Altyapısı
+                Online Randevu &amp; Müşteri Yönetimi
               </span>
             </motion.div>
 
@@ -145,16 +145,11 @@ export default function Hero() {
               transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-4"
             >
-              <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.25rem] font-bold tracking-[-0.03em] leading-[1.1] text-[#0F2A4A]">
-                İşletmeniz için
-                <br />
-                <span className="text-[#0062FF]">profesyonel</span> randevu
-                <br />
-                yönetim altyapısı.
+              <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-bold tracking-[-0.03em] leading-[1.15] text-[#0F2A4A]">
+                Randevularınızı <span className="text-[#0062FF]">kolayca</span> yönetin, işinize odaklanın.
               </h1>
-              <p className="text-base sm:text-lg text-slate-500 leading-relaxed max-w-lg">
-                No-show oranını %85 düşüren otomatik WhatsApp teyitleri, çift yönlü
-                Google &amp; Outlook senkronizasyonu ve milisaniyelik çakışma koruması.
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-lg">
+                WhatsApp hatırlatmaları, otomatik takvim eşitleme ve online randevu formu. Kurulum sadece 1 dakika sürer.
               </p>
             </motion.div>
 
