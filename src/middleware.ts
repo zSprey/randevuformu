@@ -24,10 +24,11 @@ export async function middleware(request: NextRequest) {
 
   // ────────────────────────────────────────────────────────
   // 0. GOOGLE SEARCH CONSOLE & INDEXNOW INSTANT AUTO-VERIFICATION
+  // Sadece tam eşleşen resmi Google Search Console dosyasını döndür.
+  // Wildcard (joker) KULLANMA, aksi halde Googlebot güvenlik testi sahte URL'lerde de 200 alıp "saldırıya uğramış" hatası verir!
   // ────────────────────────────────────────────────────────
-  if (lowerPathname.startsWith('/google') && lowerPathname.endsWith('.html')) {
-    const fileName = pathname.replace('/', '');
-    return new NextResponse(`google-site-verification: ${fileName}`, {
+  if (lowerPathname === '/googlefa628ba0ea483542.html') {
+    return new NextResponse('google-site-verification: googlefa628ba0ea483542.html', {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
