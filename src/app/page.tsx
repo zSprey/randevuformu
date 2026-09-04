@@ -120,13 +120,6 @@ export default function Home() {
           availability: "https://schema.org/InStock",
           description: "Temel randevu formu özellikleri tamamen ücretsizdir.",
         },
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.9",
-          reviewCount: "520",
-          bestRating: "5",
-          worstRating: "1",
-        },
         featureList: [
           "Online Randevu Formu",
           "Otomatik WhatsApp ve SMS Hatırlatma",

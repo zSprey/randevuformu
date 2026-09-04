@@ -117,29 +117,6 @@ export default function RootLayout({
         }
       },
       {
-        "@type": "SoftwareApplication",
-        "@id": "https://randevuformu.com/#software",
-        "name": "randevuformu.com",
-        "url": "https://randevuformu.com",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "All",
-        "browserRequirements": "Requires JavaScript. Requires HTML5.",
-        "description": "İşletmeniz için 30 saniyede online randevu formu kurun. WhatsApp ve SMS onaylı randevu yönetim platformu.",
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "reviewCount": "520",
-          "bestRating": "5",
-          "worstRating": "1"
-        },
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "TRY",
-          "availability": "https://schema.org/InStock"
-        }
-      },
-      {
         "@type": "Organization",
         "@id": "https://randevuformu.com/#organization",
         "name": "randevuformu.com",
@@ -153,44 +130,6 @@ export default function RootLayout({
           "areaServed": "TR",
           "availableLanguage": "Turkish"
         }
-      },
-      {
-        "@type": "FAQPage",
-        "@id": "https://randevuformu.com/#faq",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "randevuformu.com nedir ve işletmeme ne sağlar?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "randevuformu.com, işletmelerin 30 saniyede kendi online randevu bağlantılarını oluşturup web sitelerine veya Instagram biyografilerine eklemelerini sağlayan yeni nesil randevu platformudur. Telefon trafiğinizi sonlandırır ve randevuları 7/24 otomatik toplar."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Randevu sistemi WhatsApp ve SMS ile doğrulanıyor mu?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Evet. Alınan tüm randevular anında WhatsApp ve SMS bildirimleriyle müşterinize ve işletmenize teyit edilir, randevu saati öncesi otomatik hatırlatmalar iletilir."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "randevuformu.com'u kullanmak ücretsiz mi?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Evet. Temel online randevu formu oluşturma ve takvim özellikleri tamamen ücretsiz olarak sunulmaktadır. Kurulum için kredi kartı gerekmez."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Hangi sektörler randevuformu.com'u kullanabilir?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Kuaför, berber, güzellik merkezi, diş hekimi, diyetisyen, veteriner, fizyoterapist, psikolog, avukat, danışmanlık ve oto servis başta olmak üzere randevuyla çalışan tüm sektörler için özel şablonlar mevcuttur."
-            }
-          }
-        ]
       }
     ]
   };
