@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import ChatbotWidget from "@/components/ChatbotWidget";
 import {
   CalendarDays,
   Check,
@@ -169,9 +170,7 @@ export default function Home() {
       <header className="sticky top-0 w-full z-50 bg-[#080C14]/90 backdrop-blur-xl border-b border-slate-800/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-white text-slate-950 flex items-center justify-center shadow-sm">
-              <CalendarDays className="w-4 h-4 text-slate-950" />
-            </div>
+            <img src="/logo.png" alt="randevuformu.com" className="w-8 h-8 rounded-xl" />
             <span className="font-bold text-base tracking-tight text-white">
               randevuformu<span className="text-slate-400 font-normal">.com</span>
             </span>
@@ -673,6 +672,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Müşteri AI Chatbot Asistanı */}
+      <ChatbotWidget mode="customer" />
     </div>
   );
 }

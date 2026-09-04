@@ -195,7 +195,7 @@ export default function ContactPage() {
                       type="text"
                       name="name"
                       required
-                      placeholder="Dr. Ahmet Yılmaz"
+                      placeholder="Ad Soyad"
                       className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
                     />
                   </div>
@@ -207,7 +207,7 @@ export default function ContactPage() {
                     <input
                       type="text"
                       name="company"
-                      placeholder="Yılmaz Diş Polikliniği"
+                      placeholder="İşletme / Klinik Adı"
                       className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
                     />
                   </div>
@@ -220,7 +220,7 @@ export default function ContactPage() {
                       type="email"
                       name="email"
                       required
-                      placeholder="ahmet@klinik.com"
+                      placeholder="email@adresiniz.com"
                       className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-indigo-500"
                     />
                   </div>

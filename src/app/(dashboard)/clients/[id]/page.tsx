@@ -46,7 +46,7 @@ export default function ClientDetailPage({ params }: PageProps) {
       id: `tr-${Date.now()}`,
       date: new Date().toISOString().split("T")[0],
       title: newTitle,
-      doctorName: "Dr. Ahmet Yılmaz",
+      doctorName: "Tedavi Uzmanı",
       notes: newNotes,
       cost: newCost,
       status: "COMPLETED",

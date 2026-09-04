@@ -48,13 +48,13 @@ export default function SettingsPage() {
 
   // Modül 1: WhatsApp İletişim Hattı
   const [businessId, setBusinessId] = useState("cl_demo_business_123");
-  const [whatsappNumber, setWhatsappNumber] = useState("+905551234567");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [isWhatsappActive, setIsWhatsappActive] = useState(true);
   const [whatsappDefaultMessage, setWhatsappDefaultMessage] = useState("Merhaba, randevu almak istiyorum.");
   const [isSavingWhatsapp, setIsSavingWhatsapp] = useState(false);
 
   // Modül 3: Dinamik İndirim (Yield Management)
-  const [isDynamicDiscountActive, setIsDynamicDiscountActive] = useState(true);
+  const [isDynamicDiscountActive, setIsDynamicDiscountActive] = useState(false);
   const [dynamicDiscountPercent, setDynamicDiscountPercent] = useState(20);
   const [discountThresholdHours, setDiscountThresholdHours] = useState(4);
   const [isSavingYield, setIsSavingYield] = useState(false);
@@ -66,7 +66,7 @@ export default function SettingsPage() {
   const [autoConfirm, setAutoConfirm] = useState(true);
 
   // Calendar Sync
-  const [googleConnected, setGoogleConnected] = useState(true);
+  const [googleConnected, setGoogleConnected] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState(false);
 
   const showToast = (msg: string) => {

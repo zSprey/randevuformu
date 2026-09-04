@@ -15,3 +15,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Analiz üretilirken hata oluştu.' }, { status: 500 });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { message, businessId = 'cl_demo_business_123' } = body;
+
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json({ error: 'Mesaj metni zorunludur.' }, { status: 400 });
+    }
+
+    const result = await generateBusinessSummary(businessId, message);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('Business Chat API Error:', error);
+    return NextResponse.json(
+      { reply: 'Şu anda yanıt veremedim. Lütfen tekrar deneyin.' },
+      { status: 500 }
+    );
+  }
+}

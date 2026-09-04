@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import ChatbotWidget from "@/components/ChatbotWidget";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -26,8 +27,6 @@ import {
   QrCode,
   BookOpen,
   HeartPulse,
-  Package,
-  RotateCcw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -113,8 +112,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Özet Gösterge", href: "/dashboard", icon: LayoutDashboard },
     { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
     { name: "Danışan CRM", href: "/clients", icon: HeartPulse },
-    { name: "Paketler & Fatura", href: "/packages", icon: Package },
-    { name: "Müşteri Hatırlatma", href: "/retention", icon: RotateCcw },
     { name: "Ekip & Uzmanlar", href: "/staff", icon: Users },
     { name: "Form Oluşturucu", href: "/forms", icon: FileText },
     { name: "QR Stand & Widget", href: "/qr-stand", icon: QrCode },
@@ -450,6 +447,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
+
+      {/* AI Chatbot Asistanı - İşletme Modu */}
+      <ChatbotWidget mode="business" />
     </div>
   );
 }

@@ -11,10 +11,12 @@ export interface CustomerChatResponse {
     isDiscounted?: boolean;
   }>;
   quickActions?: string[];
+  isBlockedTopic?: boolean;
 }
 
 export interface BusinessSummaryResponse {
   greeting: string;
+  reply?: string;
   metrics: {
     totalAppointmentsToday: number;
     pendingCount: number;
@@ -23,18 +25,49 @@ export interface BusinessSummaryResponse {
     waitlistCount: number;
   };
   insights: string[];
+  isBlockedTopic?: boolean;
 }
 
-/**
- * 1. Müşteri Chatbotu: Doğal Dil Randevu & Müsaitlik Motoru
- */
+// ────────────────────────────────────────────────────────
+// 1. KESİN VE TAVİZSİZ KONU KORUMA VE GÜVENLİK FİLTRESİ
+// ────────────────────────────────────────────────────────
+const FORBIDDEN_KEYWORDS = [
+  // Siyaset & Politika
+  'siyaset', 'politika', 'seçim', 'secim', 'parti', 'hükümet', 'hukumet',
+  'muhalefet', 'erdoğan', 'erdogan', 'chp', 'akp', 'ak parti', 'mhp', 'iyi parti',
+  'dem parti', 'milletvekili', 'bakan', 'cumhurbaşkanı', 'cumhurbaskani',
+  'belediye başkanı', 'oy ver', 'seçimler', 'propaganda', 'ideoloji',
+
+  // Yazılım & Kodlama
+  'yazılım', 'yazilim', 'kod', 'kodlama', 'programlama', 'javascript', 'python',
+  'typescript', 'react', 'next.js', 'nextjs', 'html', 'css', 'sql', 'database',
+  'api yaz', 'fonksiyon yaz', 'script yaz', 'kod yaz', 'bug düzelt', 'c++', 'c#',
+  'java', 'php', 'github', 'algoritma', 'developer', 'yazılımcı',
+
+  // Konu Dışı / Genel İstismar
+  'şiir yaz', 'siir yaz', 'ödev yap', 'odev', 'felsefe', 'aşk mektubu', 'fıkra anlat',
+  'şarkı sözü', 'sen kimsin kim yaptı', 'prompt', 'sistem talimatı', 'jailbreak',
+];
+
+export function isForbiddenTopic(text: string): boolean {
+  const lower = text.toLowerCase();
+  return FORBIDDEN_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+export function getForbiddenReply(businessName: string): string {
+  return `Ben randevuformu.com ve ${businessName} bünyesinde hizmet veren akıllı randevu asistanıyım. Kurallarımız gereği siyaset, yazılım/kodlama veya işletme faaliyetlerimiz dışındaki konularda yanıt verememekteyim.\n\nSize ${businessName} randevuları, uygun seans saatleri, hizmetlerimiz ve fiyatlarımız konusunda nasıl yardımcı olabilirim?`;
+}
+
+// ────────────────────────────────────────────────────────
+// 2. MÜŞTERİ CHATBOTU (İşletme Temasına & Randevuya Özel)
+// ────────────────────────────────────────────────────────
 export async function processCustomerMessage(
   message: string,
   businessSlugOrId: string
 ): Promise<CustomerChatResponse> {
   const lower = message.toLowerCase().trim();
 
-  // İşletme ve hizmetlerini çek
+  // İşletme bilgilerini çek
   let business: any = null;
   try {
     business = await prisma.business.findFirst({
@@ -46,29 +79,95 @@ export async function processCustomerMessage(
       },
     });
   } catch (err) {
-    console.warn('Customer Chat business lookup error:', err);
+    console.warn('Customer Chat business lookup warning:', err);
   }
 
-  const businessName = business?.name || 'İşletmemiz';
-  const servicesList = business?.services || [
-    { name: 'Standart Seans / Muayene', price: 500, durationMin: 30 },
-  ];
+  const isByErman = businessSlugOrId === 'byerman';
+  const businessName = isByErman ? 'By Erman Hair Studio' : business?.name || 'İşletmemiz';
+  const businessCategory = isByErman ? 'Erkek Kuaförü & Saç Tasarım' : business?.category || 'Hizmet & Randevu';
 
-  // Tarih tespiti
+  // 1. KURAL: Konu dışı filtre kontrolü (Siyaset, Kodlama, Genel Sohbet)
+  if (isForbiddenTopic(lower)) {
+    return {
+      reply: getForbiddenReply(businessName),
+      quickActions: ['Uygun Saatleri Gör', 'Hizmet ve Fiyatlar', 'WhatsApp Hattı'],
+      isBlockedTopic: true,
+    };
+  }
+
+  const servicesList = business?.services?.length
+    ? business.services
+    : isByErman
+    ? [
+        { name: 'Saç & Sakal Tasarım', price: 450, durationMin: 45 },
+        { name: 'VIP Bakım & Saç Kesimi', price: 700, durationMin: 60 },
+        { name: 'Sakal Tıraşı & Cilt Bakımı', price: 300, durationMin: 30 },
+      ]
+    : [
+        { name: 'Standart Seans / Randevu', price: 500, durationMin: 30 },
+        { name: 'Detaylı Danışmanlık & Muayene', price: 800, durationMin: 60 },
+      ];
+
+  // 2. Groq / Gemini LLM Çağrısı Denemesi
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey && !groqKey.includes('test')) {
+    try {
+      const systemPrompt = `Sen randevuformu.com platformunda yer alan "${businessName}" (${businessCategory}) işletmesinin resmi yapay zeka asistanısın.
+KESİN VE TAVİZSİZ KURALLAR:
+1. SADECE randevu alma, uygun seans saatleri, işletme hizmetleri, fiyatlar, adres/çalışma saatleri ve randevu süreçleri hakkında konuşacaksın.
+2. ASLA siyaset, partiler, seçimler, politika konularına girme.
+3. ASLA yazılım, kodlama, programlama, script konularına girme.
+4. ASLA konu dışı sorulara cevap verme.
+5. Kısa, samimi, kurumsal ve Türkçe yanıt ver. Müşteriyi randevu almaya davet et.
+İşletme Hizmetleri: ${servicesList.map((s: any) => `${s.name} (₺${s.price})`).join(', ')}.`;
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message },
+          ],
+          max_tokens: 250,
+          temperature: 0.3,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiReply = data.choices?.[0]?.message?.content?.trim();
+        if (aiReply) {
+          return {
+            reply: aiReply,
+            quickActions: ['Hemen Randevu Seç', 'Fiyat Listesi', 'WhatsApp İletişim'],
+          };
+        }
+      }
+    } catch {
+      // LLM hatası durumunda yerel zeka motoruna sorunsuz geç
+    }
+  }
+
+  // 3. Yüksek Zekalı Yerel Türkçe Yanıt Motoru (Sektör & Tema Odaklı)
   let targetDate = new Date();
   let dateLabel = 'Bugün';
 
   if (lower.includes('yarın') || lower.includes('yarin')) {
     targetDate = addDays(new Date(), 1);
     dateLabel = 'Yarın';
-  } else if (lower.includes('hafta sonu') || lower.includes('cumartesi')) {
+  } else if (lower.includes('hafta sonu') || lower.includes('cumartesi') || lower.includes('pazar')) {
     targetDate = addDays(new Date(), 2);
-    dateLabel = 'Cumartesi';
+    dateLabel = 'Hafta Sonu';
   }
 
   const dateStr = format(targetDate, 'yyyy-MM-dd');
 
-  // Müsaitlik veya randevu sorusu
+  // Müsaitlik & Randevu Soruları
   if (
     lower.includes('boş') ||
     lower.includes('bos') ||
@@ -76,57 +175,78 @@ export async function processCustomerMessage(
     lower.includes('müsait') ||
     lower.includes('musait') ||
     lower.includes('saat') ||
-    lower.includes('yer var mı') ||
-    lower.includes('dolgu') ||
-    lower.includes('kesim')
+    lower.includes('yer var') ||
+    lower.includes('seans')
   ) {
     const isAfternoon = lower.includes('öğle') || lower.includes('ogle') || lower.includes('akşam') || lower.includes('aksam');
     const isMorning = lower.includes('sabah') || lower.includes('erken');
 
     let slots = [
-      { id: '1', time: '10:00', date: dateStr, serviceName: servicesList[0]?.name || 'Randevu', isDiscounted: false },
-      { id: '2', time: '11:30', date: dateStr, serviceName: servicesList[0]?.name || 'Randevu', isDiscounted: false },
-      { id: '3', time: '14:30', date: dateStr, serviceName: servicesList[0]?.name || 'Randevu', isDiscounted: true },
-      { id: '4', time: '16:00', date: dateStr, serviceName: servicesList[0]?.name || 'Randevu', isDiscounted: true },
-      { id: '5', time: '17:30', date: dateStr, serviceName: servicesList[0]?.name || 'Randevu', isDiscounted: false },
+      { id: 's1', time: '10:30', date: dateStr, serviceName: servicesList[0]?.name || 'Hizmet', isDiscounted: false },
+      { id: 's2', time: '11:45', date: dateStr, serviceName: servicesList[0]?.name || 'Hizmet', isDiscounted: false },
+      { id: 's3', time: '14:15', date: dateStr, serviceName: servicesList[0]?.name || 'Hizmet', isDiscounted: true },
+      { id: 's4', time: '16:00', date: dateStr, serviceName: servicesList[0]?.name || 'Hizmet', isDiscounted: true },
+      { id: 's5', time: '17:30', date: dateStr, serviceName: servicesList[0]?.name || 'Hizmet', isDiscounted: false },
     ];
 
-    if (isAfternoon) {
-      slots = slots.filter((s) => s.time >= '12:00');
-    } else if (isMorning) {
-      slots = slots.filter((s) => s.time < '12:00');
-    }
+    if (isAfternoon) slots = slots.filter((s) => s.time >= '12:00');
+    else if (isMorning) slots = slots.filter((s) => s.time < '12:00');
 
     return {
-      reply: `${dateLabel} günü için ${businessName} bünyesinde uygun bulduğum saatler aşağıdadır. İndirimli saatleri kaçırmamak için hemen seçebilirsiniz:`,
+      reply: `${dateLabel} günü için ${businessName} bünyesinde uygun bulduğum saatler aşağıdadır. İndirimli saatleri kaçırmadan tek tıkla seçebilirsiniz:`,
       suggestedSlots: slots,
-      quickActions: ['Fiyatları Öğren', 'WhatsApp ile Yazış', 'Hizmet Listesi'],
+      quickActions: ['Fiyatları Gör', 'WhatsApp ile Danış', 'Farklı Bir Gün Seç'],
     };
   }
 
-  // Fiyat sorusu
-  if (lower.includes('fiyat') || lower.includes('ücret') || lower.includes('kac para') || lower.includes('kaç tl')) {
-    const pricesText = servicesList
-      .map((s: any) => `• ${s.name}: ₺${s.price || 500} (${s.durationMin || 30} dk)`)
+  // Fiyat & Ücret Soruları
+  if (lower.includes('fiyat') || lower.includes('ücret') || lower.includes('ucret') || lower.includes('kaç tl') || lower.includes('kac para')) {
+    const prices = servicesList
+      .map((s: any) => `• ${s.name}: ₺${s.price || 400} (${s.durationMin || 30} dk)`)
       .join('\n');
 
     return {
-      reply: `${businessName} güncel hizmet ve fiyat listesi:\n\n${pricesText}\n\nRandevu almak istediğiniz hizmeti seçebilir veya bir gün belirtebilirsiniz.`,
-      quickActions: ['Yarın için randevu al', 'Bugün için randevu al', 'WhatsApp İletişim'],
+      reply: `${businessName} güncel hizmet ve fiyat listemiz:\n\n${prices}\n\nDilediğiniz hizmeti seçerek doğrudan online randevu oluşturabilirsiniz.`,
+      quickActions: ['Bugün Boş Yer Var mı?', 'Yarın için Randevu Al', 'WhatsApp İletişim'],
     };
   }
 
-  // Varsayılan karşılama
+  // Adres & İletişim Soruları
+  if (lower.includes('nerede') || lower.includes('adres') || lower.includes('konum') || lower.includes('telefon') || lower.includes('ulaşım')) {
+    return {
+      reply: `${businessName} olarak hizmet vermekteyiz. Randevu aldığınızda tam adres ve konum bilgisi otomatik olarak SMS ve WhatsApp ile cebinize iletilmektedir. Doğrudan görüşmek isterseniz WhatsApp butonunu kullanabilirsiniz.`,
+      quickActions: ['Randevu Al', 'WhatsApp ile Konum İste'],
+    };
+  }
+
+  // Varsayılan Karşılama
   return {
-    reply: `Merhaba! Ben ${businessName} Akıllı Randevu Asistanıyım. Size en uygun randevu saatini bulabilir, hizmet ve fiyat bilgilerini anında iletebilirim. Nasıl yardımcı olabilirim?`,
-    quickActions: ['Bugün boş yer var mı?', 'Yarın öğleden sonra müsaitlik', 'Hizmet ve Fiyatlar', 'WhatsApp Destek'],
+    reply: `Merhaba! Ben ${businessName} (${businessCategory}) akıllı randevu asistanıyım. Size en uygun randevu saatini bulabilir, seans ücretlerini iletebilir ve rezervasyonunuzu hızlandırabilirim. Nasıl yardımcı olabilirim?`,
+    quickActions: ['Bugün boş yer var mı?', 'Yarın için randevu bak', 'Hizmet & Fiyat Listesi', 'WhatsApp Destek'],
   };
 }
 
-/**
- * 2. İşletme Chatbotu: Yönetim Paneli İçin AI Analiz & Brifing Motoru
- */
-export async function generateBusinessSummary(businessId: string): Promise<BusinessSummaryResponse> {
+// ────────────────────────────────────────────────────────
+// 3. İŞLETME YÖNETİM CHATBOTU (Panel & Yönetici Odaklı)
+// ────────────────────────────────────────────────────────
+export async function generateBusinessSummary(businessId: string, customQuery?: string): Promise<BusinessSummaryResponse> {
+  // Soru sorulmuşsa ve yasaklı konu içeriyorsa
+  if (customQuery && isForbiddenTopic(customQuery)) {
+    return {
+      greeting: 'Güvenlik Uyarısı',
+      reply: 'İşletme AI asistanı yalnızca randevularınız, ciro analiziniz, bekleme listesi ve işletme operasyonlarınız için tasarlanmıştır. Siyaset, yazılım/kodlama veya harici konularda analiz yapılamaz.',
+      metrics: {
+        totalAppointmentsToday: 0,
+        pendingCount: 0,
+        expectedRevenue: 0,
+        noShowRiskAlerts: 0,
+        waitlistCount: 0,
+      },
+      insights: ['Lütfen günlük seanslarınız veya müşteri doluluğunuzla ilgili sorular sorunuz.'],
+      isBlockedTopic: true,
+    };
+  }
+
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
@@ -156,7 +276,7 @@ export async function generateBusinessSummary(businessId: string): Promise<Busin
       },
     });
   } catch (err) {
-    console.warn('Business summary query fallback:', err);
+    console.warn('Business summary query warning:', err);
   }
 
   const total = appointments.length;
@@ -166,7 +286,7 @@ export async function generateBusinessSummary(businessId: string): Promise<Busin
   const insights: string[] = [];
 
   if (pending > 0) {
-    insights.push(`Onay bekleyen ${pending} adet randevunuz bulunuyor. Müşterilere hızlı dönüş yapmak doluluk oranını %35 artırır.`);
+    insights.push(`Onay bekleyen ${pending} adet randevunuz bulunuyor. Müşterilere hızlı dönüş yapılması doluluğu artırır.`);
   }
 
   if (waitlistCount > 0) {
@@ -179,8 +299,23 @@ export async function generateBusinessSummary(businessId: string): Promise<Busin
     insights.push(`Bugün toplam ${total} seans planlandı. Tahmini günlük ciro: ₺${revenue}.`);
   }
 
+  let customReply: string | undefined = undefined;
+  if (customQuery) {
+    const qLower = customQuery.toLowerCase();
+    if (qLower.includes('ciro') || qLower.includes('gelir')) {
+      customReply = `Bugünkü tahmini toplam cironuz: ₺${revenue}. Toplam seans adedi: ${total}.`;
+    } else if (qLower.includes('bekleme') || qLower.includes('yedek')) {
+      customReply = `Şu anda bekleme listesinde ${waitlistCount} danışan yer açılmasını bekliyor.`;
+    } else if (qLower.includes('no-show') || qLower.includes('risk')) {
+      customReply = `No-Show Risk Radarı devrede. Gelmeme riski yüksek müşterilerden otomatik kapora talep edilmektedir.`;
+    } else {
+      customReply = `Bugün ${total} randevunuz mevcut. Tahmini ciro: ₺${revenue}. Başka hangi operasyonel veriyi incelemek istersiniz?`;
+    }
+  }
+
   return {
-    greeting: `Gününüz aydın olsun! İşletmenizin anlık randevu ve gelir özeti hazır:`,
+    greeting: `Gününüz aydın olsun! İşletmenizin anlık randevu ve operasyonel özeti hazır:`,
+    reply: customReply,
     metrics: {
       totalAppointmentsToday: total,
       pendingCount: pending,
