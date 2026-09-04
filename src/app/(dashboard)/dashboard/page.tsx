@@ -254,30 +254,30 @@ export default function DashboardPage() {
   const renderAddModal = () => (
     <AnimatePresence>
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-md bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 sm:p-7 shadow-2xl text-white space-y-4"
+            className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 sm:p-7 shadow-2xl text-slate-800 space-y-4"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="font-black text-lg text-white flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-amber-400" />
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-[#0F2A4A] flex items-center gap-2">
+                <Scissors className="w-5 h-5 text-[#0062FF]" />
                 <span>Manuel Randevu Ekle</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAddNewAppointment} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
                   Müşteri Adı Soyadı *
                 </label>
                 <input
@@ -286,12 +286,12 @@ export default function DashboardPage() {
                   value={newCustomerName}
                   onChange={(e) => setNewCustomerName(e.target.value)}
                   placeholder="Müşteri adı ve soyadı"
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
                   Telefon Numarası *
                 </label>
                 <input
@@ -300,18 +300,18 @@ export default function DashboardPage() {
                   value={newCustomerPhone}
                   onChange={(e) => setNewCustomerPhone(e.target.value)}
                   placeholder="05XX XXX XX XX"
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
                   Tıraş Hizmeti
                 </label>
                 <select
                   value={newServiceName}
                   onChange={(e) => setNewServiceName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#0062FF]"
                 >
                   <option value="Saç Kesimi & Yıkama">Saç Kesimi & Yıkama (30 dk)</option>
                   <option value="Sakal Tıraşı & Sıcak Havlu">Sakal Tıraşı & Sıcak Havlu (30 dk)</option>
@@ -323,21 +323,21 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Tarih</label>
+                  <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">Tarih</label>
                   <input
                     type="date"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-[#0062FF]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Saat</label>
+                  <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">Saat</label>
                   <input
                     type="time"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full px-3.5 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:bg-white focus:border-[#0062FF]"
                   />
                 </div>
               </div>
@@ -346,13 +346,13 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  className="px-4 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
                 >
                   Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30"
+                  className="px-5 py-2 text-xs font-medium rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white shadow-sm"
                 >
                   Randevuyu Kaydet
                 </button>
@@ -386,52 +386,52 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         {/* Erman Usta Header Card */}
-        <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-                <Scissors className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-lg bg-[#0F2A4A]/[0.06] border border-slate-200 text-[#0F2A4A] flex items-center justify-center shrink-0">
+                <Scissors className="w-6 h-6" strokeWidth={1.75} />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#0F2A4A]">
                   Erman Usta Randevu Paneli
                 </h1>
-                <p className="text-sm font-semibold text-emerald-400 flex items-center gap-2 mt-1">
-                  <Phone className="w-4 h-4" /> İletişim Hattı: 0538 480 90 01
+                <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 mt-0.5">
+                  <Phone className="w-3.5 h-3.5" /> İletişim Hattı: 0538 480 90 01
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={fetchDashboardData}
                 disabled={isRefreshing}
-                className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold flex items-center gap-2 border border-slate-700 transition-all active:scale-95 cursor-pointer"
+                className="px-3.5 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium flex items-center gap-1.5 border border-slate-200 transition-colors cursor-pointer"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-amber-400" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#0062FF]" : ""}`} />
                 <span>Yenile</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
-                className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black flex items-center gap-2 shadow-lg shadow-emerald-600/30 border border-emerald-400 transition-all active:scale-95 cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white text-xs font-medium flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Randevu Ekle</span>
               </button>
             </div>
           </div>
 
-          {/* Tarih Filtre Sekmeleri (Büyük & Dokunmatik) */}
-          <div className="mt-6 pt-5 border-t border-slate-800 flex flex-wrap gap-2.5">
+          {/* Tarih Filtre Sekmeleri */}
+          <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setFilterDate("today")}
-              className={`px-5 py-3 rounded-2xl font-black text-sm transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer ${
                 filterDate === "today"
-                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                  : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                  ? "bg-[#0F2A4A] text-white shadow-xs"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
               📅 Bugün ({todayAppointments.length})
@@ -439,10 +439,10 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setFilterDate("tomorrow")}
-              className={`px-5 py-3 rounded-2xl font-black text-sm transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer ${
                 filterDate === "tomorrow"
-                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                  : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                  ? "bg-[#0F2A4A] text-white shadow-xs"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
               📅 Yarın ({tomorrowAppointments.length})
@@ -450,10 +450,10 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setFilterDate("all")}
-              className={`px-5 py-3 rounded-2xl font-black text-sm transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors cursor-pointer ${
                 filterDate === "all"
-                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                  : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+                  ? "bg-[#0F2A4A] text-white shadow-xs"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
               📋 Tüm Randevular ({appointments.length})
@@ -461,15 +461,15 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Randevu Listesi (Ultra-Sade & Büyük Kartlar) */}
-        <div className="space-y-4">
+        {/* Randevu Listesi */}
+        <div className="space-y-3">
           {displayedErmanAppointments.length === 0 ? (
-            <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-10 text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center mx-auto text-2xl">
+            <div className="bg-white border border-slate-200/90 rounded-xl p-10 text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
                 💈
               </div>
-              <h3 className="text-xl font-black text-white">Henüz Kayıtlı Randevu Yok</h3>
-              <p className="text-sm text-slate-400 max-w-md mx-auto">
+              <h3 className="text-base font-bold text-[#0F2A4A]">Henüz Kayıtlı Randevu Yok</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
                 Müşteriler randevu aldığında veya siz telefonla gelen müşteriyi &quot;Randevu Ekle&quot; butonuyla eklediğinizde burada anında görünecektir.
               </p>
             </div>
@@ -477,18 +477,18 @@ export default function DashboardPage() {
             displayedErmanAppointments.map((app) => (
               <div
                 key={app.id}
-                className="bg-slate-900/90 border-2 border-slate-800 hover:border-slate-700 rounded-3xl p-5 sm:p-6 shadow-xl transition-all space-y-4"
+                className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl p-5 shadow-xs transition-colors space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="px-4 py-2 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500 text-emerald-300 font-black text-lg">
+                    <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm">
                       ⏰ {app.appointment_time?.slice(0, 5) || "Saat Yok"}
                     </div>
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-black text-white">
+                      <h3 className="text-base font-bold text-[#0F2A4A]">
                         {app.customer_name}
                       </h3>
-                      <div className="text-xs text-slate-400 font-semibold">
+                      <div className="text-xs text-slate-400">
                         Tarih: {app.appointment_date}
                       </div>
                     </div>
@@ -497,55 +497,55 @@ export default function DashboardPage() {
                   {/* Durum Rozeti */}
                   <div>
                     {app.status === "seated" ? (
-                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-blue-950 border border-blue-600 text-blue-300 animate-pulse">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700">
                         🪑 Koltukta / Tıraşta
                       </span>
                     ) : app.status === "completed" ? (
-                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-emerald-950 border border-emerald-600 text-emerald-300">
-                        <CheckCircle2 className="w-4 h-4" /> Tamamlandı
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Tamamlandı
                       </span>
                     ) : app.status === "cancelled" ? (
-                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-red-950 border border-red-600 text-red-300">
-                        <XCircle className="w-4 h-4" /> İptal Edildi
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-50 border border-rose-200 text-rose-700">
+                        <XCircle className="w-3.5 h-3.5" /> İptal Edildi
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black bg-amber-950 border border-amber-600 text-amber-300">
-                        <Clock className="w-4 h-4" /> Bekleniyor
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
+                        <Clock className="w-3.5 h-3.5" /> Bekleniyor
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Detay Bilgileri */}
-                <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 text-slate-300">
+                <div className="grid sm:grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <span className="text-slate-400">✂️ Hizmet:</span>
-                    <strong className="text-white">{app.services?.name || "Saç Kesimi"}</strong>
+                    <strong className="text-slate-800">{app.services?.name || "Saç Kesimi"}</strong>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-300">
+                  <div className="flex items-center gap-2 text-slate-600">
                     <span className="text-slate-400">📱 Telefon:</span>
                     <a
                       href={`tel:${app.customer_phone}`}
-                      className="text-emerald-400 font-mono font-bold hover:underline text-base"
+                      className="text-emerald-600 font-mono font-bold hover:underline"
                     >
                       {app.customer_phone}
                     </a>
                   </div>
                   {app.customer_note && (
-                    <div className="sm:col-span-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
+                    <div className="sm:col-span-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
                       📝 <strong>Müşteri Notu:</strong> {app.customer_note}
                     </div>
                   )}
                 </div>
 
-                {/* Büyük Dokunmatik Aksiyon Butonları */}
-                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5">
+                {/* Aksiyon Butonları */}
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <a
                       href={`tel:${app.customer_phone}`}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 hover:text-[#0F2A4A] font-medium text-xs flex items-center gap-1.5 border border-slate-200 transition-colors"
                     >
-                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Ara</span>
                     </a>
                     <a
@@ -554,7 +554,7 @@ export default function DashboardPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-green-950/60 hover:bg-green-800 text-green-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-green-700/50 transition-all cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium text-xs flex items-center gap-1.5 border border-emerald-200 transition-colors"
                     >
                       <span>💬 WhatsApp</span>
                     </a>
@@ -565,7 +565,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(app.id, "seated")}
-                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-xs transition-colors border border-blue-200 cursor-pointer"
                       >
                         🪑 Koltukta
                       </button>
@@ -574,7 +574,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(app.id, "completed")}
-                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors shadow-xs cursor-pointer"
                       >
                         ✓ Tamamlandı
                       </button>
@@ -583,7 +583,7 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(app.id, "cancelled")}
-                        className="px-3 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-700 text-red-300 hover:text-white font-bold text-xs border border-red-800 transition-all active:scale-95 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 font-medium text-xs border border-slate-200 transition-colors cursor-pointer"
                       >
                         ✕ İptal
                       </button>
@@ -634,172 +634,172 @@ export default function DashboardPage() {
       {/* Top Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">Genel Bakış & İstatistikler</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#0F2A4A]">Genel Bakış &amp; İstatistikler</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             İşletmenizin anlık randevu akışı, bekleyen talepler ve seans hacmi.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={fetchDashboardData}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-[#0F2A4A] text-xs font-medium hover:bg-slate-50 transition-colors shadow-xs active:scale-95 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-indigo-400" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#0062FF]" : "text-slate-400"}`} />
             Yenile
           </button>
 
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white text-xs font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             Manuel Randevu Ekle
           </button>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-start justify-between hover:border-indigo-500/40 transition-all group">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start justify-between hover:border-[#0062FF]/30 transition-all">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bugünkü Randevular</p>
-            <h3 className="text-3xl font-black text-white mt-2">{todayCount}</h3>
-            <p className="text-[11px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bugünkü Randevular</p>
+            <h3 className="text-2xl font-bold text-[#0F2A4A] mt-1 tabular-nums">{todayCount}</h3>
+            <p className="text-[11px] text-emerald-600 mt-1 font-medium flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> Canlı Takvim
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <CalendarCheck className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-[#0062FF]/10 text-[#0062FF] flex items-center justify-center">
+            <CalendarCheck className="w-5 h-5" strokeWidth={1.75} />
           </div>
         </div>
 
-        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-start justify-between hover:border-emerald-500/40 transition-all group">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start justify-between hover:border-[#0062FF]/30 transition-all">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Toplam Randevu</p>
-            <h3 className="text-3xl font-black text-white mt-2">{appointments.length}</h3>
-            <p className="text-[11px] text-indigo-400 mt-1 font-semibold flex items-center gap-1">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Toplam Randevu</p>
+            <h3 className="text-2xl font-bold text-[#0F2A4A] mt-1 tabular-nums">{appointments.length}</h3>
+            <p className="text-[11px] text-[#0062FF] mt-1 font-medium flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> Gerçek Veritabanı
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Users className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <Users className="w-5 h-5" strokeWidth={1.75} />
           </div>
         </div>
 
-        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-start justify-between hover:border-purple-500/40 transition-all group">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start justify-between hover:border-[#0062FF]/30 transition-all">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Haftalık Seans</p>
-            <h3 className="text-3xl font-black text-white mt-2">{appointments.length}</h3>
-            <p className="text-[11px] text-purple-400 mt-1 font-semibold">Aktif rezervasyonlar</p>
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Haftalık Seans</p>
+            <h3 className="text-2xl font-bold text-[#0F2A4A] mt-1 tabular-nums">{appointments.length}</h3>
+            <p className="text-[11px] text-slate-500 mt-1 font-medium">Aktif rezervasyonlar</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <CreditCard className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-[#0F2A4A]/[0.06] text-[#0F2A4A] flex items-center justify-center">
+            <CreditCard className="w-5 h-5" strokeWidth={1.75} />
           </div>
         </div>
 
-        <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl flex items-start justify-between hover:border-amber-500/40 transition-all group">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start justify-between hover:border-[#0062FF]/30 transition-all">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bekleyen Talepler</p>
-            <h3 className="text-3xl font-black text-white mt-2">{pendingCount}</h3>
-            <p className="text-[11px] text-amber-400 mt-1 font-semibold flex items-center gap-1">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Bekleyen Talepler</p>
+            <h3 className="text-2xl font-bold text-[#0F2A4A] mt-1 tabular-nums">{pendingCount}</h3>
+            <p className="text-[11px] text-amber-600 mt-1 font-medium flex items-center gap-1">
               <Clock className="w-3 h-3" /> Onay Bekliyor
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-600/20 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Clock className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <Clock className="w-5 h-5" strokeWidth={1.75} />
           </div>
         </div>
       </div>
 
       {/* Randevu Tablosu */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-xl shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#0062FF]/10 text-[#0062FF] flex items-center justify-center font-bold text-sm">
               📋
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Randevu Listesi</h3>
-              <p className="text-xs text-slate-400">Veritabanındaki gerçek randevular</p>
+              <h3 className="text-sm font-bold text-[#0F2A4A]">Randevu Listesi</h3>
+              <p className="text-[11px] text-slate-400">Veritabanındaki gerçek randevular</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Müşteri ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="pl-8 pr-3.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#0062FF]"
               />
             </div>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/60 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[10px] font-bold">
+          <table className="w-full text-left text-xs text-slate-600">
+            <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-[10px] font-semibold">
               <tr>
                 <th className="px-5 py-3">Müşteri</th>
                 <th className="px-5 py-3">Hizmet</th>
-                <th className="px-5 py-3">Tarih & Saat</th>
+                <th className="px-5 py-3">Tarih &amp; Saat</th>
                 <th className="px-5 py-3">Telefon</th>
                 <th className="px-5 py-3">Durum</th>
                 <th className="px-5 py-3 text-right">İşlemler</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
+            <tbody className="divide-y divide-slate-100 font-medium">
               {filteredAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 text-xs">
                     Henüz kayıtlı randevu bulunmuyor.
                   </td>
                 </tr>
               ) : (
                 filteredAppointments.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-5 py-4 font-bold text-white">{app.customer_name}</td>
-                    <td className="px-5 py-4 text-slate-300">{app.services?.name || "Hizmet"}</td>
-                    <td className="px-5 py-4 text-indigo-400 font-bold">
+                  <tr key={app.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 py-3.5 font-semibold text-[#0F2A4A]">{app.customer_name}</td>
+                    <td className="px-5 py-3.5 text-slate-600">{app.services?.name || "Hizmet"}</td>
+                    <td className="px-5 py-3.5 text-[#0062FF] font-medium tabular-nums">
                       {app.appointment_date} {app.appointment_time?.slice(0, 5)}
                     </td>
-                    <td className="px-5 py-4 font-mono">{app.customer_phone}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-3.5 font-mono text-slate-500">{app.customer_phone}</td>
+                    <td className="px-5 py-3.5">
                       {app.status === "seated" ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-950 text-blue-300 border border-blue-700">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
                           🪑 Koltukta
                         </span>
                       ) : app.status === "completed" ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                           ✓ Tamamlandı
                         </span>
                       ) : app.status === "cancelled" ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-950 text-red-300 border border-red-700">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
                           ✕ İptal
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-950 text-amber-300 border border-amber-700">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
                           ⏳ Bekleniyor
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-right space-x-1.5 whitespace-nowrap">
                       <a
                         href={`tel:${app.customer_phone}`}
-                        className="px-2.5 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-700 text-xs font-bold"
+                        className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-600 hover:text-[#0F2A4A] rounded-md border border-slate-200 text-xs font-medium"
                       >
                         Ara
                       </a>
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(app.id, "completed")}
-                        className="px-2.5 py-1.5 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-500/30 text-xs font-bold"
+                        className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-md border border-emerald-200 text-xs font-medium"
                       >
                         ✓
                       </button>

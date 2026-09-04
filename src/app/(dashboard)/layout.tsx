@@ -23,7 +23,6 @@ import {
   Trash2,
   FileText,
   Mail,
-  Sparkles,
   QrCode,
   BookOpen,
   HeartPulse,
@@ -58,7 +57,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const currentUser = typeof window !== "undefined" ? localStorage.getItem("rf_user") : null;
       const currentTenant = typeof window !== "undefined" ? localStorage.getItem("rf_tenant") : null;
 
-      // By Erman SADECE açıkça byerman kullanıcı adı ve şifresiyle girildiyse veya byerman subdomaininde ise aktiftir
       const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
 
       if (isByErman) {
@@ -121,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen bg-[#070B12] text-slate-100 flex overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#FAFBFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">
       {/* Mobile Drawer Backdrop */}
       <AnimatePresence>
         {isMobileOpen && (
@@ -130,30 +128,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 md:hidden"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar (Desktop & Mobile Responsive Drawer) */}
+      {/* Sidebar (Desktop & Mobile Responsive Drawer) — Clean Enterprise White */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${
           isMobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
-        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform">
-              <CalendarDays className="w-5 h-5" />
-            </div>
-            <span className="text-white font-black text-lg tracking-tight">
-              randevuformu<span className="text-indigo-400">.com</span>
+            <img
+              src="/logo.png"
+              alt="randevuformu.com"
+              className="h-7 w-auto transition-transform group-hover:scale-105"
+              width={28}
+              height={28}
+            />
+            <span className="text-[#0F2A4A] font-bold text-[15px] tracking-tight">
+              randevuformu<span className="text-slate-400 font-normal">.com</span>
             </span>
           </Link>
           <button
             type="button"
             onClick={() => setIsMobileOpen(false)}
-            className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg"
+            className="md:hidden p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>
@@ -161,10 +163,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 flex-1 overflow-y-auto space-y-6">
           <div>
-            <p className="px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            <p className="px-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Yönetim Merkezi
             </p>
-            <nav className="space-y-1">
+            <nav className="space-y-0.5">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -173,13 +175,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
                       isActive
-                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/40"
-                        : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+                        ? "bg-[#0062FF]/[0.08] text-[#0062FF] font-semibold border-l-2 border-[#0062FF]"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-[#0F2A4A]"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-[#0062FF]" : "text-slate-400"}`} strokeWidth={1.75} />
                     <span>{item.name}</span>
                   </Link>
                 );
@@ -187,37 +189,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
 
-          <div className="pt-4 border-t border-slate-800 space-y-2">
-            <p className="px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <p className="px-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Hızlı Canlı Önizleme
             </p>
             <Link
               href={`/${tenantSlug}`}
               target="_blank"
-              className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-indigo-300 bg-indigo-950/40 border border-indigo-800/50 hover:bg-indigo-900/40 transition-colors"
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-[#0062FF] bg-[#0062FF]/[0.05] border border-[#0062FF]/15 hover:bg-[#0062FF]/10 transition-colors"
             >
-              <span>{tenantSlug === "byerman" ? "byerman.randevuformu.com" : `randevuformu.com/${tenantSlug}`}</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="truncate">{tenantSlug === "byerman" ? "byerman.randevuformu.com" : `/${tenantSlug}`}</span>
+              <ExternalLink className="w-3.5 h-3.5 shrink-0 ml-1" />
             </Link>
           </div>
         </div>
 
         {/* Support & Logout footer */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-4 border-t border-slate-100 space-y-1">
           <a
             href="mailto:destek@randevuformu.com"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-slate-500 hover:text-[#0F2A4A] hover:bg-slate-50 transition-colors"
           >
-            <Mail className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+            <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span className="truncate">destek@randevuformu.com</span>
           </a>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-2.5 px-3 py-2 w-full rounded-xl text-left hover:bg-red-950/30 hover:text-red-400 transition-all text-slate-400 text-xs font-bold"
+            className="flex items-center gap-2 px-3 py-2 w-full rounded-lg text-left text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-medium transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4 text-red-400" />
+            <LogOut className="w-4 h-4 text-rose-500" />
             <span>Çıkış Yap</span>
           </button>
         </div>
@@ -225,32 +227,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <header className="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-8 z-30 relative">
-          <div className="flex items-center gap-4">
+        {/* Top Header — Clean Enterprise White */}
+        <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-8 z-30 relative">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMobileOpen(true)}
-              className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+              className="md:hidden p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-bold text-[#0F2A4A] flex items-center gap-2">
                 Hoş Geldiniz 👋
               </h1>
-              <p className="text-xs text-slate-400 hidden sm:block">randevuformu.com Yönetim Merkezi</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">randevuformu.com Yönetim Merkezi</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4 relative">
+          <div className="flex items-center gap-3 relative">
             {/* Quick Live Preview Link */}
             <Link
               href={`/${tenantSlug}`}
               target="_blank"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#0062FF]" />
               <span>Canlı Sayfamı Aç</span>
             </Link>
 
@@ -262,11 +264,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setShowNotifications(!showNotifications);
                   setShowProfileMenu(false);
                 }}
-                className="relative p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-2xl transition-colors"
+                className="relative p-2 text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                aria-label="Bildirimler"
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-slate-900 animate-pulse">
+                  <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#00BCD4] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
@@ -276,16 +279,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <AnimatePresence>
                 {showNotifications && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50"
                   >
-                    <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-sm text-white">Bildirimler</h3>
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 rounded-full">
+                        <h3 className="font-semibold text-xs text-[#0F2A4A]">Bildirimler</h3>
+                        <span className="px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-full">
                           {unreadCount} yeni
                         </span>
                       </div>
@@ -293,46 +296,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <button
                           type="button"
                           onClick={markAllAsRead}
-                          className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300"
+                          className="text-[11px] font-medium text-[#0062FF] hover:underline"
                         >
                           Tümünü Okundu Say
                         </button>
                       )}
                     </div>
 
-                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
+                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
                       {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-xs text-slate-500">
+                        <div className="p-6 text-center text-xs text-slate-400">
                           Hiç bildiriminiz bulunmuyor.
                         </div>
                       ) : (
                         notifications.map((n) => (
                           <div
                             key={n.id}
-                            className={`p-3.5 hover:bg-slate-800/50 transition-colors flex items-start justify-between gap-3 ${
-                              n.unread ? "bg-indigo-950/20" : ""
+                            className={`p-3 hover:bg-slate-50 transition-colors flex items-start justify-between gap-3 ${
+                              n.unread ? "bg-blue-50/40" : ""
                             }`}
                           >
                             <div className="flex items-start gap-2.5">
                               <div className="mt-0.5">
                                 {n.type === "booking" ? (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                 ) : n.type === "payment" ? (
-                                  <CreditCard className="w-4 h-4 text-indigo-400" />
+                                  <CreditCard className="w-4 h-4 text-[#0062FF]" />
                                 ) : (
-                                  <Bell className="w-4 h-4 text-amber-400" />
+                                  <Bell className="w-4 h-4 text-amber-500" />
                                 )}
                               </div>
                               <div>
-                                <div className="font-semibold text-xs text-white">{n.title}</div>
-                                <div className="text-[11px] text-slate-400 mt-0.5">{n.message}</div>
-                                <div className="text-[10px] text-slate-500 mt-1">{n.time}</div>
+                                <div className="font-medium text-xs text-[#0F2A4A]">{n.title}</div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">{n.message}</div>
+                                <div className="text-[10px] text-slate-400 mt-1">{n.time}</div>
                               </div>
                             </div>
                             <button
                               type="button"
                               onClick={() => deleteNotification(n.id)}
-                              className="text-slate-500 hover:text-red-400 p-1"
+                              className="text-slate-400 hover:text-rose-500 p-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -341,11 +344,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )}
                     </div>
 
-                    <div className="p-3 bg-slate-950/60 text-center border-t border-slate-800">
+                    <div className="p-2.5 bg-slate-50 text-center border-t border-slate-100">
                       <Link
                         href="/calendar"
                         onClick={() => setShowNotifications(false)}
-                        className="text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                        className="text-xs font-medium text-[#0062FF] hover:underline"
                       >
                         Randevu Takvimine Git →
                       </Link>
@@ -363,7 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setShowProfileMenu(!showProfileMenu);
                   setShowNotifications(false);
                 }}
-                className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center border border-indigo-400/40 shadow-lg shadow-indigo-600/25 hover:scale-105 transition-transform uppercase"
+                className="w-9 h-9 rounded-lg bg-[#0F2A4A] text-[#00BCD4] font-bold text-xs flex items-center justify-center border border-slate-200 hover:bg-[#0062FF] hover:text-white transition-colors uppercase cursor-pointer"
               >
                 {tenantName ? tenantName.slice(0, 2) : "BE"}
               </button>
@@ -371,18 +374,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <AnimatePresence>
                 {showProfileMenu && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-2 z-50"
+                    className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50 text-slate-800"
                   >
-                    <div className="p-3 border-b border-slate-800">
-                      <p className="font-bold text-xs text-white">{tenantName}</p>
+                    <div className="p-3 border-b border-slate-100">
+                      <p className="font-semibold text-xs text-[#0F2A4A]">{tenantName}</p>
                       <p className="text-[11px] text-slate-400">
                         {tenantSlug === "byerman" ? "byerman.randevuformu.com" : `/${tenantSlug}`}
                       </p>
-                      <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30">
+                      <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
                         Canlı İşletme Hesabı
                       </span>
                     </div>
@@ -391,45 +394,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <Link
                         href="/settings"
                         onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"
                       >
-                        <User className="w-4 h-4 text-indigo-400" />
+                        <User className="w-4 h-4 text-slate-400" />
                         İşletme Ayarları
                       </Link>
                       <Link
                         href="/staff"
                         onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"
                       >
-                        <Users className="w-4 h-4 text-emerald-400" />
+                        <Users className="w-4 h-4 text-slate-400" />
                         Ekip Yönetimi
                       </Link>
                       <Link
                         href="/admin/login"
                         onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"
                       >
-                        <ShieldCheck className="w-4 h-4 text-red-400" />
+                        <ShieldCheck className="w-4 h-4 text-slate-400" />
                         Super Admin Girişi
                       </Link>
                       <Link
                         href={`/${tenantSlug}`}
                         target="_blank"
-                        className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                        className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <CalendarDays className="w-4 h-4 text-indigo-400" />
+                          <CalendarDays className="w-4 h-4 text-slate-400" />
                           Canlı Randevu Sayfam
                         </span>
-                        <ExternalLink className="w-3 h-3 text-slate-500" />
+                        <ExternalLink className="w-3 h-3 text-slate-400" />
                       </Link>
                     </div>
 
-                    <div className="pt-1 border-t border-slate-800">
+                    <div className="pt-1 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 rounded-xl transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       >
                         <LogOut className="w-4 h-4" />
                         Çıkış Yap
@@ -442,8 +445,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#070B12] text-slate-100">
+        {/* Dynamic Page Content — Light Surface-0 Canvas */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#FAFBFC] text-[#0F172A]">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
