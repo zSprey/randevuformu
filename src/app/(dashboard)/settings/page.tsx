@@ -33,6 +33,8 @@ import {
   ExternalLink,
   Image as ImageIcon,
   UploadCloud,
+  Star,
+  MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -42,6 +44,7 @@ import {
 } from "@/app/actions/business-settings";
 
 import { DEFAULT_BYERMAN_SERVICES, StoredBusinessService } from "@/lib/storage/servicesStore";
+import { PrivateFeedback, DEFAULT_BYERMAN_REPUTATION } from "@/lib/storage/reputationStore";
 
 export interface BusinessService {
   id: string;
@@ -133,6 +136,14 @@ export default function SettingsPage() {
   const [galleryPhotoSubtitle, setGalleryPhotoSubtitle] = useState("");
   const [galleryUrlInput, setGalleryUrlInput] = useState("");
   const [galleryUploadMode, setGalleryUploadMode] = useState<"file" | "url">("file");
+
+  // Reputation & Review States
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(DEFAULT_BYERMAN_REPUTATION.google_review_url);
+  const [ratingScore, setRatingScore] = useState(String(DEFAULT_BYERMAN_REPUTATION.rating_score));
+  const [reviewCount, setReviewCount] = useState(String(DEFAULT_BYERMAN_REPUTATION.review_count));
+  const [reviewsEnabled, setReviewsEnabled] = useState(DEFAULT_BYERMAN_REPUTATION.reviews_enabled);
+  const [privateFeedbacks, setPrivateFeedbacks] = useState<PrivateFeedback[]>([]);
+  const [isSavingReputation, setIsSavingReputation] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -322,6 +333,24 @@ export default function SettingsPage() {
           try {
             localStorage.setItem(`rf_business_gallery_${targetSlug}`, JSON.stringify(gData.photos));
           } catch {}
+        }
+      } catch {}
+
+      // 9. Load Reputation & Feedback Data
+      try {
+        const targetSlug = isByErman ? "byerman" : "byerman";
+        const repRes = await fetch(`/api/business/reputation?slug=${targetSlug}&include_feedbacks=true`);
+        const repData = await repRes.json();
+        if (repData.success) {
+          if (repData.settings) {
+            if (repData.settings.google_review_url) setGoogleReviewUrl(repData.settings.google_review_url);
+            if (repData.settings.rating_score) setRatingScore(String(repData.settings.rating_score));
+            if (repData.settings.review_count) setReviewCount(String(repData.settings.review_count));
+            if (repData.settings.reviews_enabled !== undefined) setReviewsEnabled(Boolean(repData.settings.reviews_enabled));
+          }
+          if (Array.isArray(repData.feedbacks)) {
+            setPrivateFeedbacks(repData.feedbacks);
+          }
         }
       } catch {}
     }
@@ -622,6 +651,64 @@ export default function SettingsPage() {
     }
   };
 
+  // Reputation & Review Handlers
+  const handleSaveReputation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingReputation(true);
+    try {
+      const res = await fetch("/api/business/reputation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_settings",
+          slug: "byerman",
+          google_review_url: googleReviewUrl.trim(),
+          rating_score: parseFloat(ratingScore) || 4.9,
+          review_count: parseInt(reviewCount) || 148,
+          reviews_enabled: reviewsEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Google Yorum ve İtibar ayarları başarıyla buluta kaydedildi!");
+      } else {
+        showToast(data.error || "Kaydedilirken hata oluştu.");
+      }
+    } catch {
+      showToast("İtibar ayarları kaydedilirken bağlantı hatası oluştu.");
+    } finally {
+      setIsSavingReputation(false);
+    }
+  };
+
+  const handleUpdateFeedbackStatus = async (feedbackId: string, nextStatus: "new" | "contacted" | "resolved") => {
+    try {
+      const res = await fetch("/api/business/reputation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_feedback_status",
+          slug: "byerman",
+          feedback_id: feedbackId,
+          status: nextStatus,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPrivateFeedbacks((prev) =>
+          prev.map((f) => (f.id === feedbackId ? { ...f, status: nextStatus } : f))
+        );
+        showToast(
+          `Şikayet durumu güncellendi: ${
+            nextStatus === "contacted" ? "İletişime Geçildi" : nextStatus === "resolved" ? "Çözüldü" : "Yeni"
+          }`
+        );
+      }
+    } catch {
+      showToast("Durum güncellenemedi.");
+    }
+  };
+
   // Service CRUD Handlers
   const handleOpenAddModal = (isExtra = false, presetName = "", presetDuration = "30") => {
     setEditingServiceId(null);
@@ -732,6 +819,7 @@ export default function SettingsPage() {
     { id: "services", name: "Hizmetler & Randevu Tipleri", icon: Calendar },
     { id: "availability", name: "Çalışma Saatleri & Müsaitlik", icon: Clock },
     { id: "gallery", name: "Salon & Galeri Fotoğrafları", icon: ImageIcon },
+    { id: "reputation", name: "Google Yorum & İtibar Masası", icon: Star },
     { id: "whatsapp", name: "WhatsApp Otomasyonu", icon: MessageCircle },
     { id: "yield", name: "Akıllı Doluluk & İndirim Motoru", icon: Zap },
     { id: "profile", name: "Profil & Uzman Bilgileri", icon: User },
@@ -1518,6 +1606,240 @@ export default function SettingsPage() {
                               ☁️ Bulut
                             </span>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: GOOGLE REPUTATION & REVIEWS FUNNEL */}
+          {activeTab === "reputation" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
+                    <Star className="w-5 h-5 text-amber-500 fill-amber-400" />
+                    Google Yorumları &amp; 5 Yıldız İtibar Masası
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Google Haritalar puanınızı 5.0&apos;a yükseltin. Randevu alan müşteriler memnun kaldığında (4-5 yıldız) doğrudan Google&apos;a yönlendirilir, olumsuz bildirimler ise Google&apos;a gitmeden buraya özel olarak düşer.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    Akıllı İtibar Filtresi Aktif
+                  </span>
+                </div>
+              </div>
+
+              {/* 1. Google Maps Review Link & Display Settings */}
+              <form onSubmit={handleSaveReputation} className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#0F2A4A] flex items-center gap-1.5">
+                    <ExternalLink className="w-4 h-4 text-[#0062FF]" />
+                    Google Haritalar Değerlendirme Bağlantısı &amp; Puan Ayarları
+                  </span>
+                  {googleReviewUrl && (
+                    <a
+                      href={googleReviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#0062FF] hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      <span>Linki Test Et</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Google Haritalar Yorum / Değerlendirme URL&apos;si
+                    </label>
+                    <input
+                      type="url"
+                      value={googleReviewUrl}
+                      onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                      placeholder="https://search.google.com/local/writereview?placeid=... veya https://maps.app.goo.gl/..."
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-[#0062FF] focus:ring-1 focus:ring-[#0062FF]"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Müşteriniz randevu onayında 4 veya 5 yıldız verdiğinde tek tıkla bu bağlantıya yönlendirilerek doğrudan Google&apos;da yorum yazar.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Vitrin Puanı (1.0 - 5.0)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="1"
+                        max="5"
+                        value={ratingScore}
+                        onChange={(e) => setRatingScore(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-[#0062FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Toplam Google Yorum Sayısı
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={reviewCount}
+                        onChange={(e) => setReviewCount(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-[#0062FF]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200/60">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={reviewsEnabled}
+                        onChange={(e) => setReviewsEnabled(e.target.checked)}
+                        className="w-4 h-4 rounded text-[#0062FF] focus:ring-0 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">
+                        Randevu sayfasında seçkin müşteri yorum kartlarını sergile
+                      </span>
+                    </label>
+
+                    <button
+                      type="submit"
+                      disabled={isSavingReputation}
+                      className="px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052D4] text-white font-semibold text-xs transition-all shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0"
+                    >
+                      {isSavingReputation ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Kaydediliyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          <span>İtibar Ayarlarını Kaydet</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {/* 2. Private Feedback Rescue Desk (İtibar Kurtarma Masası) */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-[#0F2A4A] flex items-center gap-2">
+                      <span>🛡️ İtibar Kurtarma Masası (1-3 Yıldız Özel Şikayetler)</span>
+                      <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">
+                        {privateFeedbacks.length} Kayıt
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Bu müşteriler Google Haritalar&apos;a yönlendirilmeden şikayetleri doğrudan size iletilmiştir. Arayıp telafi ederek müşteri sadakatini kurtarabilirsiniz.
+                    </p>
+                  </div>
+                </div>
+
+                {privateFeedbacks.length === 0 ? (
+                  <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200/80 text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div className="text-xs font-bold text-[#0F2A4A]">Henüz Olumsuz Geri Bildirim Yok!</div>
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                      Harika! Müşterileriniz 4 ve 5 yıldız vererek doğrudan Google Haritalar profilinize yönlendiriliyor.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {privateFeedbacks.map((fb) => (
+                      <div
+                        key={fb.id}
+                        className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0">
+                              {fb.customer_name ? fb.customer_name.charAt(0) : "M"}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#0F2A4A] flex items-center gap-2 flex-wrap">
+                                <span>{fb.customer_name}</span>
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                  ★ {fb.rating} / 5
+                                </span>
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.2 rounded-full border ${
+                                    fb.status === "resolved"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : fb.status === "contacted"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-rose-50 text-rose-700 border-rose-200 animate-pulse"
+                                  }`}
+                                >
+                                  {fb.status === "resolved"
+                                    ? "✓ Çözüldü"
+                                    : fb.status === "contacted"
+                                    ? "İletişime Geçildi"
+                                    : "Yeni Bildirim"}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-400">
+                                Tel: {fb.customer_phone} • {new Date(fb.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                            {fb.customer_phone && fb.customer_phone !== "-" && (
+                              <>
+                                <a
+                                  href={`https://wa.me/${fb.customer_phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                    `Merhaba ${fb.customer_name}, By Erman Hair Studio'dan arıyorum. Randevunuzdaki geri bildiriminizi inceledik, memnuniyetinizi sağlamak ve telafi etmek isteriz.`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs"
+                                >
+                                  <MessageSquare className="w-3 h-3" />
+                                  <span>WhatsApp</span>
+                                </a>
+                                <a
+                                  href={`tel:${fb.customer_phone}`}
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold flex items-center gap-1"
+                                >
+                                  <Phone className="w-3 h-3 text-[#0062FF]" />
+                                  <span>Ara</span>
+                                </a>
+                              </>
+                            )}
+
+                            <select
+                              value={fb.status}
+                              onChange={(e) => handleUpdateFeedbackStatus(fb.id, e.target.value as any)}
+                              className="px-2 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 focus:outline-hidden"
+                            >
+                              <option value="new">Yeni</option>
+                              <option value="contacted">İletişime Geçildi</option>
+                              <option value="resolved">Çözüldü</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/70 text-xs text-slate-700 italic">
+                          &ldquo;{fb.comment}&rdquo;
                         </div>
                       </div>
                     ))}

@@ -32,6 +32,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
+import {
+  CustomerReview,
+  BusinessReputationSettings,
+  DEFAULT_BYERMAN_REPUTATION,
+  DEFAULT_BYERMAN_REVIEWS,
+} from "@/lib/storage/reputationStore";
 
 interface Service {
   id: string;
@@ -85,13 +91,21 @@ export default function ErmanBarberWidget({
 
   // 3.2 Dynamic Location & Business Info State (defaults to By Erman, syncs from cloud/localStorage)
   const [googleMapsUrl, setGoogleMapsUrl] = useState<string>("https://share.google/gOW1xHwztRfGIc3F1");
-  const [businessAddress, setBusinessAddress] = useState<string>("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
+  const [businessAddress, setBusinessAddress] = useState<string>("Mimar Sinan, Mehmet Akif Ersoy Cd. No:88/A, 41780 Körfez/Kocaeli");
   const [workingHoursText, setWorkingHoursText] = useState<string>("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
   
   // 3.3 Dynamic Cloud Gallery State (Loaded from settings / cloud store)
   const [galleryPhotos, setGalleryPhotos] = useState<GalleryItem[]>([]);
   const [loadingGallery, setLoadingGallery] = useState<boolean>(true);
   const [activePhoto, setActivePhoto] = useState<GalleryItem | null>(null);
+
+  // 3.4 Dynamic Reputation & Reviews State
+  const [reputationSettings, setReputationSettings] = useState<BusinessReputationSettings>(DEFAULT_BYERMAN_REPUTATION);
+  const [reviewsList, setReviewsList] = useState<CustomerReview[]>(DEFAULT_BYERMAN_REVIEWS);
+  const [ratingSelected, setRatingSelected] = useState<number | null>(null);
+  const [privateFeedbackComment, setPrivateFeedbackComment] = useState<string>("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
 
   // 4. Submission & UI State
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -180,18 +194,34 @@ export default function ErmanBarberWidget({
       }
     };
 
+    const syncReputationData = async () => {
+      try {
+        const res = await fetch(`/api/business/reputation?slug=${businessSlug}`);
+        const data = await res.json();
+        if (data.success) {
+          if (data.settings) setReputationSettings(data.settings);
+          if (data.reviews && data.reviews.length > 0) setReviewsList(data.reviews);
+        }
+      } catch (err) {
+        console.warn("Failed to load reputation data:", err);
+      }
+    };
+
     syncLocationData();
     syncGalleryData();
     syncServicesData();
+    syncReputationData();
 
     window.addEventListener("storage", syncLocationData);
     window.addEventListener("storage", syncGalleryData);
     window.addEventListener("storage", syncServicesData);
+    window.addEventListener("storage", syncReputationData);
 
     return () => {
       window.removeEventListener("storage", syncLocationData);
       window.removeEventListener("storage", syncGalleryData);
       window.removeEventListener("storage", syncServicesData);
+      window.removeEventListener("storage", syncReputationData);
     };
   }, [businessSlug]);
 
@@ -349,6 +379,53 @@ export default function ErmanBarberWidget({
     }
   };
 
+  const handleRatingClick = async (star: number) => {
+    setRatingSelected(star);
+    if (star >= 4) {
+      try {
+        await fetch("/api/business/reputation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "submit_feedback",
+            slug: businessSlug,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            rating: star,
+            comment: "5 Yıldızlı Google Yönlendirmesi",
+          }),
+        });
+      } catch (err) {
+        console.warn("Feedback save error:", err);
+      }
+    }
+  };
+
+  const handleSendPrivateFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ratingSelected) return;
+    setIsSubmittingFeedback(true);
+    try {
+      await fetch("/api/business/reputation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit_feedback",
+          slug: businessSlug,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          rating: ratingSelected,
+          comment: privateFeedbackComment,
+        }),
+      });
+      setFeedbackSubmitted(true);
+    } catch (err) {
+      console.warn("Private feedback submit error:", err);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto font-sans antialiased text-slate-800 space-y-6">
       {/* 1. Header Card — Clean Corporate Brand (Deep Navy + Cyan Accent) */}
@@ -371,13 +448,24 @@ export default function ErmanBarberWidget({
                   Açık
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-1">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span className="font-bold text-slate-800">4.9</span>
-                <span className="text-slate-400">(148 Google Yorumu)</span>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mt-1 text-xs sm:text-sm text-slate-500">
+                <a
+                  href={reputationSettings.google_review_url || googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-bold text-slate-800 hover:text-[#0062FF] transition-colors"
+                >
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{reputationSettings.rating_score}</span>
+                  <span className="text-slate-400 font-normal">({reputationSettings.review_count} Google Yorumu)</span>
+                </a>
                 <span className="text-slate-300">•</span>
-                <span className="text-slate-600 font-medium">Kadıköy, İstanbul</span>
-              </p>
+                <span className="text-slate-600 font-medium">Körfez, Kocaeli</span>
+                <span className="hidden sm:inline text-slate-300">•</span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> Doğrulanmış Salon
+                </span>
+              </div>
             </div>
           </div>
 
@@ -545,6 +633,104 @@ export default function ErmanBarberWidget({
             </div>
           )}
         </div>
+
+        {/* 1.3 Müşteri Değerlendirmeleri & Google Yorumları Vitrini */}
+        {reputationSettings.reviews_enabled && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                  <Star className="w-4 h-4 fill-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-[#0F2A4A]">
+                      Müşteri Deneyimleri &amp; Google Yorumları
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      ★ {reputationSettings.rating_score}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Google Haritalar üzerinden doğrulanmış {reputationSettings.review_count} müşteri değerlendirmesi
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={reputationSettings.google_review_url || googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-[#0062FF] border border-slate-200 text-xs font-semibold transition-all shadow-2xs self-start sm:self-auto"
+              >
+                <span>Google&apos;da İncele &amp; Yorum Yaz</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* Reviews Grid */}
+            <div className="grid sm:grid-cols-2 gap-2.5">
+              {reviewsList.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:bg-slate-50 hover:border-slate-300 transition-all flex flex-col justify-between gap-2"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-[#0062FF]/10 text-[#0062FF] font-bold text-xs flex items-center justify-center border border-[#0062FF]/20">
+                          {review.author_name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-[#0F2A4A] flex items-center gap-1.5">
+                            <span>{review.author_name}</span>
+                            {review.is_verified && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                <ShieldCheck className="w-2.5 h-2.5" /> Randevulu
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-medium">
+                            {review.relative_date}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-0.5 text-amber-400">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3 h-3 ${
+                              i < review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {review.service_name && (
+                      <span className="inline-block px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-medium text-slate-600">
+                        {review.service_name}
+                      </span>
+                    )}
+
+                    <p className="text-[11px] text-slate-600 leading-relaxed italic">
+                      &ldquo;{review.text}&rdquo;
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                Sadece randevu alan ve Google Haritalar&apos;da deneyimini paylaşan müşterilere aittir.
+              </span>
+              <span className="hidden sm:inline">randevuformu.com Güvencesiyle</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Success Screen (Calendly Style) */}
@@ -657,6 +843,124 @@ export default function ErmanBarberWidget({
                   Apple / iCal (.ics)
                 </button>
               </div>
+            </div>
+
+            {/* 5-Star Reputation Funnel (Çift Kademeli İtibar Filtresi) */}
+            <div className="max-w-md mx-auto p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-amber-50/80 to-amber-50/30 border border-amber-200/80 text-center space-y-3 shadow-xs">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100/80 border border-amber-300 text-amber-800 text-[11px] font-bold">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>Deneyiminizi 5 Saniyede Puanlayın</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Hizmet kalitemizi en üst düzeyde tutmak adına görüşleriniz bizim için çok kıymetli.
+                </p>
+              </div>
+
+              {/* Star Rating Buttons */}
+              <div className="flex items-center justify-center gap-2 py-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => handleRatingClick(star)}
+                    className="p-1.5 hover:scale-125 transition-transform active:scale-95 focus:outline-hidden"
+                    title={`${star} Yıldız`}
+                  >
+                    <Star
+                      className={`w-7 h-7 transition-colors ${
+                        ratingSelected !== null && ratingSelected >= star
+                          ? "fill-amber-400 text-amber-400 drop-shadow-xs"
+                          : "text-slate-300 hover:text-amber-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* Branch 1: 4 or 5 Stars -> Direct Google Review Booster */}
+              {ratingSelected !== null && ratingSelected >= 4 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3.5 rounded-xl bg-white border border-amber-200 text-left space-y-2.5"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">🎉</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#0F2A4A]">
+                        Harika! Memnuniyetiniz Bizim İçin Çok Değerli
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        Erman Usta&apos;ya destek olmak için deneyiminizi 30 saniyede Google Haritalar&apos;da da paylaşmak ister misiniz?
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href={reputationSettings.google_review_url || googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#0062FF] to-[#0052D4] hover:opacity-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                    <span>Google Haritalar&apos;da 5 Yıldız Bırak (30 Sn)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </motion.div>
+              )}
+
+              {/* Branch 2: 1 to 3 Stars -> Shield Google & Capture Private Constructive Feedback */}
+              {ratingSelected !== null && ratingSelected <= 3 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3.5 rounded-xl bg-white border border-rose-200 text-left space-y-2.5"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">🙏</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-rose-800">
+                        Bunu duyduğumuza üzüldük, telafi etmek isteriz!
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        Neyi eksik yaptık veya daha iyi yapabilirdik? Lütfen bize iletin; Erman Usta bizzat ilgilenerek memnuniyetinizi sağlasın.
+                      </p>
+                    </div>
+                  </div>
+
+                  {feedbackSubmitted ? (
+                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Geri bildiriminiz işletme yöneticisine iletildi. En kısa sürede sizinle iletişime geçeceğiz.</span>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSendPrivateFeedback} className="space-y-2">
+                      <textarea
+                        value={privateFeedbackComment}
+                        onChange={(e) => setPrivateFeedbackComment(e.target.value)}
+                        placeholder="Neyi iyileştirmemizi istersiniz? (İsteğe bağlı)"
+                        rows={2}
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-hidden focus:border-[#0062FF] focus:ring-1 focus:ring-[#0062FF]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSubmittingFeedback}
+                        className="w-full py-2 px-3 rounded-lg bg-[#0F2A4A] hover:bg-[#1E3A8A] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                      >
+                        {isSubmittingFeedback ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>İletiliyor...</span>
+                          </>
+                        ) : (
+                          <span>Geri Bildirimi İlet (Gizli)</span>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </motion.div>
+              )}
             </div>
 
             <div className="pt-2">
