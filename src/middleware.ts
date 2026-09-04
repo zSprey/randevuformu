@@ -205,6 +205,14 @@ export async function middleware(request: NextRequest) {
   finalResponse.headers.set('X-XSS-Protection', '1; mode=block')
   finalResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
+  // Search Engine Edge Directive: Tell Googlebot to index freshly and not archive old cache
+  if (!pathname.startsWith('/admin') && !pathname.startsWith('/panel') && !pathname.startsWith('/api')) {
+    finalResponse.headers.set(
+      'X-Robots-Tag',
+      'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1, noarchive'
+    )
+  }
+
   if (finalResponse !== supabaseResponse) {
     const cookiesToSet = supabaseResponse.cookies.getAll()
     cookiesToSet.forEach((cookie) => {

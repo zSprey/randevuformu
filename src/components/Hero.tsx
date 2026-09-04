@@ -202,15 +202,15 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* ── Left Column: Value Proposition ── */}
           <div className="space-y-8">
-            {/* Trust Badge */}
+            {/* Pill Badge */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <span className="inline-flex items-center gap-2 text-[12px] font-medium text-[#0062FF] bg-[#0062FF]/[0.06] border border-[#0062FF]/[0.12] px-3 py-1.5 rounded-lg">
                 <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-                Online Randevu &amp; Müşteri Yönetimi
+                Online Randevu Sistemi &amp; Randevu Formu
               </span>
             </motion.div>
 
@@ -222,10 +222,10 @@ export default function Hero() {
               className="space-y-4"
             >
               <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-bold tracking-[-0.03em] leading-[1.15] text-[#0F2A4A]">
-                Randevularınızı <span className="text-[#0062FF]">kolayca</span> yönetin, işinize odaklanın.
+                Yeni Nesil <span className="text-[#0062FF]">Randevu Formu</span> &amp; Online Randevu Sistemi
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-lg">
-                WhatsApp hatırlatmaları, otomatik takvim eşitleme ve online randevu formu. Kurulum sadece 1 dakika sürer.
+                Kuaför, berber, klinik ve danışmanlar için WhatsApp onaylı randevu formu. Rezervasyonlarınızı 30 saniyede otomatikleştirin.
               </p>
             </motion.div>
 

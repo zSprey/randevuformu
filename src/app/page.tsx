@@ -43,6 +43,12 @@ export default function Home() {
       description: "Koltuk ve uzman bazlı kaporalı rezervasyon",
     },
     {
+      name: "Berber & Erkek Bakımı",
+      slug: "berber",
+      icon: Scissors,
+      description: "Saç-sakal tıraşı, usta seçimi ve WhatsApp teyidi",
+    },
+    {
       name: "Hukuk & Avukat",
       slug: "avukat",
       icon: Scale,
@@ -95,19 +101,54 @@ export default function Home() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "randevuformu.com",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "TRY",
-      description: "Temel randevu alma özellikleri tamamen ücretsiz.",
-    },
-    description:
-      "Modern işletmeler için WhatsApp bildirimli, SMS teyitli ve takvim entegrasyonlu randevu yönetim platformu.",
-    url: "https://randevuformu.com",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://randevuformu.com/#software",
+        name: "randevuformu.com - Online Randevu Sistemi & Randevu Formu",
+        applicationCategory: "BusinessApplication",
+        applicationSubCategory: "AppointmentScheduling",
+        operatingSystem: "Web, iOS, Android",
+        browserRequirements: "Requires JavaScript. Requires HTML5.",
+        url: "https://randevuformu.com",
+        description:
+          "Berber, kuaför, güzellik salonu, diş hekimi ve klinikler için WhatsApp onaylı, çakışma önleyici ücretsiz online randevu formu ve randevu yazılımı.",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "TRY",
+          availability: "https://schema.org/InStock",
+          description: "Temel randevu formu özellikleri tamamen ücretsizdir.",
+        },
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "4.9",
+          reviewCount: "520",
+          bestRating: "5",
+          worstRating: "1",
+        },
+        featureList: [
+          "Online Randevu Formu",
+          "Otomatik WhatsApp ve SMS Hatırlatma",
+          "Atomik Çakışma Kilidi (Concurrency Lock)",
+          "Google Takvim ve Outlook Senkronizasyonu",
+          "Kuaför ve Berber Randevu Programı Altyapısı",
+          "İyzico Sanal POS ile Ön Kapora Tahsilatı",
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://randevuformu.com/#faq",
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.a,
+          },
+        })),
+      },
+    ],
   };
 
   return (

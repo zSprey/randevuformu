@@ -829,5 +829,68 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
         description: "Göz hareketleriyle duyarsızlaştırma ve travma yeniden işleme seansı."
       }
     ]
+  },
+  "berber": {
+    slug: "berber",
+    title: "Erkek Kuaförleri & Berberler İçin Koltuk Rezervasyon ve Randevu Sistemi",
+    badge: "💈 Berber & Erkek Kuaförü Çözümü",
+    heroHeadline: "Dükkan Önü Beklemelerini Bitirin, Koltuğunuz Hep Dolu Olsun.",
+    heroSub: "Müşterileriniz saç ve sakal tıraşı için boş saatleri görsün, istediği ustadan saniyeler içinde randevu alsın. WhatsApp hatırlatmasıyla no-show sıfırlansın.",
+    metaTitle: "Berber Randevu Sistemi & Erkek Kuaförü Randevu Programı | randevuformu.com",
+    metaDescription: "Berberler ve erkek kuaförleri için WhatsApp onaylı online randevu ve koltuk rezervasyon yazılımı. Sıra bekleme karmaşasına son verin, 7/24 randevu kabul edin.",
+    keywords: [
+      "berber randevu sistemi",
+      "berber randevu programı",
+      "erkek kuaförü randevu",
+      "berber sıra takip sistemi",
+      "kuaför randevu programı"
+    ],
+    schemaType: "HairSalon",
+    stats: [
+      { label: "Sıra Bekleme Süresi", value: "0 Dk" },
+      { label: "Koltuk Verimliliği", value: "%96" },
+      { label: "WhatsApp Onay Oranı", value: "%99" }
+    ],
+    painPoints: [
+      { problem: "Cumartesi günleri kapıda biriken ve beklemekten vazgeçen müşteriler", solution: "Müşteriler randevu saatinde gelir, koltuk boş kalmaz, dükkanda yığılma olmaz." },
+      { problem: "Tıraş esnasında sürekli çalan telefonlara bakmak zorunda kalmak", solution: "Müşteriler Instagram bio'nuzdan veya linkinizden randevusunu kendisi oluşturur." }
+    ],
+    features: [
+      { title: "Usta & Koltuk Seçimi", desc: "Müşteriler randevu alırken dilediği berberi seçer.", icon: "Scissors" },
+      { title: "Otomatik WhatsApp Bildirimi", desc: "Randevu teyidi ve 2 saat önceki hatırlatma otomatik gider.", icon: "MessageCircle" }
+    ],
+    faqs: [
+      { question: "Müşteriler hangi ustanın boş olduğunu görebilir mi?", answer: "Evet, her personelin ayrı takvimi bulunur. Müşteri boş saatleri canlı olarak görür." },
+      { question: "Sakal ve saç tıraşı süreleri farklı mı ayarlanır?", answer: "Evet, her hizmete özel işlem süresi tanımlayabilir, aralara dinlenme/hijyen süresi ekleyebilirsiniz." }
+    ],
+    exampleSlug: "byerman",
+    exampleName: "Erman Usta - Erkek Berberi",
+    category: "Berber & Erkek Bakımı",
+    services: [
+      {
+        id: "brb-1",
+        name: "Saç Kesimi & Yıkama",
+        duration_minutes: 30,
+        price: 350,
+        price_text: "₺350",
+        description: "Yüz hatlarına uygun modern saç kesimi ve yıkama."
+      },
+      {
+        id: "brb-2",
+        name: "Sakal Tıraşı & Sıcak Havlu Bakımı",
+        duration_minutes: 25,
+        price: 200,
+        price_text: "₺200",
+        description: "Geleneksel ustura tıraşı ve buharlı sıcak havlu kompresi."
+      },
+      {
+        id: "brb-3",
+        name: "Saç + Sakal (Komple Bakım)",
+        duration_minutes: 60,
+        price: 500,
+        price_text: "₺500",
+        description: "Saç kesimi, sakal tıraşı, saç yıkama ve stil şekillendirme."
+      }
+    ]
   }
 };

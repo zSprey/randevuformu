@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 1. Statik Rotalar & Programmatic SEO Lokasyon Dizinleri
   const programmaticRoutes = [
     '',
+    '/byerman',
     '/kesfet',
     '/kesfet/istanbul/kadikoy/kuafor',
     '/kesfet/istanbul/sisli/dis-hekimi',
