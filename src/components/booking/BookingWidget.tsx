@@ -278,7 +278,7 @@ export default function BookingWidget({
       {/* Top Progress Bar */}
       <div className="bg-slate-950/60 p-6 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-indigo-400">
+          <div className="w-10 h-10 rounded-xl bg-[#0062FF]/20 border border-[#0062FF]/40 flex items-center justify-center font-bold text-[#00BCD4]">
             {businessName.charAt(0)}
           </div>
           <div>
@@ -299,7 +299,7 @@ export default function BookingWidget({
               key={s.num}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${
                 step === s.num
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                  ? "bg-[#0062FF] text-white shadow-md shadow-[#0062FF]/30"
                   : step > s.num
                   ? "bg-emerald-500/20 text-emerald-300"
                   : "text-slate-500 bg-white/5"
@@ -325,7 +325,7 @@ export default function BookingWidget({
               className="space-y-4"
             >
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-white">Almak İstediğiniz Hizmeti Seçin</h3>
+                <h3 className="text-xl font-bold text-white tracking-tight">Almak İstediğiniz Hizmeti Seçin</h3>
                 <p className="text-xs text-slate-400 mt-1">
                   Uzmanımız tarafından sunulan seans süreleri ve detayları
                 </p>
@@ -334,22 +334,28 @@ export default function BookingWidget({
               <div className="grid gap-3 sm:grid-cols-2">
                 {services.map((s) => {
                   const isSelected = selectedService?.id === s.id;
+                  const hasPrice = Boolean(
+                    (s.price && s.price > 0) ||
+                    (s.price_text && s.price_text !== "Ücretsiz" && s.price_text !== "0 TL" && s.price_text !== "₺0")
+                  );
                   return (
                     <div
                       key={s.id}
                       onClick={() => setSelectedService(s)}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? "bg-indigo-600/20 border-indigo-500 shadow-lg shadow-indigo-500/10 scale-[1.01]"
+                          ? "bg-[#0062FF]/20 border-[#0062FF] shadow-lg shadow-[#0062FF]/10 scale-[1.01]"
                           : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-white text-base">{s.name}</h4>
-                          <span className="text-xs font-bold px-2.5 py-1 bg-indigo-500/30 text-indigo-300 rounded-lg">
-                            {s.price_text}
-                          </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-bold text-white text-base leading-snug">{s.name}</h4>
+                          {hasPrice && (
+                            <span className="text-xs font-bold px-2.5 py-1 bg-[#0062FF]/20 text-[#00BCD4] border border-[#0062FF]/30 rounded-lg shrink-0">
+                              {s.price && s.price > 0 ? `₺${s.price.toLocaleString("tr-TR")}` : s.price_text}
+                            </span>
+                          )}
                         </div>
                         {s.description && (
                           <p className="text-xs text-slate-400 mt-2 line-clamp-2">
@@ -360,7 +366,7 @@ export default function BookingWidget({
 
                       <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
                         <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                          <Clock className="w-3.5 h-3.5 text-[#00BCD4]" />
                           {s.duration_minutes} Dakika
                         </span>
                         {isSelected && (
@@ -378,7 +384,7 @@ export default function BookingWidget({
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="px-6 py-3.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-sm shadow-lg shadow-[#0062FF]/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
                 >
                   Tarih ve Saat Seçimine Geç <ChevronRight className="w-4 h-4" />
                 </button>
@@ -441,7 +447,7 @@ export default function BookingWidget({
                         }}
                         className={`p-3 rounded-2xl border text-left transition-all ${
                           isSelected
-                            ? "bg-indigo-600/30 border-indigo-500 shadow-md shadow-indigo-600/20 text-white"
+                            ? "bg-[#0062FF]/25 border-[#0062FF] shadow-md shadow-[#0062FF]/20 text-white"
                             : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
                         }`}
                       >
@@ -467,7 +473,7 @@ export default function BookingWidget({
                       setSelectedDate(e.target.value);
                       setSelectedSlot(null);
                     }}
-                    className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
                   />
                   <p className="text-[11px] text-slate-500">
                     * Pazar günleri hariç tüm günler 09:00 - 18:00 arası açıktır.
@@ -503,9 +509,9 @@ export default function BookingWidget({
                             onClick={() => handleSlotSelect(slot.displayTime, slot.startUtc)}
                             className={`py-3 px-2 text-xs font-bold rounded-xl border transition-all ${
                               isSelected
-                                ? "bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-600/30 scale-105"
+                                ? "bg-[#0062FF] text-white border-[#0062FF] shadow-lg shadow-[#0062FF]/30 scale-105"
                                 : slot.isAvailable
-                                ? "bg-white/5 text-slate-200 border-white/10 hover:bg-white/15 hover:border-indigo-500/50"
+                                ? "bg-white/5 text-slate-200 border-white/10 hover:bg-white/15 hover:border-[#0062FF]/50"
                                 : "bg-white/[0.02] text-slate-600 border-white/5 cursor-not-allowed line-through"
                             }`}
                           >
@@ -540,7 +546,7 @@ export default function BookingWidget({
                   type="button"
                   disabled={!selectedSlot}
                   onClick={() => setStep(3)}
-                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 disabled:opacity-40 transition-all hover:scale-105 active:scale-95"
+                  className="px-6 py-3.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-sm shadow-lg shadow-[#0062FF]/30 flex items-center gap-2 disabled:opacity-40 transition-all hover:scale-105 active:scale-95"
                 >
                   Bilgilerinizi Girin <ChevronRight className="w-4 h-4" />
                 </button>
@@ -560,7 +566,7 @@ export default function BookingWidget({
               <div>
                 <h3 className="text-xl font-bold text-white">İletişim & Randevu Detayları</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Seçilen Zaman: <span className="text-indigo-400 font-semibold">{selectedDate} - {selectedSlot}</span>
+                  Seçilen Zaman: <span className="text-[#00BCD4] font-semibold">{selectedDate} - {selectedSlot}</span>
                 </p>
               </div>
 
@@ -585,7 +591,7 @@ export default function BookingWidget({
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         placeholder="Adınız ve Soyadınız"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
                       />
                     </div>
                   </div>
@@ -602,7 +608,7 @@ export default function BookingWidget({
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="05XX XXX XX XX"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
                       />
                     </div>
                   </div>
@@ -620,7 +626,7 @@ export default function BookingWidget({
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="eposta@adresiniz.com"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
                     />
                   </div>
                 </div>
@@ -634,7 +640,7 @@ export default function BookingWidget({
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder="Varsa şikayetiniz, talebiniz veya özel notunuz..."
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
                   />
                 </div>
 
@@ -649,12 +655,12 @@ export default function BookingWidget({
                       onClick={() => setPaymentMethod("VENUE")}
                       className={`p-3 rounded-2xl border text-left transition-all ${
                         paymentMethod === "VENUE"
-                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
                           : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <Wallet className="w-4 h-4 text-indigo-400" />
+                        <Wallet className="w-4 h-4 text-[#00BCD4]" />
                         <span className="text-xs font-bold">Klinikte / Yerinde</span>
                       </div>
                       <p className="text-[10px] text-slate-400">Nakit veya POS ile seans günü ödeyin.</p>
@@ -665,12 +671,12 @@ export default function BookingWidget({
                       onClick={() => setPaymentMethod("STRIPE")}
                       className={`p-3 rounded-2xl border text-left transition-all ${
                         paymentMethod === "STRIPE"
-                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
                           : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="w-4 h-4 text-indigo-400" />
+                        <CreditCard className="w-4 h-4 text-[#00BCD4]" />
                         <span className="text-xs font-bold">Kredi Kartı (Stripe)</span>
                       </div>
                       <p className="text-[10px] text-slate-400">Global & Güvenli online kart ödemesi.</p>
@@ -681,7 +687,7 @@ export default function BookingWidget({
                       onClick={() => setPaymentMethod("IYZICO")}
                       className={`p-3 rounded-2xl border text-left transition-all ${
                         paymentMethod === "IYZICO"
-                          ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
+                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
                           : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
@@ -701,7 +707,7 @@ export default function BookingWidget({
                       type="checkbox"
                       checked={kvkkConsent}
                       onChange={(e) => setKvkkConsent(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded bg-white/10 border-white/20 text-indigo-600 focus:ring-indigo-500"
+                      className="mt-0.5 w-4 h-4 rounded bg-white/10 border-white/20 text-[#0062FF] focus:ring-[#0062FF]"
                     />
                     <span>
                       6698 sayılı KVKK kapsamında kişisel verilerimin randevu koordinasyonu, SMS ve WhatsApp bilgilendirmeleri amacıyla işlenmesini kabul ediyorum.
@@ -748,7 +754,7 @@ export default function BookingWidget({
                 </h3>
                 <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
                   {businessName} randevunuz için onay bilgileri ve takvim daveti{" "}
-                  <span className="text-indigo-300 font-semibold">{customerEmail}</span> adresine iletildi.
+                  <span className="text-sky-300 font-semibold">{customerEmail}</span> adresine iletildi.
                 </p>
               </div>
 
@@ -759,7 +765,7 @@ export default function BookingWidget({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Tarih & Saat:</span>
-                  <span className="font-semibold text-indigo-400">{selectedDate} - {selectedSlot}</span>
+                  <span className="font-semibold text-[#00BCD4]">{selectedDate} - {selectedSlot}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Danışan:</span>
@@ -767,7 +773,11 @@ export default function BookingWidget({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Tutar / Durum:</span>
-                  <span className="font-semibold text-emerald-400">{selectedService?.price_text} (Onaylandı)</span>
+                  <span className="font-semibold text-emerald-400">
+                    {selectedService?.price && selectedService.price > 0
+                      ? `₺${selectedService.price.toLocaleString("tr-TR")} (Onaylandı)`
+                      : "Onaylandı"}
+                  </span>
                 </div>
               </div>
 

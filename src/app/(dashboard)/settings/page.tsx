@@ -21,6 +21,13 @@ import {
   Check,
   Smartphone,
   ShieldCheck,
+  Scissors,
+  Plus,
+  Trash2,
+  Edit3,
+  Tag,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,9 +36,60 @@ import {
   getBusinessSettings,
 } from "@/app/actions/business-settings";
 
+export interface BusinessService {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  price?: number;
+  price_text?: string;
+  description?: string;
+}
+
+const DEFAULT_SERVICES: BusinessService[] = [
+  {
+    id: "srv-sac",
+    name: "Saç Kesimi & Yıkama & Fön",
+    duration_minutes: 35,
+    price: 350,
+    price_text: "₺350",
+    description: "Kişinin yüz tipine uygun saç kesimi, saç yıkama ve fön işlemi.",
+  },
+  {
+    id: "srv-sakal",
+    name: "Sakal Tıraşı & Sıcak Havlu",
+    duration_minutes: 25,
+    price: 200,
+    price_text: "₺200",
+    description: "Geleneksel ustura tıraşı, sakal şekillendirme ve buharlı sıcak havlu.",
+  },
+  {
+    id: "srv-komple",
+    name: "Saç + Sakal (Komple Tıraş & Bakım)",
+    duration_minutes: 55,
+    price: 500,
+    price_text: "₺500",
+    description: "Komple saç kesimi, sakal tıraşı, saç yıkama, fön ve şekillendirme.",
+  },
+  {
+    id: "srv-bakim",
+    name: "VIP Saç Bakımı & Cilt Maskesi",
+    duration_minutes: 35,
+    description: "Özel tonik bakımı, baş masajı ve canlandırıcı maske. (Fiyat boş bırakıldı - formda gizlenir)",
+  },
+];
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("whatsapp");
+  const [activeTab, setActiveTab] = useState("services");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Form State: Services & Appointment Customization
+  const [services, setServices] = useState<BusinessService[]>(DEFAULT_SERVICES);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [isAddingService, setIsAddingService] = useState(false);
+  const [serviceNameInput, setServiceNameInput] = useState("");
+  const [serviceDurationInput, setServiceDurationInput] = useState("30");
+  const [servicePriceInput, setServicePriceInput] = useState("");
+  const [serviceDescInput, setServiceDescInput] = useState("");
 
   // Form State: Profile
   const [fullName, setFullName] = useState("İşletme Yetkilisi");
@@ -82,6 +140,22 @@ export default function SettingsPage() {
       const currentUser = localStorage.getItem("rf_user");
       const currentTenant = localStorage.getItem("rf_tenant") || "default";
       const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+
+      // 0. Check tab parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get("tab");
+      if (tabParam) setActiveTab(tabParam);
+
+      // 0.1 Services Persistence
+      const savedServices = localStorage.getItem("rf_business_services");
+      if (savedServices) {
+        try {
+          const parsed = JSON.parse(savedServices);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setServices(parsed);
+          }
+        } catch {}
+      }
 
       // 1. Profile Persistence
       const savedProfile = localStorage.getItem("rf_settings_profile");
@@ -299,7 +373,80 @@ export default function SettingsPage() {
     showToast(`${type === "google" ? "Google Calendar" : "Outlook"} bağlantısı ${nextState ? "aktif edildi" : "kapatıldı"}.`);
   };
 
+  // Service CRUD Handlers
+  const handleSaveService = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serviceNameInput.trim()) {
+      showToast("Lütfen bir hizmet adı giriniz.");
+      return;
+    }
+
+    const cleanPrice = servicePriceInput.trim() !== "" ? Number(servicePriceInput.replace(/[^0-9]/g, "")) : undefined;
+    const durationNum = Number(serviceDurationInput) || 30;
+
+    let updatedList: BusinessService[];
+    if (editingServiceId) {
+      updatedList = services.map((s) =>
+        s.id === editingServiceId
+          ? {
+              ...s,
+              name: serviceNameInput.trim(),
+              duration_minutes: durationNum,
+              price: cleanPrice && cleanPrice > 0 ? cleanPrice : undefined,
+              price_text: cleanPrice && cleanPrice > 0 ? `₺${cleanPrice.toLocaleString("tr-TR")}` : undefined,
+              description: serviceDescInput.trim() || undefined,
+            }
+          : s
+      );
+      showToast("Hizmet başarıyla güncellendi.");
+      setEditingServiceId(null);
+    } else {
+      const newService: BusinessService = {
+        id: `srv-${Date.now()}`,
+        name: serviceNameInput.trim(),
+        duration_minutes: durationNum,
+        price: cleanPrice && cleanPrice > 0 ? cleanPrice : undefined,
+        price_text: cleanPrice && cleanPrice > 0 ? `₺${cleanPrice.toLocaleString("tr-TR")}` : undefined,
+        description: serviceDescInput.trim() || undefined,
+      };
+      updatedList = [...services, newService];
+      showToast("Yeni hizmet başarıyla eklendi.");
+      setIsAddingService(false);
+    }
+
+    setServices(updatedList);
+    localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
+
+    // Reset inputs
+    setServiceNameInput("");
+    setServiceDurationInput("30");
+    setServicePriceInput("");
+    setServiceDescInput("");
+  };
+
+  const handleStartEdit = (service: BusinessService) => {
+    setEditingServiceId(service.id);
+    setIsAddingService(false);
+    setServiceNameInput(service.name);
+    setServiceDurationInput(String(service.duration_minutes));
+    setServicePriceInput(service.price ? String(service.price) : "");
+    setServiceDescInput(service.description || "");
+  };
+
+  const handleDeleteService = (id: string) => {
+    if (services.length <= 1) {
+      showToast("En az 1 aktif randevu hizmeti bulunmalıdır.");
+      return;
+    }
+    const updatedList = services.filter((s) => s.id !== id);
+    setServices(updatedList);
+    localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
+    showToast("Hizmet silindi.");
+    if (editingServiceId === id) setEditingServiceId(null);
+  };
+
   const tabs = [
+    { id: "services", name: "Hizmetler & Randevu Tipleri", icon: Scissors },
     { id: "whatsapp", name: "WhatsApp Hattı (Modül 1)", icon: MessageCircle },
     { id: "yield", name: "Dinamik İndirim (Modül 3)", icon: Zap },
     { id: "profile", name: "Profil & Uzman Bilgileri", icon: User },
@@ -362,6 +509,220 @@ export default function SettingsPage() {
 
         {/* Form Content Area */}
         <div className="flex-1 bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-8">
+          {/* TAB: SERVICES & APPOINTMENT TYPES (CUSTOMIZATION & OPTIONAL PRICING) */}
+          {activeTab === "services" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
+                    <Scissors className="w-5 h-5 text-[#0062FF]" />
+                    Hizmetler & Randevu Tipleri
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    İşletmenizin sunduğu saç, sakal, bakım, seans ve muayene kalemlerini özelleştirin.
+                  </p>
+                </div>
+                {!isAddingService && !editingServiceId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingService(true);
+                      setEditingServiceId(null);
+                      setServiceNameInput("");
+                      setServiceDurationInput("30");
+                      setServicePriceInput("");
+                      setServiceDescInput("");
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Yeni Hizmet Ekle</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Info Notice: Optional Pricing */}
+              <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3">
+                <Sparkles className="w-4 h-4 text-[#0062FF] mt-0.5 shrink-0" />
+                <div className="text-xs text-slate-700 leading-relaxed">
+                  <strong className="text-[#0F2A4A]">Opsiyonel Fiyatlandırma Garantisi:</strong> Hizmetlerinize fiyat tanımlamak tamamen işletmenizin tercihine bağlıdır. Fiyat alanını boş bırakırsanız, randevu formunda fiyat rozeti ve alanı tamamen gizlenir; müşterilere asla yanıltıcı &quot;0 TL&quot; veya &quot;Ücretsiz&quot; ibaresi gösterilmez.
+                </div>
+              </div>
+
+              {/* Add / Edit Form Modal/Card */}
+              {(isAddingService || editingServiceId) && (
+                <form
+                  onSubmit={handleSaveService}
+                  className="p-5 rounded-2xl bg-slate-50/80 border-2 border-[#0062FF]/30 space-y-4"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                    <h4 className="text-xs font-bold text-[#0F2A4A] uppercase tracking-wider flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-[#0062FF]" />
+                      {editingServiceId ? "Hizmeti Düzenle" : "Yeni Hizmet Oluştur"}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingService(false);
+                        setEditingServiceId(null);
+                      }}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Hizmet Adı *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={serviceNameInput}
+                        onChange={(e) => setServiceNameInput(e.target.value)}
+                        placeholder="Örn: Saç Kesimi & Yıkama"
+                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        İşlem Süresi (Dakika) *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          required
+                          min={5}
+                          max={360}
+                          step={5}
+                          value={serviceDurationInput}
+                          onChange={(e) => setServiceDurationInput(e.target.value)}
+                          placeholder="30"
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                        />
+                        <Clock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Fiyat (₺) — <span className="text-emerald-600 font-bold">Opsiyonel</span>
+                      </label>
+                      <span className="text-[11px] text-slate-400">Boş bırakılırsa fiyat gizlenir</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={servicePriceInput}
+                        onChange={(e) => setServicePriceInput(e.target.value)}
+                        placeholder="Örn: 350 (Boş bırakabilirsiniz)"
+                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                        ₺
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Hizmet Açıklaması (Opsiyonel)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={serviceDescInput}
+                      onChange={(e) => setServiceDescInput(e.target.value)}
+                      placeholder="Müşteriye randevu seçiminde gösterilecek kısa açıklama..."
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingService(false);
+                        setEditingServiceId(null);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-semibold shadow-xs transition-colors"
+                    >
+                      {editingServiceId ? "Değişiklikleri Kaydet" : "Hizmeti Ekle"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Existing Services List */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
+                  <span>Mevcut Hizmetler ({services.length})</span>
+                  <span>İşlemler</span>
+                </div>
+
+                {services.map((s) => (
+                  <div
+                    key={s.id}
+                    className="p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h4 className="text-sm font-bold text-[#0F2A4A]">{s.name}</h4>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {s.duration_minutes} Dakika
+                        </span>
+                        {s.price && s.price > 0 ? (
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            ₺{s.price.toLocaleString("tr-TR")}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-50 text-slate-400 border border-slate-200/60 italic">
+                            Fiyat Gizli (Formda Görünmez)
+                          </span>
+                        )}
+                      </div>
+                      {s.description && (
+                        <p className="text-xs text-slate-500 leading-relaxed max-w-xl">
+                          {s.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit(s)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Düzenle</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteService(s.id)}
+                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                        title="Hizmeti Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* TAB: WHATSAPP (MODÜL 1) */}
           {activeTab === "whatsapp" && (
             <form onSubmit={handleSaveWhatsapp} className="space-y-6">

@@ -1,3 +1,12 @@
+export interface SektorServiceItem {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  price?: number;
+  price_text?: string;
+  description?: string;
+}
+
 export interface SektorConfig {
   slug: string;
   title: string;
@@ -15,6 +24,7 @@ export interface SektorConfig {
   exampleSlug: string;
   exampleName: string;
   category: string;
+  services?: SektorServiceItem[];
 }
 
 export const SEKTOR_DATA: Record<string, SektorConfig> = {
@@ -49,7 +59,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "dyt-ayse",
     exampleName: "Uzm. Dyt. Ayşe Kaya Beslenme Kliniği",
-    category: "Beslenme & Sağlık"
+    category: "Beslenme & Sağlık",
+    services: [
+      {
+        id: "dyt-1",
+        name: "İlk Danışmanlık & Beslenme Anamnezi",
+        duration_minutes: 45,
+        price: 1200,
+        price_text: "₺1.200",
+        description: "Vücut kompozisyon analizi, beslenme alışkanlıkları ve kişiye özel beslenme planı oluşturma."
+      },
+      {
+        id: "dyt-2",
+        name: "Haftalık Kontrol & Kilo Takip Seansı",
+        duration_minutes: 30,
+        price: 750,
+        price_text: "₺750",
+        description: "Haftalık kilo ve yağ ölçümü, diyet listesi revizyonu ve motivasyon görüşmesi."
+      },
+      {
+        id: "dyt-3",
+        name: "Online Diyet & Görüntülü Görüşme",
+        duration_minutes: 30,
+        price: 900,
+        price_text: "₺900",
+        description: "Google Meet üzerinden görüntülü seans ve dijital diyet takibi."
+      },
+      {
+        id: "dyt-4",
+        name: "Sporcu Beslenmesi & Performans Seansı",
+        duration_minutes: 45,
+        description: "Antrenman programına göre makro/mikro besin ve takviye planlaması."
+      }
+    ]
   },
   "veteriner": {
     slug: "veteriner",
@@ -80,7 +122,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "vet-pati",
     exampleName: "Pati Dostları Veteriner Polikliniği",
-    category: "Veterinerlik & Pet"
+    category: "Veterinerlik & Pet",
+    services: [
+      {
+        id: "vet-1",
+        name: "Genel Muayene & Sağlık Kontrolü",
+        duration_minutes: 30,
+        price: 500,
+        price_text: "₺500",
+        description: "Göz, kulak, diş, kalp ve genel fiziki muayene değerlendirmesi."
+      },
+      {
+        id: "vet-2",
+        name: "Karma Aşı & Kuduz Aşısı Uygulaması",
+        duration_minutes: 20,
+        price: 450,
+        price_text: "₺450",
+        description: "Aşı karnesi kontrolü ve koruyucu aşı periyodu uygulaması."
+      },
+      {
+        id: "vet-3",
+        name: "İç & Dış Parazit Koruma Tedavisi",
+        duration_minutes: 15,
+        price: 350,
+        price_text: "₺350",
+        description: "Damlalık veya enjeksiyon yöntemiyle parazit tedavisi."
+      },
+      {
+        id: "vet-4",
+        name: "Cerrahi Operasyon & Kısırlaştırma Ön Muayenesi",
+        duration_minutes: 30,
+        description: "Kan tahlili, anestezi uygunluk testi ve operasyon planlaması."
+      }
+    ]
   },
   "fizyoterapist": {
     slug: "fizyoterapist",
@@ -110,7 +184,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "fzt-emre",
     exampleName: "Fzt. Emre Demir Manuel Terapi Merkezi",
-    category: "Fizyoterapi & Rehabilitasyon"
+    category: "Fizyoterapi & Rehabilitasyon",
+    services: [
+      {
+        id: "fzt-1",
+        name: "Manuel Terapi & Omurga Değerlendirmesi",
+        duration_minutes: 50,
+        price: 1500,
+        price_text: "₺1.500",
+        description: "Bel, boyun ve postür analizi eşliğinde birebir manuel terapi seansı."
+      },
+      {
+        id: "fzt-2",
+        name: "Klinik Pilates & Postür Egzersizi",
+        duration_minutes: 45,
+        price: 1000,
+        price_text: "₺1.000",
+        description: "Reformer üzerinde kişiye özel omurga güçlendirme çalışması."
+      },
+      {
+        id: "fzt-3",
+        name: "Kuru İğneleme & Tetik Nokta Masajı",
+        duration_minutes: 30,
+        price: 850,
+        price_text: "₺850",
+        description: "Kas spazmları ve kulunç tedavisi için hedef odaklı uygulama."
+      },
+      {
+        id: "fzt-4",
+        name: "Sporcu Rehabilitasyonu & Sakatlık Kontrolü",
+        duration_minutes: 60,
+        description: "Kas-eklem kuvvet testleri ve sahaya dönüş protokolü."
+      }
+    ]
   },
   "avukat": {
     slug: "avukat",
@@ -140,7 +246,31 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "av-yilmaz",
     exampleName: "Yılmaz & Ortakları Hukuk Bürosu",
-    category: "Hukuk & Danışmanlık"
+    category: "Hukuk & Danışmanlık",
+    services: [
+      {
+        id: "av-1",
+        name: "Hukuki Danışmanlık (Ofis Randevusu)",
+        duration_minutes: 45,
+        price: 2500,
+        price_text: "₺2.500",
+        description: "Yüz yüze hukuki durum analizi, dava süreci ve strateji bilgilendirmesi."
+      },
+      {
+        id: "av-2",
+        name: "Online Hukuki Danışmanlık (Zoom / Meet)",
+        duration_minutes: 30,
+        price: 1800,
+        price_text: "₺1.800",
+        description: "Görüntülü toplantı ile mevzuat ve hak analizi değerlendirmesi."
+      },
+      {
+        id: "av-3",
+        name: "Sözleşme İnceleme & Hukuki Mütalaa",
+        duration_minutes: 60,
+        description: "Gayrimenkul, ticari veya iş sözleşmelerinin detaylı incelenmesi ve raporlanması."
+      }
+    ]
   },
   "guzellik-merkezi": {
     slug: "guzellik-merkezi",
@@ -169,7 +299,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "estetik-aura",
     exampleName: "Aura Medikal Estetik & Güzellik",
-    category: "Güzellik & Bakım"
+    category: "Güzellik & Bakım",
+    services: [
+      {
+        id: "est-1",
+        name: "Lazer Epilasyon (Tüm Vücut Seansı)",
+        duration_minutes: 60,
+        price: 2000,
+        price_text: "₺2.000",
+        description: "Buz başlıklı acısız diyot lazer epilasyon seansı."
+      },
+      {
+        id: "est-2",
+        name: "Medikal Cilt Bakımı & Hydrafacial",
+        duration_minutes: 60,
+        price: 1200,
+        price_text: "₺1.200",
+        description: "Derin gözenek temizliği, siyah nokta arındırma ve serum infüzyonu."
+      },
+      {
+        id: "est-3",
+        name: "Bölgesel İncelme & G5 Masajı",
+        duration_minutes: 40,
+        price: 800,
+        price_text: "₺800",
+        description: "Selülit giderme ve sıkılaşma seansı."
+      },
+      {
+        id: "est-4",
+        name: "Kalıcı Makyaj & Microblading Ön Görüşmesi",
+        duration_minutes: 30,
+        description: "Kişiye özel altın oran kaş çizimi ve renk testi."
+      }
+    ]
   },
   "kisisel-antrenor": {
     slug: "kisisel-antrenor",
@@ -198,7 +360,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "coach-can",
     exampleName: "Can Yılmaz Performance Lab",
-    category: "Spor & Fitness"
+    category: "Spor & Fitness",
+    services: [
+      {
+        id: "pt-1",
+        name: "Birebir Personal Training (1'e 1 Seans)",
+        duration_minutes: 60,
+        price: 1000,
+        price_text: "₺1.000",
+        description: "Kişiye özel hipertrofi, yağ yakımı veya fonksiyonel antrenman."
+      },
+      {
+        id: "pt-2",
+        name: "Postür & Vücut Kompozisyon Analizi",
+        duration_minutes: 45,
+        price: 600,
+        price_text: "₺600",
+        description: "FMS hareket taraması, yağ-kas ölçümü ve gelişim haritası."
+      },
+      {
+        id: "pt-3",
+        name: "Düet Antrenman (2 Kişilik Özel Seans)",
+        duration_minutes: 60,
+        price: 1500,
+        price_text: "₺1.500",
+        description: "Partnerinizle birlikte koç eşliğinde antrenman."
+      },
+      {
+        id: "pt-4",
+        name: "Haftalık Beslenme & Makro Takip Konsültasyonu",
+        duration_minutes: 30,
+        description: "Antrenman yoğunluğuna göre kalori ve takviye planı."
+      }
+    ]
   },
   "oto-servis": {
     slug: "oto-servis",
@@ -227,7 +421,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "pro-oto",
     exampleName: "ProTech Oto Servis & Ekspertiz",
-    category: "Otomotiv & Servis"
+    category: "Otomotiv & Servis",
+    services: [
+      {
+        id: "oto-1",
+        name: "Periyodik Araç Bakımı & Yağ/Filtre Değişimi",
+        duration_minutes: 60,
+        price: 2500,
+        price_text: "₺2.500",
+        description: "Motor yağı, hava/polen filtreleri değişimi ve 30 nokta güvenlik kontrolü."
+      },
+      {
+        id: "oto-2",
+        name: "Full Ekspertiz & Bilgisayarlı Arıza Tespiti",
+        duration_minutes: 45,
+        price: 1500,
+        price_text: "₺1.500",
+        description: "OBD cihazı ile elektronik beyin taraması, kaporta-boya ve fren testi."
+      },
+      {
+        id: "oto-3",
+        name: "Fren & Balata Bakımı / Değişimi",
+        duration_minutes: 45,
+        price: 1200,
+        price_text: "₺1.200",
+        description: "Ön ve arka fren disk/balata kontrolü ve hidrolik seviye testi."
+      },
+      {
+        id: "oto-4",
+        name: "Detaylı İç Temizlik & Pasta Cila Ön Kontrol",
+        duration_minutes: 30,
+        description: "Boya kalınlığı ölçümü ve seramik kaplama uygunluk analizi."
+      }
+    ]
   },
   "dovmeci": {
     slug: "dovmeci",
@@ -256,7 +482,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "ink-art",
     exampleName: "Ink & Art Tattoo Studio",
-    category: "Sanat & Dövme"
+    category: "Sanat & Dövme",
+    services: [
+      {
+        id: "dov-1",
+        name: "Minimal Dövme Seansı (5-10 cm)",
+        duration_minutes: 60,
+        price: 1500,
+        price_text: "₺1.500",
+        description: "Tek renk ince çizgi (fine-line) minimal dövme uygulaması."
+      },
+      {
+        id: "dov-2",
+        name: "Custom Dövme Tasarım & Ön Konsültasyon",
+        duration_minutes: 30,
+        price: 500,
+        price_text: "₺500",
+        description: "Bölge seçimi, ölçü belirleme ve özel şablon çizimi."
+      },
+      {
+        id: "dov-3",
+        name: "Piercing Uygulaması & Titanyum Takı",
+        duration_minutes: 20,
+        price: 400,
+        price_text: "₺400",
+        description: "Steril tek kullanımlık kanül ile kulak, burun veya göbek delimi."
+      },
+      {
+        id: "dov-4",
+        name: "Büyük Proje & Kol Kaplama (Full Sleeve) Seansı",
+        duration_minutes: 180,
+        description: "Çoklu seans gerektiren özel tasarım dövme çalışması."
+      }
+    ]
   },
   "fotografci": {
     slug: "fotografci",
@@ -285,7 +543,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "lens-studio",
     exampleName: "Lens & Frame Fotoğraf Stüdyosu",
-    category: "Fotoğraf & Medya"
+    category: "Fotoğraf & Medya",
+    services: [
+      {
+        id: "foto-1",
+        name: "Dış Çekim & Düğün/Nişan Fotoğrafçılığı",
+        duration_minutes: 120,
+        price: 6000,
+        price_text: "₺6.000",
+        description: "Seçilen dış mekan lokasyonunda 2 saatlik profesyonel çekim ve retouch."
+      },
+      {
+        id: "foto-2",
+        name: "Stüdyo Portre & Biyometrik/CV Çekimi",
+        duration_minutes: 30,
+        price: 1000,
+        price_text: "₺1.000",
+        description: "LinkedIn, kurumsal web sitesi ve pasaport için profesyonel ışıkta portre."
+      },
+      {
+        id: "foto-3",
+        name: "Ürün & Yemek Fotoğrafçılığı (Stüdyo)",
+        duration_minutes: 90,
+        price: 4500,
+        price_text: "₺4.500",
+        description: "E-ticaret veya menü için yüksek çözünürlüklü konsept ürün çekimi."
+      },
+      {
+        id: "foto-4",
+        name: "Etkinlik & Lansman Fotoğraf/Video Hizmeti",
+        duration_minutes: 180,
+        description: "Kurumsal etkinlik, kokteyl veya açılış tam gün/yarım gün çekimi."
+      }
+    ]
   },
   "pedagog": {
     slug: "pedagog",
@@ -314,7 +604,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "pedagog-aylin",
     exampleName: "Uzm. Pedagog Aylin Şen Danışmanlık",
-    category: "Pedagoji & Danışmanlık"
+    category: "Pedagoji & Danışmanlık",
+    services: [
+      {
+        id: "ped-1",
+        name: "Ebeveyn Danışmanlığı & Gelişim Takibi",
+        duration_minutes: 50,
+        price: 1600,
+        price_text: "₺1.600",
+        description: "Davranış problemleri, sınır koyma ve okul uyum süreci görüşmesi."
+      },
+      {
+        id: "ped-2",
+        name: "Çocuk Merkezli Oyun Terapisi Seansı",
+        duration_minutes: 45,
+        price: 1800,
+        price_text: "₺1.800",
+        description: "Kaygı, öfke ve travma süreçlerinde terapötik oyun seansı."
+      },
+      {
+        id: "ped-3",
+        name: "Gelişimsel Tarama & Dikkat Testleri (WISC-R / Moxo)",
+        duration_minutes: 60,
+        price: 2200,
+        price_text: "₺2.200",
+        description: "Bilişsel dikkat, odaklanma ve gelişimsel olgunluk değerlendirmesi."
+      },
+      {
+        id: "ped-4",
+        name: "Okula Hazırlık & Oryantasyon Değerlendirmesi",
+        duration_minutes: 45,
+        description: "Anaokulu ve ilkokul 1. sınıf başlangıç uyum kontrolü."
+      }
+    ]
   },
   "dis-hekimi": {
     slug: "dis-hekimi",
@@ -344,7 +666,39 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "dr-ahmet",
     exampleName: "Dr. Ahmet Yılmaz Diş Kliniği",
-    category: "Diş Sağlığı & Poliklinik"
+    category: "Diş Sağlığı & Poliklinik",
+    services: [
+      {
+        id: "dis-1",
+        name: "Genel Diş Muayenesi & Teşhis",
+        duration_minutes: 30,
+        price: 600,
+        price_text: "₺600",
+        description: "Ağız içi muayene, dijital panoramik röntgen analizi ve tedavi planlaması."
+      },
+      {
+        id: "dis-2",
+        name: "Ultrasonik Diş Taşı Temizliği & Polisaj",
+        duration_minutes: 30,
+        price: 1200,
+        price_text: "₺1.200",
+        description: "Plak ve tartar temizliği, diş eti sağlığı bakımı ve cila."
+      },
+      {
+        id: "dis-3",
+        name: "Estetik Kompozit Dolgu (Tek Diş)",
+        duration_minutes: 45,
+        price: 1500,
+        price_text: "₺1.500",
+        description: "Diş renginde estetik nano-kompozit materyal ile dolgu tedavisi."
+      },
+      {
+        id: "dis-4",
+        name: "İmplant & Gülüş Tasarımı Konsültasyonu",
+        duration_minutes: 30,
+        description: "Eksik dişlerin implant planlaması ve 3D tomografi değerlendirmesi."
+      }
+    ]
   },
   "kuafor": {
     slug: "kuafor",
@@ -373,7 +727,47 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "studio-nova",
     exampleName: "Studio Nova Kuaför",
-    category: "Kuaför & Saç Bakımı"
+    category: "Kuaför & Saç Bakımı",
+    services: [
+      {
+        id: "kfr-1",
+        name: "Saç Kesimi & Yıkama & Fön",
+        duration_minutes: 35,
+        price: 350,
+        price_text: "₺350",
+        description: "Kişinin yüz tipine uygun stil saç kesimi, saç yıkama ve fön işlemi."
+      },
+      {
+        id: "kfr-2",
+        name: "Sakal Tıraşı & Sıcak Havlu Bakımı",
+        duration_minutes: 25,
+        price: 200,
+        price_text: "₺200",
+        description: "Geleneksel ustura tıraşı, sakal şekillendirme ve sıcak buhar havlusu."
+      },
+      {
+        id: "kfr-3",
+        name: "Saç + Sakal (Komple Tıraş & Bakım)",
+        duration_minutes: 60,
+        price: 500,
+        price_text: "₺500",
+        description: "Komple saç kesimi, sakal tıraşı, saç yıkama, fön ve saç şekillendirme."
+      },
+      {
+        id: "kfr-4",
+        name: "Keratin Saç Bakımı & Cilt Maskesi",
+        duration_minutes: 45,
+        price: 400,
+        price_text: "₺400",
+        description: "Yıpranmış saçlar için besleyici keratin yüklemesi ve siyah nokta maskesi."
+      },
+      {
+        id: "kfr-5",
+        name: "Özel Gün & Damat Tıraşı Paketi",
+        duration_minutes: 90,
+        description: "Özel gün için VIP komple saç-sakal tasarımı, manikür ve cilt bakımı."
+      }
+    ]
   },
   "psikolog": {
     slug: "psikolog",
@@ -402,6 +796,38 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     ],
     exampleSlug: "psk-melis",
     exampleName: "Uzm. Psk. Melis Aktaş",
-    category: "Psikoloji & Terapi"
+    category: "Psikoloji & Terapi",
+    services: [
+      {
+        id: "psk-1",
+        name: "Bireysel Yetişkin Psikoterapisi",
+        duration_minutes: 50,
+        price: 1800,
+        price_text: "₺1.800",
+        description: "Bilişsel Davranışçı Terapi (BDT) ve Şema Terapi odaklı bireysel seans."
+      },
+      {
+        id: "psk-2",
+        name: "Çift & Aile Danışmanlığı Seansı",
+        duration_minutes: 60,
+        price: 2400,
+        price_text: "₺2.400",
+        description: "İlişki dinamikleri, iletişim çatışmaları ve uzlaşma terapisi."
+      },
+      {
+        id: "psk-3",
+        name: "Online Terapi (Zoom / Google Meet)",
+        duration_minutes: 50,
+        price: 1600,
+        price_text: "₺1.600",
+        description: "Güvenli ve şifreli görüntülü bağlantı ile uzaktan psikoterapi seansı."
+      },
+      {
+        id: "psk-4",
+        name: "EMDR Travma Terapisi Seansı",
+        duration_minutes: 60,
+        description: "Göz hareketleriyle duyarsızlaştırma ve travma yeniden işleme seansı."
+      }
+    ]
   }
 };
