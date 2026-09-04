@@ -10,7 +10,7 @@ import {
   User,
   CheckCircle2,
   X,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import {
   format,
@@ -23,11 +23,10 @@ import {
   isSameMonth,
   isSameDay,
   addDays,
-  parseISO
+  parseISO,
 } from "date-fns";
 import { tr } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
 
 interface AppointmentItem {
   id: string;
@@ -50,7 +49,7 @@ export default function CalendarPage() {
   // Modals
   const [selectedApp, setSelectedApp] = useState<AppointmentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("Saç Kesimi & Yıkama");
+  const [newTitle, setNewTitle] = useState("Randevu & Görüşme");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
@@ -89,8 +88,6 @@ export default function CalendarPage() {
           return;
         }
       }
-
-      // Fallback
       setAppointments([]);
     } catch {
       setAppointments([]);
@@ -176,39 +173,41 @@ export default function CalendarPage() {
       days.push(
         <div
           key={day.toString()}
-          className={`min-h-[130px] p-2.5 border-r border-b border-slate-800 flex flex-col gap-1.5 transition-colors ${
+          className={`min-h-[120px] p-2.5 border-r border-b border-slate-100 flex flex-col gap-1.5 transition-colors ${
             !isCurrentMonth
-              ? "bg-slate-950/40 text-slate-600"
+              ? "bg-slate-50/50 text-slate-400"
               : isToday
-              ? "bg-indigo-950/20 text-white"
-              : "bg-slate-900 text-slate-300 hover:bg-slate-850"
+              ? "bg-blue-50/40 text-[#0F2A4A]"
+              : "bg-white text-slate-800 hover:bg-slate-50/70"
           }`}
         >
           <div className="flex justify-between items-center mb-1">
             <span
-              className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-lg ${
+              className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-lg ${
                 isToday
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/40"
+                  ? "bg-[#0062FF] text-white shadow-xs font-bold"
+                  : isCurrentMonth
+                  ? "text-slate-700"
                   : "text-slate-400"
               }`}
             >
               {formattedDate}
             </span>
             {dayAppointments.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-[#0062FF] font-semibold">
                 {dayAppointments.length}
               </span>
             )}
           </div>
 
-          <div className="flex flex-col gap-1 overflow-y-auto max-h-[85px] pr-0.5">
+          <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px] pr-0.5">
             {dayAppointments.map((app) => (
               <div
                 key={app.id}
                 onClick={() => setSelectedApp(app)}
-                className="text-[11px] p-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-200 truncate cursor-pointer hover:bg-indigo-600/40 transition-all flex items-center justify-between"
+                className="text-[11px] p-1.5 rounded-lg bg-blue-50 border border-blue-200/60 text-[#0062FF] truncate cursor-pointer hover:bg-blue-100 transition-colors flex items-center justify-between font-medium"
               >
-                <span className="font-bold text-indigo-400 mr-1">{app.time}</span>
+                <span className="font-bold mr-1">{app.time}</span>
                 <span className="truncate">{app.customerName}</span>
               </div>
             ))}
@@ -228,7 +227,7 @@ export default function CalendarPage() {
   const weekDays = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cts", "Paz"];
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Toast */}
       <AnimatePresence>
         {toastMessage && (
@@ -236,10 +235,10 @@ export default function CalendarPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-8 z-50 p-4 rounded-2xl bg-indigo-600 text-white font-semibold text-xs shadow-2xl flex items-center gap-2 border border-indigo-400"
+            className="fixed top-20 right-8 z-50 px-4 py-3 rounded-xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2 border border-[#0062FF]/30"
           >
-            <CheckCircle2 className="w-4 h-4 text-white" />
-            {toastMessage}
+            <CheckCircle2 className="w-4 h-4 text-[#00BCD4]" />
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -247,16 +246,19 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">Randevu Takvimi</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Tüm seansları, uzman müsaitliklerini ve randevu detaylarını yönetin.
+          <h2 className="text-2xl font-bold text-[#0F2A4A] flex items-center gap-2">
+            <CalendarIcon className="w-6 h-6 text-[#0062FF]" />
+            Randevu Takvimi
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Tüm seansları, uzman müsaitliklerini ve randevu detaylarını tek ekrandan yönetin.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+          className="inline-flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-[#0051d4] text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all"
         >
           <Plus className="w-4 h-4" />
           Yeni Randevu Planla
@@ -264,49 +266,49 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar Card */}
-      <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
         {/* Navigation Bar */}
-        <div className="p-4 sm:p-6 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-950/40">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white">
           <div className="flex items-center gap-4">
-            <h3 className="text-xl font-extrabold text-white capitalize w-52">
+            <h3 className="text-lg font-bold text-[#0F2A4A] capitalize w-48">
               {format(currentDate, "MMMM yyyy", { locale: tr })}
             </h3>
-            <div className="flex items-center rounded-xl border border-slate-800 bg-slate-900 overflow-hidden shadow-sm">
+            <div className="flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={prevMonth}
-                className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border-r border-slate-800"
+                className="p-2 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors border-r border-slate-200"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={today}
-                className="px-4 py-2 text-xs font-bold hover:bg-slate-800 text-slate-300 hover:text-white transition-colors border-r border-slate-800"
+                className="px-3.5 py-1.5 text-xs font-semibold hover:bg-slate-50 text-slate-700 transition-colors border-r border-slate-200"
               >
                 Bugün
               </button>
               <button
                 type="button"
                 onClick={nextMonth}
-                className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-start lg:self-auto">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start lg:self-auto">
             {(["month", "week", "day"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setViewMode(m)}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                   viewMode === m
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-white text-[#0F2A4A] shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 {m === "month" ? "Ay" : m === "week" ? "Hafta" : "Gün"}
@@ -318,17 +320,17 @@ export default function CalendarPage() {
         {/* Calendar Grid */}
         <div className="flex-1 flex flex-col overflow-x-auto">
           <div className="min-w-[700px]">
-            <div className="grid grid-cols-7 border-b border-slate-800 bg-slate-950/60">
+            <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/70">
               {weekDays.map((d) => (
                 <div
                   key={d}
-                  className="py-3 text-center text-xs font-bold text-slate-400 border-r border-slate-800 last:border-r-0"
+                  className="py-2.5 text-center text-xs font-semibold text-slate-500 border-r border-slate-100 last:border-r-0"
                 >
                   {d}
                 </div>
               ))}
             </div>
-            <div className="flex flex-col bg-slate-800 gap-px">{rows}</div>
+            <div className="flex flex-col">{rows}</div>
           </div>
         </div>
       </div>
@@ -336,56 +338,56 @@ export default function CalendarPage() {
       {/* Appointment Detail Modal */}
       <AnimatePresence>
         {selectedApp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl text-white space-y-4"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl text-slate-900 space-y-4"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-blue-50 text-[#0062FF]">
                     <CalendarIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-white">{selectedApp.title}</h3>
-                    <p className="text-xs text-indigo-400">{selectedApp.price}</p>
+                    <h3 className="font-bold text-base text-[#0F2A4A]">{selectedApp.title}</h3>
+                    <p className="text-xs text-[#0062FF] font-medium">{selectedApp.price}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedApp(null)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg"
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
                   <User className="w-4 h-4 text-slate-400" />
                   <div>
-                    <div className="text-slate-400 text-[10px]">Danışan</div>
-                    <div className="font-bold text-white text-sm">{selectedApp.customerName}</div>
-                    <div className="text-slate-400">{selectedApp.customerPhone}</div>
+                    <div className="text-slate-500 text-[10px]">Danışan</div>
+                    <div className="font-semibold text-slate-900 text-sm">{selectedApp.customerName}</div>
+                    <div className="text-slate-500">{selectedApp.customerPhone}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5">
-                  <Clock className="w-4 h-4 text-indigo-400" />
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <Clock className="w-4 h-4 text-[#0062FF]" />
                   <div>
-                    <div className="text-slate-400 text-[10px]">Randevu Saati</div>
-                    <div className="font-semibold text-white">
+                    <div className="text-slate-500 text-[10px]">Randevu Saati</div>
+                    <div className="font-semibold text-[#0F2A4A]">
                       {format(parseISO(selectedApp.date), "dd MMMM yyyy", { locale: tr })} - {selectedApp.time}
                     </div>
                   </div>
                 </div>
 
                 {selectedApp.notes && (
-                  <div className="p-3 rounded-2xl bg-white/5">
-                    <div className="text-slate-400 text-[10px] mb-1 font-semibold">Özel Not</div>
-                    <div className="text-slate-300">{selectedApp.notes}</div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="text-slate-500 text-[10px] mb-1 font-semibold">Özel Not</div>
+                    <div className="text-slate-700">{selectedApp.notes}</div>
                   </div>
                 )}
               </div>
@@ -394,7 +396,7 @@ export default function CalendarPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedApp(null)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/20 text-white"
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
                 >
                   Kapat
                 </button>
@@ -404,7 +406,7 @@ export default function CalendarPage() {
                     showToast("Randevu teyit SMS'i danışana yeniden gönderildi.");
                     setSelectedApp(null);
                   }}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white"
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white shadow-xs"
                 >
                   Teyit Mesajı Gönder
                 </button>
@@ -417,95 +419,92 @@ export default function CalendarPage() {
       {/* Add Appointment Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl text-white space-y-4"
+              className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl text-slate-900 space-y-4"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h3 className="font-bold text-base text-white">Yeni Randevu Oluştur</h3>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="font-bold text-base text-[#0F2A4A]">Yeni Randevu Planla</h3>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg"
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleAddAppointment} className="space-y-4">
+              <form onSubmit={handleAddAppointment} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Danışan Adı *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Danışan Adı *</label>
                   <input
                     type="text"
                     required
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Ad Soyad"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Telefon Numarası *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Telefon Numarası *</label>
                   <input
                     type="tel"
                     required
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     placeholder="05XX XXX XX XX"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono tabular-nums text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Tarih</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tarih</label>
                     <input
                       type="date"
                       value={newDate}
                       onChange={(e) => setNewDate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Saat</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Saat</label>
                     <input
                       type="time"
                       value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Hizmet Türü</label>
-                  <select
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hizmet Türü</label>
+                  <input
+                    type="text"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="İmplant Konsültasyonu">İmplant Konsültasyonu (30 dk)</option>
-                    <option value="Lazerli Beyazlatma">Lazerli Beyazlatma (60 dk)</option>
-                    <option value="Kanal Tedavisi & Dolgu">Kanal Tedavisi & Dolgu (60 dk)</option>
-                    <option value="Gülüş Tasarımı Ön Muayene">Gülüş Tasarımı Ön Muayene (45 dk)</option>
-                  </select>
+                    placeholder="Hizmet Adı (Örn: Muayene, Saç Kesimi)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                  />
                 </div>
 
-                <div className="pt-3 flex justify-end gap-2">
+                <div className="pt-2 flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
+                    className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 hover:bg-slate-100"
                   >
                     İptal
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30"
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white shadow-xs"
                   >
                     Takvime Ekle
                   </button>

@@ -75,7 +75,7 @@ randevuformu.com, Türkiye'deki diş hekimleri için özel olarak optimize edilm
       },
       {
         question: "Danışanlardan seans öncesi kan tahlili veya bilgi formu toplayabilir miyim?",
-        answer: "Evet, No-Code Form Oluşturucu ile kilonuz, boyunuz, hedefiniz gibi özel soruları randevu adımına ekleyebilirsiniz."
+        answer: "Evet, randevu formunuza danışan hedefi, boy, kilo gibi özel soruları ve danışan notlarını rezervasyon adımında toplayabilirsiniz."
       }
     ],
     content: `

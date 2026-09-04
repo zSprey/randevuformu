@@ -52,23 +52,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [tenantSlug, setTenantSlug] = useState("dashboard");
 
   useEffect(() => {
-    try {
-      const isByErmanHost = typeof window !== "undefined" && window.location.hostname.includes("byerman");
-      const currentUser = typeof window !== "undefined" ? localStorage.getItem("rf_user") : null;
-      const currentTenant = typeof window !== "undefined" ? localStorage.getItem("rf_tenant") : null;
+    const updateTenantInfo = () => {
+      try {
+        const isByErmanHost = typeof window !== "undefined" && window.location.hostname.includes("byerman");
+        const currentUser = typeof window !== "undefined" ? localStorage.getItem("rf_user") : null;
+        const currentTenant = typeof window !== "undefined" ? localStorage.getItem("rf_tenant") : null;
 
-      const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+        const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
 
-      if (isByErman) {
-        setTenantSlug("byerman");
-        setTenantName("By Erman Hair Studio");
-      } else {
-        const storedName = localStorage.getItem("rf_tenant_name");
-        const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
-        setTenantName(storedName && storedName !== "By Erman Hair Studio" ? storedName : "İşletme Yönetim Paneli");
-        setTenantSlug(storedSlug && storedSlug !== "byerman" ? storedSlug : "dashboard");
-      }
-    } catch {}
+        if (isByErman) {
+          setTenantSlug("byerman");
+          setTenantName("By Erman Hair Studio");
+        } else {
+          const storedName = localStorage.getItem("rf_tenant_name");
+          const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
+          setTenantName(storedName && storedName !== "By Erman Hair Studio" ? storedName : "İşletme Yönetim Paneli");
+          setTenantSlug(storedSlug && storedSlug !== "byerman" ? storedSlug : "dashboard");
+        }
+      } catch {}
+    };
+
+    updateTenantInfo();
+    window.addEventListener("storage", updateTenantInfo);
+    return () => window.removeEventListener("storage", updateTenantInfo);
   }, []);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -109,9 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: "Özet Gösterge", href: "/dashboard", icon: LayoutDashboard },
     { name: "Randevu Takvimi", href: "/calendar", icon: Calendar },
-    { name: "Danışan CRM", href: "/clients", icon: HeartPulse },
     { name: "Ekip & Uzmanlar", href: "/staff", icon: Users },
-    { name: "Form Oluşturucu", href: "/forms", icon: FileText },
     { name: "QR Stand & Widget", href: "/qr-stand", icon: QrCode },
     { name: "Blog & SEO Rehberi", href: "/blog", icon: BookOpen },
     { name: "İşletme Ayarları", href: "/settings", icon: Settings },

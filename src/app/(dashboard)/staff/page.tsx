@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   AlertTriangle,
   Loader2,
+  X,
 } from "lucide-react";
 
 interface StaffMember {
@@ -52,11 +53,33 @@ export default function StaffManagementPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Personel Listesini Yükle (İşletmeye Özel)
+  // Personel Listesini Yükle (İşletmeye Özel ve Kalıcı)
   const fetchStaff = async () => {
     setLoading(true);
     const tenantId = getTenantId();
     const storageKey = `rf_staff_${tenantId}`;
+
+    let localStaff: StaffMember[] = [];
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          localStaff = JSON.parse(saved).filter(
+            (s: StaffMember) =>
+              !s.display_name?.includes("Ahmet Yılmaz") &&
+              !s.display_name?.includes("Zeynep Kaya") &&
+              !s.display_name?.includes("Emre Can")
+          );
+        } catch {
+          localStaff = [];
+        }
+      }
+    }
+
+    // İlk olarak yerel veriyi hemen göster
+    if (localStaff.length > 0) {
+      setStaffList(localStaff);
+    }
 
     try {
       const res = await fetch(`/api/staff?tenantId=${encodeURIComponent(tenantId)}`);
@@ -64,7 +87,6 @@ export default function StaffManagementPage() {
         const json = await res.json();
         const apiStaff = json?.data?.staff || json?.staff || [];
         
-        // Sahte çalışanları filtrele (Dr. Ahmet Yılmaz, Dt. Zeynep Kaya gibi mock veriler varsa temizle)
         const cleaned = apiStaff.filter(
           (s: StaffMember) =>
             !s.display_name?.includes("Ahmet Yılmaz") &&
@@ -72,37 +94,19 @@ export default function StaffManagementPage() {
             !s.display_name?.includes("Emre Can")
         );
 
-        setStaffList(cleaned);
-        if (typeof window !== "undefined") {
-          localStorage.setItem(storageKey, JSON.stringify(cleaned));
+        // Sunucuda gerçek veri varsa localStorage'ı güncelle; boş ise yerel veriyi SİLME!
+        if (cleaned.length > 0) {
+          setStaffList(cleaned);
+          if (typeof window !== "undefined") {
+            localStorage.setItem(storageKey, JSON.stringify(cleaned));
+          }
         }
-        return;
       }
     } catch {
-      // API fallback: localStorage'dan oku
+      // API fallback: yerel veriyi koru
+    } finally {
+      setLoading(false);
     }
-
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const cleaned = parsed.filter(
-            (s: StaffMember) =>
-              !s.display_name?.includes("Ahmet Yılmaz") &&
-              !s.display_name?.includes("Zeynep Kaya") &&
-              !s.display_name?.includes("Emre Can")
-          );
-          setStaffList(cleaned);
-        } catch {
-          setStaffList([]);
-        }
-      } else {
-        setStaffList([]);
-      }
-    }
-
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -192,7 +196,7 @@ export default function StaffManagementPage() {
     }
   };
 
-  // Personeli Sil (İşletmeler Silebilsin)
+  // Personeli Sil
   const handleConfirmDelete = async () => {
     if (!staffToDelete) return;
 
@@ -213,26 +217,26 @@ export default function StaffManagementPage() {
         method: "DELETE",
       });
     } catch (err) {
-      console.warn("Delete staff API warning:", err);
+      console.warn("Staff delete error:", err);
     }
 
     setStaffToDelete(null);
-    showToast(`${name} ekipten başarıyla silindi.`);
+    showToast(`${name} ekipten silindi.`);
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-16">
-      {/* Toast */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* Toast Feedback */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-8 z-50 p-4 rounded-2xl bg-zinc-900 text-white font-semibold text-xs shadow-2xl flex items-center gap-2 border border-zinc-700"
+            className="fixed top-20 right-8 z-50 px-4 py-3 rounded-xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 border border-[#0062FF]/30"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            {toastMessage}
+            <CheckCircle2 className="w-4 h-4 text-[#00BCD4]" />
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -240,18 +244,18 @@ export default function StaffManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-indigo-400" />
+          <h2 className="text-2xl font-bold text-[#0F2A4A] flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-[#0062FF]" />
             Ekip & Personel Yönetimi
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            İşletmenizdeki randevu alan uzmanları ve personeli yönetin; dilediğiniz zaman yeni personel ekleyin veya silin.
+          <p className="text-xs text-slate-500 mt-1">
+            İşletmenizdeki randevu kabul eden uzmanları yönetin; dilediğiniz zaman yeni personel ekleyin veya düzenleyin.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex min-h-[44px] items-center gap-2 px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+          className="inline-flex min-h-[40px] items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-semibold text-xs shadow-xs transition-all"
         >
           <UserPlus className="w-4 h-4" />
           Yeni Personel Ekle
@@ -259,21 +263,21 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Routing Strategy Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/50 border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 border border-blue-200/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0062FF] text-[11px] font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
             Akıllı Randevu Dağıtım Motoru (Routing Engine)
           </div>
-          <h3 className="text-base font-bold text-white">
-            Müşteriler &quot;İlk Müsait Uzman&quot; seçtiğinde ne olsun?
+          <h3 className="text-sm font-bold text-[#0F2A4A]">
+            Müşteriler &quot;İlk Müsait Uzman&quot; seçtiğinde randevu nasıl atansın?
           </h3>
-          <p className="text-xs text-slate-400">
-            Sistem gelen rezervasyonları Round-Robin (Sıralı) veya Least-Busy (Yük Dengeleme) ile personele otomatik atar.
+          <p className="text-xs text-slate-500">
+            Sistem gelen rezervasyonları Round-Robin (Sıralı) veya Least-Busy (Yük Dengeleme) ile personellerinize otomatik yönlendirir.
           </p>
         </div>
         <select
-          className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-indigo-500 min-h-[44px]"
+          className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#0062FF] shadow-2xs"
           defaultValue="ROUND_ROBIN"
         >
           <option value="ROUND_ROBIN">🔄 Sırayla Dağıt (Round-Robin)</option>
@@ -283,21 +287,26 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Staff Cards or Empty State */}
-      {staffList.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/50 p-12 text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mx-auto">
+      {loading ? (
+        <div className="p-12 text-center text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#0062FF]" />
+          <p className="text-xs mt-2">Personel listesi yükleniyor...</p>
+        </div>
+      ) : staffList.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center space-y-4 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0062FF] border border-blue-200/50 flex items-center justify-center mx-auto">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Kayıtlı Personel Bulunmuyor</h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 leading-relaxed">
+            <h3 className="text-base font-bold text-[#0F2A4A]">Kayıtlı Personel Bulunmuyor</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
               İşletmenizde randevu kabul eden uzmanları, hekimleri veya çalışanları ekleyerek çoklu takvim yönetimini başlatabilirsiniz.
             </p>
           </div>
           <div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-transform active:scale-95"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold transition-all shadow-xs"
             >
               <UserPlus className="w-4 h-4" />
               İlk Personeli Ekle
@@ -305,74 +314,73 @@ export default function StaffManagementPage() {
           </div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {staffList.map((staff) => (
             <div
               key={staff.id}
-              className={`p-6 rounded-3xl border transition-all ${
+              className={`p-5 rounded-2xl border transition-all ${
                 staff.is_active
-                  ? "bg-slate-900/80 border-slate-800 hover:border-slate-700"
-                  : "bg-slate-950 border-slate-900 opacity-60"
+                  ? "bg-white border-slate-200/90 hover:border-[#0062FF]/40 shadow-xs"
+                  : "bg-slate-50/80 border-slate-200 opacity-60"
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center font-bold text-white text-base shadow-lg shadow-indigo-600/30">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] flex items-center justify-center font-bold text-white text-sm shadow-xs">
                     {staff.display_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-white">{staff.display_name}</h4>
-                    <p className="text-xs text-slate-400">{staff.title || "Uzman"}</p>
+                    <h4 className="font-bold text-sm text-[#0F2A4A]">{staff.display_name}</h4>
+                    <p className="text-xs text-slate-500">{staff.title || "Uzman"}</p>
                   </div>
                 </div>
                 <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     staff.role === "OWNER"
-                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                      : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                      ? "bg-purple-50 text-purple-700 border border-purple-200/60"
+                      : "bg-blue-50 text-[#0062FF] border border-blue-200/60"
                   }`}
                 >
-                  {staff.role}
+                  {staff.role === "OWNER" ? "Sahip" : "Uzman"}
                 </span>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-300">
+              <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2 text-xs text-slate-600">
                 {staff.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{staff.email}</span>
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="truncate">{staff.email}</span>
                   </div>
                 )}
                 {staff.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-500" />
+                    <Phone className="w-3.5 h-3.5 text-slate-400" />
                     <span className="font-mono tabular-nums">{staff.phone}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                <div className="flex items-center gap-2 text-emerald-600 font-medium">
                   <CalendarCheck className="w-3.5 h-3.5" />
                   <span>Randevuya Açık</span>
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => toggleStatus(staff.id)}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                  className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                     staff.is_active
-                      ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
-                  {staff.is_active ? "● Aktif Randevu Alıyor" : "○ Pasif"}
+                  {staff.is_active ? "● Aktif" : "○ Pasif"}
                 </button>
 
-                {/* İşletmeler Silebilsin Butonu */}
                 <button
                   type="button"
                   onClick={() => setStaffToDelete(staff)}
-                  className="min-h-[36px] p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="min-h-[32px] p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                   title="Personeli Sil"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -385,51 +393,51 @@ export default function StaffManagementPage() {
 
       {/* Add Staff Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md p-6 rounded-2xl bg-white border border-slate-200 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-indigo-400" />
+              <h3 className="font-bold text-base text-[#0F2A4A] flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#0062FF]" />
                 Yeni Personel Ekle
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddStaff} className="space-y-4">
+            <form onSubmit={handleAddStaff} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Ad Soyad *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Erman Güler"
+                  placeholder="Örn: Mehmet Can"
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-[16px] min-h-[44px] focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Unvan / Uzmanlık Alanı
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Kıdemli Usta / Hekim"
+                  placeholder="Örn: Uzman Kuaför / Diyetisyen"
                   value={newStaffTitle}
                   onChange={(e) => setNewStaffTitle(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-[16px] min-h-[44px] focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   E-Posta Adresi (İsteğe Bağlı)
                 </label>
                 <input
@@ -437,12 +445,12 @@ export default function StaffManagementPage() {
                   placeholder="personel@isletme.com"
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-[16px] min-h-[44px] focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Telefon Numarası
                 </label>
                 <input
@@ -450,16 +458,16 @@ export default function StaffManagementPage() {
                   placeholder="05XX XXX XX XX"
                   value={newStaffPhone}
                   onChange={(e) => setNewStaffPhone(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white font-mono tabular-nums text-[16px] min-h-[44px] focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono tabular-nums text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Rol</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Rol</label>
                 <select
                   value={newStaffRole}
                   onChange={(e) => setNewStaffRole(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs min-h-[44px] focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
                 >
                   <option value="STAFF">Uzman / Hizmet Veren</option>
                   <option value="ADMIN">Yönetici / Sekreter</option>
@@ -467,20 +475,20 @@ export default function StaffManagementPage() {
                 </select>
               </div>
 
-              <div className="pt-2 flex justify-end gap-3">
+              <div className="pt-2 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving || !newStaffName.trim()}
-                  className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs disabled:opacity-50"
                 >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Kaydet & Ekle</span>
                 </button>
               </div>
@@ -489,18 +497,18 @@ export default function StaffManagementPage() {
         </div>
       )}
 
-      {/* 20 Kural (Kural 13): Silme Onay Modalı */}
+      {/* Delete Staff Confirmation Modal */}
       {staffToDelete && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm p-6 rounded-2xl bg-white border border-slate-200 shadow-2xl space-y-4">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/60 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5" />
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-white">Personeli Silmek İstiyor musunuz?</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                <strong className="text-white">{staffToDelete.display_name}</strong> adlı personeli ekipten silmek üzeresiniz. Bu işlem geri alınamaz.
+              <h3 className="text-sm font-bold text-[#0F2A4A]">Personeli Silmek İstiyor musunuz?</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                <strong className="text-slate-800">{staffToDelete.display_name}</strong> adlı personeli ekipten silmek üzeresiniz. Bu işlem geri alınamaz.
               </p>
             </div>
 
@@ -508,16 +516,16 @@ export default function StaffManagementPage() {
               <button
                 type="button"
                 onClick={() => setStaffToDelete(null)}
-                className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
               >
                 Vazgeç
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="min-h-[44px] px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs"
               >
-                Evet, Personeli Sil
+                Evet, Sil
               </button>
             </div>
           </div>

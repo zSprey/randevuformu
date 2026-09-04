@@ -279,8 +279,8 @@ export default function Home() {
                 </Link>
               </li>
               <li>
-                <Link href="/forms" className="hover:text-white transition-colors">
-                  Form Oluşturucu
+                <Link href="/qr-stand" className="hover:text-white transition-colors">
+                  QR Stand &amp; Masa Kartı
                 </Link>
               </li>
             </ul>
