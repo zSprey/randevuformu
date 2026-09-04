@@ -80,12 +80,13 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
 
   // Clinic & Location Settings
-  const [clinicName, setClinicName] = useState("İşletmem");
-  const [clinicSlug, setClinicSlug] = useState("isletme");
-  const [clinicAddress, setClinicAddress] = useState("");
-  const [googleMapsUrl, setGoogleMapsUrl] = useState("https://share.google/gOW1xHwztRfGIc3F1");
-  const [workingHoursSummary, setWorkingHoursSummary] = useState("Pzt - Cmt: 09:00 - 21:00 | Paz: 10:00 - 19:00");
+  const [clinicName, setClinicName] = useState("By Erman");
+  const [clinicSlug, setClinicSlug] = useState("byerman");
+  const [clinicAddress, setClinicAddress] = useState("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("https://share.google/VpkvdhoLKLSzWpHA6");
+  const [workingHoursSummary, setWorkingHoursSummary] = useState("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
+  const [isSavingClinic, setIsSavingClinic] = useState(false);
 
   // WhatsApp Hotline (Module 1)
   const [businessId, setBusinessId] = useState("cl_demo_business_123");
@@ -202,7 +203,7 @@ export default function SettingsPage() {
         setTitle("Master Barber");
       }
 
-      // 2. Clinic & Location Persistence
+      // 2. Clinic & Location Cloud & Local Persistence
       const savedClinic = localStorage.getItem("rf_settings_clinic");
       if (savedClinic) {
         try {
@@ -214,33 +215,21 @@ export default function SettingsPage() {
           if (c.workingHoursSummary) setWorkingHoursSummary(c.workingHoursSummary);
           if (c.cancelPolicyHours) setCancelPolicyHours(c.cancelPolicyHours);
         } catch {}
-      } else if (isByErman) {
-        setClinicName("By Erman Hair Studio");
-        setClinicSlug("byerman");
-        setClinicAddress("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
-        setWorkingHoursSummary("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
-      } else {
-        const storedName = localStorage.getItem("rf_tenant_name");
-        const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
-        if (storedName && storedName !== "İşletme Yönetim Paneli" && !storedName.includes("Ahmet Yılmaz")) {
-          setClinicName(storedName);
-        } else if (storedSlug && storedSlug !== "default" && storedSlug !== "dashboard") {
-          setClinicName(storedSlug.charAt(0).toUpperCase() + storedSlug.slice(1));
-        }
-        if (storedSlug && storedSlug !== "dashboard") {
-          setClinicSlug(storedSlug);
-        }
       }
 
-      // Check specific location storage
-      const savedLoc = localStorage.getItem("rf_business_location");
-      if (savedLoc) {
-        try {
-          const l = JSON.parse(savedLoc);
-          if (l.googleMapsUrl) setGoogleMapsUrl(l.googleMapsUrl);
-          if (l.address) setClinicAddress(l.address);
-          if (l.workingHours) setWorkingHoursSummary(l.workingHours);
-        } catch {}
+      // Load from Cloud Profile API
+      try {
+        const pRes = await fetch(`/api/business/profile?slug=${targetSlug}`);
+        const pData = await pRes.json();
+        if (pData.success && pData.profile) {
+          if (pData.profile.name) setClinicName(pData.profile.name);
+          if (pData.profile.address) setClinicAddress(pData.profile.address);
+          if (pData.profile.google_maps_url) setGoogleMapsUrl(pData.profile.google_maps_url);
+          if (pData.profile.working_hours) setWorkingHoursSummary(pData.profile.working_hours);
+          if (pData.profile.phone) setPhone(pData.profile.phone);
+        }
+      } catch (err) {
+        console.warn("Failed to load cloud profile:", err);
       }
 
       // 3. Notifications Persistence
@@ -382,10 +371,11 @@ export default function SettingsPage() {
     showToast("Profil ve uzman bilgileriniz başarıyla kaydedildi.");
   };
 
-  // Save Clinic & Location Settings Handler
-  const handleSaveClinic = (e: React.FormEvent) => {
+  // Save Clinic & Location Settings Handler (Direct Cloud Persistence)
+  const handleSaveClinic = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanSlug = clinicSlug.toLowerCase().replace(/[^a-z0-9-_]/g, "");
+    setIsSavingClinic(true);
+    const cleanSlug = clinicSlug.toLowerCase().replace(/[^a-z0-9-_]/g, "") || "byerman";
     const data = {
       clinicName: clinicName.trim(),
       clinicSlug: cleanSlug,
@@ -394,6 +384,8 @@ export default function SettingsPage() {
       workingHoursSummary: workingHoursSummary.trim(),
       cancelPolicyHours,
     };
+
+    // 1. Write local cache
     localStorage.setItem("rf_settings_clinic", JSON.stringify(data));
     localStorage.setItem(
       "rf_business_location",
@@ -406,7 +398,33 @@ export default function SettingsPage() {
     localStorage.setItem("rf_tenant_name", clinicName.trim());
     localStorage.setItem("rf_tenant_slug", cleanSlug);
     window.dispatchEvent(new Event("storage"));
-    showToast("İşletme adresi, Google Haritalar linki ve çalışma saatleri kaydedildi.");
+
+    // 2. Direct Cloud Profile API Save
+    try {
+      const res = await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: cleanSlug,
+          name: clinicName.trim(),
+          address: clinicAddress.trim(),
+          city: clinicAddress.includes("Ümraniye") ? "Ümraniye, İstanbul" : "İstanbul",
+          google_maps_url: googleMapsUrl.trim(),
+          working_hours: workingHoursSummary.trim(),
+          phone: phone.trim(),
+        }),
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast("İşletme bilgileri ve konumu buluta başarıyla kaydedildi!");
+      } else {
+        showToast(resData.error || "İşletme ayarları kaydedilirken hata oluştu.");
+      }
+    } catch {
+      showToast("İşletme ayarları yerel olarak kaydedildi, sunucuya aktarılamadı.");
+    } finally {
+      setIsSavingClinic(false);
+    }
   };
 
   // Save Notifications Handler
@@ -670,6 +688,17 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
+        setGoogleMapsUrl(googleReviewUrl.trim());
+        try {
+          await fetch("/api/business/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              slug: "byerman",
+              google_maps_url: googleReviewUrl.trim(),
+            }),
+          });
+        } catch {}
         showToast("Google Yorum ve İtibar ayarları başarıyla buluta kaydedildi!");
       } else {
         showToast(data.error || "Kaydedilirken hata oluştu.");
@@ -2198,7 +2227,7 @@ export default function SettingsPage() {
                   type="url"
                   value={googleMapsUrl}
                   onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                  placeholder="https://share.google/gOW1xHwztRfGIc3F1 veya https://maps.google.com/..."
+                  placeholder="https://share.google/VpkvdhoLKLSzWpHA6 veya https://maps.google.com/..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/60 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -2263,9 +2292,15 @@ export default function SettingsPage() {
               <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-2"
+                  disabled={isSavingClinic}
+                  className="px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" /> Klinik Ayarlarını Kaydet
+                  {isSavingClinic ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  {isSavingClinic ? "Buluta Kaydediliyor..." : "İşletme & Konum Ayarlarını Buluta Kaydet"}
                 </button>
               </div>
             </form>

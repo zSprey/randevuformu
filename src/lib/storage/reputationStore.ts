@@ -31,50 +31,14 @@ export interface PrivateFeedback {
 
 export const DEFAULT_BYERMAN_REPUTATION: BusinessReputationSettings = {
   business_slug: "byerman",
-  google_review_url: "https://search.google.com/local/writereview?placeid=ChIJgOW1xHwztRfGIc3F1",
+  google_review_url: "https://share.google/VpkvdhoLKLSzWpHA6",
   rating_score: 4.9,
   review_count: 148,
   reviews_enabled: true,
 };
 
-export const DEFAULT_BYERMAN_REVIEWS: CustomerReview[] = [
-  {
-    id: "rev-1",
-    author_name: "Ahmet K.",
-    rating: 5,
-    relative_date: "2 gün önce",
-    service_name: "Saç & Sakal Tasarımı",
-    text: "Erman ustanın eli gerçekten çok hafif. Saç kesimi tam istediğim gibi oldu. Randevu sistemiyle beklemeden koltuğa oturmak büyük konfor, salon çok temiz ve profesyonel.",
-    is_verified: true,
-  },
-  {
-    id: "rev-2",
-    author_name: "Murat Demir",
-    rating: 5,
-    relative_date: "5 gün önce",
-    service_name: "Özel Bakım & Buharlı Havlu",
-    text: "Randevu saatimde doğrudan işlem başladı, sıfır bekleme. Sıcak havlu ve cilt bakımı son derece rahatlatıcıydı. Kesinlikle düzenli geleceğim tek salon.",
-    is_verified: true,
-  },
-  {
-    id: "rev-3",
-    author_name: "Barış Yılmaz",
-    rating: 5,
-    relative_date: "1 hafta önce",
-    service_name: "Saç Kesimi & Yıkama",
-    text: "Yıllardır geldiğim kuaförüm. Yeni randevu sistemi sayesinde kapıda sıra bekleme derdi tamamen bitmiş. Çay kahve ikramı ve ilgi alaka her zamanki gibi kusursuz.",
-    is_verified: true,
-  },
-  {
-    id: "rev-4",
-    author_name: "Emre Kaya",
-    rating: 5,
-    relative_date: "2 hafta önce",
-    service_name: "Sakal Tasarımı & Maske",
-    text: "Detaylara ve hijyene verilen önem üst düzeyde. Tek kullanımlık steril havlular ve kullanılan ürünlerin kalitesi çok başarılı. Tavsiye ederim.",
-    is_verified: true,
-  },
-];
+// Sadece gerçek müşteriler yorum bıraktığında listelenir; sahte yorumlar tamamen kaldırılmıştır.
+export const DEFAULT_BYERMAN_REVIEWS: CustomerReview[] = [];
 
 const memorySettingsMap = new Map<string, BusinessReputationSettings>([
   ["byerman", DEFAULT_BYERMAN_REPUTATION],
@@ -84,23 +48,7 @@ const memoryReviewsMap = new Map<string, CustomerReview[]>([
   ["byerman", DEFAULT_BYERMAN_REVIEWS],
 ]);
 
-const memoryFeedbacksMap = new Map<string, PrivateFeedback[]>([
-  [
-    "byerman",
-    [
-      {
-        id: "fb-sample-1",
-        business_slug: "byerman",
-        customer_name: "Serkan Vural",
-        customer_phone: "+90 532 444 11 22",
-        rating: 3,
-        comment: "Randevu saatimde 10 dakika gecikmeli başlandı, fakat tıraş kalitesi çok iyiydi. Bir dahaki sefere tam vaktinde alınmasını rica ederim.",
-        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        status: "new",
-      },
-    ],
-  ],
-]);
+const memoryFeedbacksMap = new Map<string, PrivateFeedback[]>();
 
 export async function getReputationSettings(slug: string): Promise<BusinessReputationSettings> {
   const current = memorySettingsMap.get(slug);
@@ -127,8 +75,8 @@ export async function saveReputationSettings(
 
 export async function getFeaturedReviews(slug: string): Promise<CustomerReview[]> {
   const reviews = memoryReviewsMap.get(slug);
-  if (reviews && reviews.length > 0) return reviews;
-  return DEFAULT_BYERMAN_REVIEWS;
+  if (reviews) return reviews;
+  return [];
 }
 
 export async function getPrivateFeedbacks(slug: string): Promise<PrivateFeedback[]> {

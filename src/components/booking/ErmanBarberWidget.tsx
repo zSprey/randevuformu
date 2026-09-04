@@ -90,8 +90,8 @@ export default function ErmanBarberWidget({
   const [showKvkkModal, setShowKvkkModal] = useState<boolean>(false);
 
   // 3.2 Dynamic Location & Business Info State (defaults to By Erman, syncs from cloud/localStorage)
-  const [googleMapsUrl, setGoogleMapsUrl] = useState<string>("https://share.google/gOW1xHwztRfGIc3F1");
-  const [businessAddress, setBusinessAddress] = useState<string>("Mimar Sinan, Mehmet Akif Ersoy Cd. No:88/A, 41780 Körfez/Kocaeli");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState<string>("https://share.google/VpkvdhoLKLSzWpHA6");
+  const [businessAddress, setBusinessAddress] = useState<string>("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
   const [workingHoursText, setWorkingHoursText] = useState<string>("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
   
   // 3.3 Dynamic Cloud Gallery State (Loaded from settings / cloud store)
@@ -115,7 +115,22 @@ export default function ErmanBarberWidget({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const syncLocationData = () => {
+    const syncLocationData = async () => {
+      // 1. Direct Cloud Profile API fetch (Priority 1)
+      try {
+        const res = await fetch(`/api/business/profile?slug=${businessSlug}`);
+        const data = await res.json();
+        if (data.success && data.profile) {
+          if (data.profile.google_maps_url) setGoogleMapsUrl(data.profile.google_maps_url);
+          if (data.profile.address) setBusinessAddress(data.profile.address);
+          if (data.profile.working_hours) setWorkingHoursText(data.profile.working_hours);
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to load cloud profile:", err);
+      }
+
+      // 2. Local fallback if offline
       try {
         const savedLoc = localStorage.getItem("rf_business_location");
         if (savedLoc) {
@@ -460,7 +475,7 @@ export default function ErmanBarberWidget({
                   <span className="text-slate-400 font-normal">({reputationSettings.review_count} Google Yorumu)</span>
                 </a>
                 <span className="text-slate-300">•</span>
-                <span className="text-slate-600 font-medium">Körfez, Kocaeli</span>
+                <span className="text-slate-600 font-medium">Ümraniye, İstanbul</span>
                 <span className="hidden sm:inline text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
                   <ShieldCheck className="w-3 h-3 text-emerald-600" /> Doğrulanmış Salon
@@ -634,101 +649,95 @@ export default function ErmanBarberWidget({
           )}
         </div>
 
-        {/* 1.3 Müşteri Değerlendirmeleri & Google Yorumları Vitrini */}
+        {/* 1.3 Doğrulanmış Google Haritalar & Gerçek Müşteri Değerlendirmeleri */}
         {reputationSettings.reviews_enabled && (
           <div className="mt-4 pt-4 border-t border-slate-100">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
-                  <Star className="w-4 h-4 fill-amber-400" />
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" /> Doğrulanmış Google İşletmesi
+                  </span>
+                  <span className="text-xs text-amber-500 font-bold flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" /> {reputationSettings.rating_score} ({reputationSettings.review_count} Google Değerlendirmesi)
+                  </span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-[#0F2A4A]">
-                      Müşteri Deneyimleri &amp; Google Yorumları
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                      ★ {reputationSettings.rating_score}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Google Haritalar üzerinden doğrulanmış {reputationSettings.review_count} müşteri değerlendirmesi
-                  </p>
-                </div>
+                <p className="text-xs font-semibold text-[#0F2A4A]">
+                  By Erman Hair Studio • Google Haritalar Müşteri Yorumları &amp; Değerlendirmeleri
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Salonumuz hakkındaki tüm müşteri deneyimlerini doğrudan Google Haritalar profili üzerinden inceleyebilir veya siz de yorum bırakabilirsiniz.
+                </p>
               </div>
 
-              <a
-                href={reputationSettings.google_review_url || googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-[#0062FF] border border-slate-200 text-xs font-semibold transition-all shadow-2xs self-start sm:self-auto"
-              >
-                <span>Google&apos;da İncele &amp; Yorum Yaz</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            {/* Reviews Grid */}
-            <div className="grid sm:grid-cols-2 gap-2.5">
-              {reviewsList.map((review) => (
-                <div
-                  key={review.id}
-                  className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:bg-slate-50 hover:border-slate-300 transition-all flex flex-col justify-between gap-2"
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all inline-flex items-center gap-1.5"
                 >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-[#0062FF]/10 text-[#0062FF] font-bold text-xs flex items-center justify-center border border-[#0062FF]/20">
-                          {review.author_name.charAt(0)}
+                  <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                  <span>Google Haritalar&apos;da İncele &amp; Yorum Yap</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
+            {reviewsList && reviewsList.length > 0 && (
+              <div className="grid sm:grid-cols-2 gap-2.5 mt-3">
+                {reviewsList.map((review) => (
+                  <div
+                    key={review.id}
+                    className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:bg-slate-50 hover:border-slate-300 transition-all flex flex-col justify-between gap-2"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#0062FF]/10 text-[#0062FF] font-bold text-xs flex items-center justify-center border border-[#0062FF]/20">
+                            {review.author_name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#0F2A4A] flex items-center gap-1.5">
+                              <span>{review.author_name}</span>
+                              {review.is_verified && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                  <ShieldCheck className="w-2.5 h-2.5" /> Randevulu
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              {review.relative_date}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-xs font-bold text-[#0F2A4A] flex items-center gap-1.5">
-                            <span>{review.author_name}</span>
-                            {review.is_verified && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                <ShieldCheck className="w-2.5 h-2.5" /> Randevulu
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-medium">
-                            {review.relative_date}
-                          </div>
+
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
+                              }`}
+                            />
+                          ))}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-0.5 text-amber-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      {review.service_name && (
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-medium text-slate-600">
+                          {review.service_name}
+                        </span>
+                      )}
+
+                      <p className="text-[11px] text-slate-600 leading-relaxed italic">
+                        &ldquo;{review.text}&rdquo;
+                      </p>
                     </div>
-
-                    {review.service_name && (
-                      <span className="inline-block px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-medium text-slate-600">
-                        {review.service_name}
-                      </span>
-                    )}
-
-                    <p className="text-[11px] text-slate-600 leading-relaxed italic">
-                      &ldquo;{review.text}&rdquo;
-                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                Sadece randevu alan ve Google Haritalar&apos;da deneyimini paylaşan müşterilere aittir.
-              </span>
-              <span className="hidden sm:inline">randevuformu.com Güvencesiyle</span>
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
