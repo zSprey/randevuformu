@@ -41,6 +41,8 @@ import {
   getBusinessSettings,
 } from "@/app/actions/business-settings";
 
+import { DEFAULT_BYERMAN_SERVICES, StoredBusinessService } from "@/lib/storage/servicesStore";
+
 export interface BusinessService {
   id: string;
   name: string;
@@ -48,53 +50,24 @@ export interface BusinessService {
   price?: number;
   price_text?: string;
   description?: string;
+  is_extra?: boolean;
+  category?: string;
 }
-
-const DEFAULT_SERVICES: BusinessService[] = [
-  {
-    id: "srv-sac",
-    name: "Saç Kesimi & Yıkama & Fön",
-    duration_minutes: 35,
-    price: 350,
-    price_text: "₺350",
-    description: "Kişinin yüz tipine uygun saç kesimi, saç yıkama ve fön işlemi.",
-  },
-  {
-    id: "srv-sakal",
-    name: "Sakal Tıraşı & Sıcak Havlu",
-    duration_minutes: 25,
-    price: 200,
-    price_text: "₺200",
-    description: "Geleneksel ustura tıraşı, sakal şekillendirme ve buharlı sıcak havlu.",
-  },
-  {
-    id: "srv-komple",
-    name: "Saç + Sakal (Komple Tıraş & Bakım)",
-    duration_minutes: 55,
-    price: 500,
-    price_text: "₺500",
-    description: "Komple saç kesimi, sakal tıraşı, saç yıkama, fön ve şekillendirme.",
-  },
-  {
-    id: "srv-bakim",
-    name: "VIP Saç Bakımı & Cilt Maskesi",
-    duration_minutes: 35,
-    description: "Özel tonik bakımı, baş masajı ve canlandırıcı maske. (Fiyat boş bırakıldı - formda gizlenir)",
-  },
-];
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("services");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State: Services & Appointment Customization
-  const [services, setServices] = useState<BusinessService[]>(DEFAULT_SERVICES);
+  const [services, setServices] = useState<BusinessService[]>(DEFAULT_BYERMAN_SERVICES);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [isAddingService, setIsAddingService] = useState(false);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [serviceNameInput, setServiceNameInput] = useState("");
   const [serviceDurationInput, setServiceDurationInput] = useState("30");
   const [servicePriceInput, setServicePriceInput] = useState("");
   const [serviceDescInput, setServiceDescInput] = useState("");
+  const [serviceIsExtraInput, setServiceIsExtraInput] = useState(false);
+  const [isSavingServiceToCloud, setIsSavingServiceToCloud] = useState(false);
 
   // Form State: Profile
   const [fullName, setFullName] = useState("İşletme Yetkilisi");
@@ -180,7 +153,8 @@ export default function SettingsPage() {
       const tabParam = urlParams.get("tab");
       if (tabParam) setActiveTab(tabParam);
 
-      // 0.1 Services Persistence
+      // 0.1 Services Persistence (Local Cache & Cloud API)
+      const targetSlug = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || "byerman");
       const savedServices = localStorage.getItem("rf_business_services");
       if (savedServices) {
         try {
@@ -190,6 +164,16 @@ export default function SettingsPage() {
           }
         } catch {}
       }
+      try {
+        const sRes = await fetch(`/api/business/services?slug=${targetSlug}`);
+        const sData = await sRes.json();
+        if (sData.success && Array.isArray(sData.services) && sData.services.length > 0) {
+          setServices(sData.services);
+          try {
+            localStorage.setItem("rf_business_services", JSON.stringify(sData.services));
+          } catch {}
+        }
+      } catch {}
 
       // 1. Profile Persistence
       const savedProfile = localStorage.getItem("rf_settings_profile");
@@ -639,75 +623,109 @@ export default function SettingsPage() {
   };
 
   // Service CRUD Handlers
-  const handleSaveService = (e: React.FormEvent) => {
+  const handleOpenAddModal = (isExtra = false, presetName = "", presetDuration = "30") => {
+    setEditingServiceId(null);
+    setServiceNameInput(presetName);
+    setServiceDurationInput(presetDuration);
+    setServicePriceInput("");
+    setServiceDescInput("");
+    setServiceIsExtraInput(isExtra);
+    setIsServiceModalOpen(true);
+  };
+
+  const handleStartEdit = (service: BusinessService) => {
+    setEditingServiceId(service.id);
+    setServiceNameInput(service.name);
+    setServiceDurationInput(String(service.duration_minutes));
+    setServicePriceInput(service.price ? String(service.price) : "");
+    setServiceDescInput(service.description || "");
+    setServiceIsExtraInput(Boolean(service.is_extra));
+    setIsServiceModalOpen(true);
+  };
+
+  const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!serviceNameInput.trim()) {
       showToast("Lütfen bir hizmet adı giriniz.");
       return;
     }
 
+    setIsSavingServiceToCloud(true);
     const cleanPrice = servicePriceInput.trim() !== "" ? Number(servicePriceInput.replace(/[^0-9]/g, "")) : undefined;
     const durationNum = Number(serviceDurationInput) || 30;
 
+    const currentServicePayload: BusinessService = {
+      id: editingServiceId || `srv-${Date.now()}`,
+      name: serviceNameInput.trim(),
+      duration_minutes: durationNum,
+      price: cleanPrice && cleanPrice > 0 ? cleanPrice : undefined,
+      price_text: cleanPrice && cleanPrice > 0 ? `₺${cleanPrice.toLocaleString("tr-TR")}` : undefined,
+      description: serviceDescInput.trim() || undefined,
+      is_extra: serviceIsExtraInput,
+      category: serviceIsExtraInput ? "Ekstra Hizmet" : "Ana Hizmet",
+    };
+
     let updatedList: BusinessService[];
     if (editingServiceId) {
-      updatedList = services.map((s) =>
-        s.id === editingServiceId
-          ? {
-              ...s,
-              name: serviceNameInput.trim(),
-              duration_minutes: durationNum,
-              price: cleanPrice && cleanPrice > 0 ? cleanPrice : undefined,
-              price_text: cleanPrice && cleanPrice > 0 ? `₺${cleanPrice.toLocaleString("tr-TR")}` : undefined,
-              description: serviceDescInput.trim() || undefined,
-            }
-          : s
-      );
-      showToast("Hizmet başarıyla güncellendi.");
-      setEditingServiceId(null);
+      updatedList = services.map((s) => (s.id === editingServiceId ? currentServicePayload : s));
+      showToast("✓ Hizmet başarıyla güncellendi.");
     } else {
-      const newService: BusinessService = {
-        id: `srv-${Date.now()}`,
-        name: serviceNameInput.trim(),
-        duration_minutes: durationNum,
-        price: cleanPrice && cleanPrice > 0 ? cleanPrice : undefined,
-        price_text: cleanPrice && cleanPrice > 0 ? `₺${cleanPrice.toLocaleString("tr-TR")}` : undefined,
-        description: serviceDescInput.trim() || undefined,
-      };
-      updatedList = [...services, newService];
-      showToast("Yeni hizmet başarıyla eklendi.");
-      setIsAddingService(false);
+      updatedList = [...services, currentServicePayload];
+      showToast(serviceIsExtraInput ? "✓ Ekstra hizmet başarıyla eklendi." : "✓ Yeni hizmet başarıyla eklendi.");
     }
 
     setServices(updatedList);
     localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
+    window.dispatchEvent(new Event("storage"));
+    setIsServiceModalOpen(false);
 
-    // Reset inputs
-    setServiceNameInput("");
-    setServiceDurationInput("30");
-    setServicePriceInput("");
-    setServiceDescInput("");
+    // Save to Cloud API
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      await fetch("/api/business/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          action: "save_all",
+          services: updatedList,
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist services to cloud:", err);
+    } finally {
+      setIsSavingServiceToCloud(false);
+    }
   };
 
-  const handleStartEdit = (service: BusinessService) => {
-    setEditingServiceId(service.id);
-    setIsAddingService(false);
-    setServiceNameInput(service.name);
-    setServiceDurationInput(String(service.duration_minutes));
-    setServicePriceInput(service.price ? String(service.price) : "");
-    setServiceDescInput(service.description || "");
-  };
-
-  const handleDeleteService = (id: string) => {
+  const handleDeleteService = async (id: string) => {
     if (services.length <= 1) {
       showToast("En az 1 aktif randevu hizmeti bulunmalıdır.");
       return;
     }
+
+    if (!confirm("Bu hizmeti silmek istediğinize emin misiniz?")) return;
+
     const updatedList = services.filter((s) => s.id !== id);
     setServices(updatedList);
     localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
+    window.dispatchEvent(new Event("storage"));
     showToast("Hizmet silindi.");
-    if (editingServiceId === id) setEditingServiceId(null);
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      await fetch("/api/business/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          action: "delete",
+          serviceId: id,
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to delete service in cloud:", err);
+    }
   };
 
   const tabs = [
@@ -732,10 +750,10 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-8 z-50 px-4 py-3 rounded-xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 border border-[#0062FF]/30"
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] px-4 py-3 rounded-2xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 border border-[#0062FF]/30"
           >
-            <CheckCircle2 className="w-4 h-4 text-[#00BCD4]" />
-            <span>{toastMessage}</span>
+            <CheckCircle2 className="w-4 h-4 text-[#00BCD4] shrink-0" />
+            <span className="truncate">{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -776,176 +794,108 @@ export default function SettingsPage() {
 
         {/* Form Content Area */}
         <div className="flex-1 bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-8">
-          {/* TAB: SERVICES & APPOINTMENT TYPES (CUSTOMIZATION & OPTIONAL PRICING) */}
+          {/* TAB: SERVICES & APPOINTMENT TYPES (CUSTOMIZATION & OPTIONAL PRICING & EXTRA SERVICES) */}
           {activeTab === "services" && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                   <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-[#0062FF]" />
-                    Hizmetler & Randevu Tipleri
+                    Hizmetler &amp; Randevu Tipleri
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    İşletmenizin sunduğu seans, muayene, bakım ve randevu kalemlerini özelleştirin.
+                    Ana tıraş/bakım seanslarınızı ve müşterilerin seçebileceği isteğe bağlı ekstra hizmetleri yönetin.
                   </p>
                 </div>
-                {!isAddingService && !editingServiceId && (
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsAddingService(true);
-                      setEditingServiceId(null);
-                      setServiceNameInput("");
-                      setServiceDurationInput("30");
-                      setServicePriceInput("");
-                      setServiceDescInput("");
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 shrink-0"
+                    onClick={() => handleOpenAddModal(false)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all active:scale-95"
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Yeni Hizmet Ekle</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Yeni Ana Hizmet</span>
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddModal(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>+ Ekstra Hizmet Ekle</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Presets: 1-Click Popular Add-ons */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#0F2A4A] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#0062FF]" />
+                    Erman Usta İçin Hızlı Ekstra Hizmet Şablonları (Tek Tıkla Ekle)
+                  </span>
+                  <span className="text-[10px] text-slate-400">İsteğe göre özelleştirilebilir</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { name: "Canlandırıcı Cilt Maskesi", duration: "15", price: "100" },
+                    { name: "Kulak & Burun Ağda / İp Temizliği", duration: "10", price: "70" },
+                    { name: "Saç Bakım Serumu & Masaj", duration: "15", price: "120" },
+                    { name: "Buharlı Sıcak Havlu Ekstra Bakımı", duration: "10", price: "60" },
+                    { name: "Sakal Boyama & Beyaz Kamuflaj", duration: "20", price: "150" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => handleOpenAddModal(true, preset.name, preset.duration)}
+                      className="px-2.5 py-1 rounded-lg bg-white/90 hover:bg-white border border-blue-200/80 text-[11px] font-medium text-slate-700 hover:text-[#0062FF] hover:border-[#0062FF] transition-all flex items-center gap-1 shadow-2xs"
+                    >
+                      <Plus className="w-3 h-3 text-[#0062FF]" />
+                      <span>{preset.name}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">({preset.duration} dk)</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Info Notice: Optional Pricing */}
-              <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3">
-                <Sparkles className="w-4 h-4 text-[#0062FF] mt-0.5 shrink-0" />
-                <div className="text-xs text-slate-700 leading-relaxed">
-                  <strong className="text-[#0F2A4A]">Opsiyonel Fiyatlandırma Garantisi:</strong> Hizmetlerinize fiyat tanımlamak tamamen işletmenizin tercihine bağlıdır. Fiyat alanını boş bırakırsanız, randevu formunda fiyat rozeti ve alanı tamamen gizlenir; müşterilere asla yanıltıcı &quot;0 TL&quot; veya &quot;Ücretsiz&quot; ibaresi gösterilmez.
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#0062FF] mt-0.5 shrink-0" />
+                <div className="text-[11px] text-slate-600 leading-relaxed">
+                  <strong className="text-[#0F2A4A]">Bulut Senkronizasyonu &amp; Fiyat Esnekliği:</strong> Eklediğiniz veya düzenlediğiniz tüm hizmetler anında buluta kaydedilir ve müşteri randevu sayfasında canlıya alınır. Fiyat alanı boş bırakılan hizmetlerde fiyat rozeti otomatik gizlenir.
                 </div>
               </div>
-
-              {/* Add / Edit Form Modal/Card */}
-              {(isAddingService || editingServiceId) && (
-                <form
-                  onSubmit={handleSaveService}
-                  className="p-5 rounded-2xl bg-slate-50/80 border-2 border-[#0062FF]/30 space-y-4"
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <h4 className="text-xs font-bold text-[#0F2A4A] uppercase tracking-wider flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-[#0062FF]" />
-                      {editingServiceId ? "Hizmeti Düzenle" : "Yeni Hizmet Oluştur"}
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddingService(false);
-                        setEditingServiceId(null);
-                      }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Hizmet Adı *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={serviceNameInput}
-                        onChange={(e) => setServiceNameInput(e.target.value)}
-                        placeholder="Örn: Saç Kesimi & Yıkama"
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        İşlem Süresi (Dakika) *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          required
-                          min={5}
-                          max={360}
-                          step={5}
-                          value={serviceDurationInput}
-                          onChange={(e) => setServiceDurationInput(e.target.value)}
-                          placeholder="30"
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
-                        />
-                        <Clock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-semibold text-slate-700">
-                        Fiyat (₺) — <span className="text-emerald-600 font-bold">Opsiyonel</span>
-                      </label>
-                      <span className="text-[11px] text-slate-400">Boş bırakılırsa fiyat gizlenir</span>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={servicePriceInput}
-                        onChange={(e) => setServicePriceInput(e.target.value)}
-                        placeholder="Örn: 350 (Boş bırakabilirsiniz)"
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
-                      />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                        ₺
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Hizmet Açıklaması (Opsiyonel)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={serviceDescInput}
-                      onChange={(e) => setServiceDescInput(e.target.value)}
-                      placeholder="Müşteriye randevu seçiminde gösterilecek kısa açıklama..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddingService(false);
-                        setEditingServiceId(null);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition-colors"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-semibold shadow-xs transition-colors"
-                    >
-                      {editingServiceId ? "Değişiklikleri Kaydet" : "Hizmeti Ekle"}
-                    </button>
-                  </div>
-                </form>
-              )}
 
               {/* Existing Services List */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
-                  <span>Mevcut Hizmetler ({services.length})</span>
+                  <span>Mevcut Hizmet ve Ekstralar ({services.length})</span>
                   <span>İşlemler</span>
                 </div>
 
                 {services.map((s) => (
                   <div
                     key={s.id}
-                    className="p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 shadow-2xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs ${
+                      s.is_extra
+                        ? "border-indigo-100 bg-indigo-50/20 hover:border-indigo-200"
+                        : "border-slate-200/90 bg-white hover:border-slate-300"
+                    }`}
                   >
                     <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h4 className="text-sm font-bold text-[#0F2A4A]">{s.name}</h4>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                        {s.is_extra ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <Sparkles className="w-2.5 h-2.5 text-indigo-500" />
+                            Ekstra Hizmet (Add-on)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                            Ana Hizmet
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                           <Clock className="w-3 h-3 text-slate-400" />
                           {s.duration_minutes} Dakika
                         </span>
@@ -987,6 +937,191 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
+
+              {/* 5. Mobile-Friendly Popup Modal Dialog for Add / Edit Service */}
+              <AnimatePresence>
+                {isServiceModalOpen && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+                    onClick={() => setIsServiceModalOpen(false)}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 text-left space-y-4 max-h-[90vh] overflow-y-auto"
+                    >
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2 text-[#0F2A4A] font-bold text-sm">
+                          {serviceIsExtraInput ? (
+                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                          ) : (
+                            <Tag className="w-4 h-4 text-[#0062FF]" />
+                          )}
+                          <span>
+                            {editingServiceId
+                              ? "Hizmeti Düzenle"
+                              : serviceIsExtraInput
+                              ? "Yeni Ekstra Hizmet Ekle"
+                              : "Yeni Ana Hizmet Oluştur"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsServiceModalOpen(false)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveService} className="space-y-4 text-xs">
+                        {/* Service Type Switcher */}
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1.5">
+                            Hizmet Türü
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setServiceIsExtraInput(false)}
+                              className={`p-2.5 rounded-xl border text-center font-semibold transition-all ${
+                                !serviceIsExtraInput
+                                  ? "bg-[#0062FF] text-white border-[#0062FF] shadow-xs"
+                                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              🏷️ Ana Randevu Hizmeti
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setServiceIsExtraInput(true)}
+                              className={`p-2.5 rounded-xl border text-center font-semibold transition-all ${
+                                serviceIsExtraInput
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              ✨ Ekstra / Yan Hizmet
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            {serviceIsExtraInput
+                              ? "Müşteri randevu alırken ana hizmetin yanına ilave ekstra olarak seçebilir."
+                              : "Müşterinin randevuya başlarken seçeceği temel işlem."}
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            Hizmet Adı *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={serviceNameInput}
+                            onChange={(e) => setServiceNameInput(e.target.value)}
+                            placeholder="Örn: Canlandırıcı Cilt Maskesi"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                            autoFocus
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block font-semibold text-slate-700 mb-1">
+                              İşlem Süresi (Dakika) *
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                required
+                                min={5}
+                                max={360}
+                                step={5}
+                                value={serviceDurationInput}
+                                onChange={(e) => setServiceDurationInput(e.target.value)}
+                                placeholder="15"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                              />
+                              <Clock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block font-semibold text-slate-700">
+                                Fiyat (₺)
+                              </label>
+                              <span className="text-[10px] text-slate-400">Opsiyonel</span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={servicePriceInput}
+                                onChange={(e) => setServicePriceInput(e.target.value)}
+                                placeholder="Örn: 100 (Boş bırakılabilir)"
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                              />
+                              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                                ₺
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-slate-700 mb-1">
+                            Açıklama (Opsiyonel)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={serviceDescInput}
+                            onChange={(e) => setServiceDescInput(e.target.value)}
+                            placeholder="Müşteriye gösterilecek kısa bilgilendirme..."
+                            className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                          />
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-800 space-y-0.5">
+                          <p className="font-semibold">☁️ Bulut Senkronizasyonu:</p>
+                          <p>
+                            Değişiklik kaydedildiği anda tüm ziyaretçilerinizin ekranında otomatik güncellenir.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setIsServiceModalOpen(false)}
+                            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
+                          >
+                            Vazgeç
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSavingServiceToCloud}
+                            className="px-5 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-semibold flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                          >
+                            {isSavingServiceToCloud ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Buluta Kaydediliyor...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save className="w-3.5 h-3.5" />
+                                <span>{editingServiceId ? "Değişiklikleri Kaydet" : "Hizmeti Ekle & Yayınla"}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 

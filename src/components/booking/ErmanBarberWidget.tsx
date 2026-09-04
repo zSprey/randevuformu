@@ -31,12 +31,17 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
+
 interface Service {
   id: string;
   name: string;
   duration_minutes: number;
   price?: number;
+  price_text?: string;
   description: string;
+  is_extra?: boolean;
+  category?: string;
 }
 
 export interface GalleryItem {
@@ -47,44 +52,6 @@ export interface GalleryItem {
   source?: "business_upload" | "google_maps";
 }
 
-const CLASSIC_SERVICES: Service[] = [
-  {
-    id: "srv-sac",
-    name: "Saç Kesimi & Yıkama",
-    duration_minutes: 30,
-    price: 350,
-    description: "Makine veya makasla saç kesimi, saç yıkama ve fön işlemi.",
-  },
-  {
-    id: "srv-sakal",
-    name: "Sakal Tıraşı & Sıcak Havlu",
-    duration_minutes: 30,
-    price: 200,
-    description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
-  },
-  {
-    id: "srv-komple",
-    name: "Saç + Sakal (Komple Tıraş)",
-    duration_minutes: 60,
-    price: 500,
-    description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
-  },
-  {
-    id: "srv-cocuk",
-    name: "Çocuk Saç Kesimi",
-    duration_minutes: 30,
-    price: 250,
-    description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
-  },
-  {
-    id: "srv-yikama",
-    name: "Saç Yıkama & Fön",
-    duration_minutes: 20,
-    price: 150,
-    description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
-  },
-];
-
 export default function ErmanBarberWidget({
   businessSlug = "byerman",
   tenantId = "byerman-id",
@@ -94,8 +61,12 @@ export default function ErmanBarberWidget({
 }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // 1. State: Service Selection
-  const [selectedService, setSelectedService] = useState<Service>(CLASSIC_SERVICES[0]);
+  // 1. State: Service & Extra Services Selection
+  const [servicesList, setServicesList] = useState<Service[]>(DEFAULT_BYERMAN_SERVICES as any);
+  const [selectedService, setSelectedService] = useState<Service>(
+    (DEFAULT_BYERMAN_SERVICES.find((s) => !s.is_extra) as any) || (DEFAULT_BYERMAN_SERVICES[0] as any)
+  );
+  const [selectedExtraServices, setSelectedExtraServices] = useState<Service[]>([]);
 
   // 2. State: Date & Slot
   const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
@@ -178,17 +149,74 @@ export default function ErmanBarberWidget({
       }
     };
 
+    const syncServicesData = async () => {
+      // Instant cache read
+      try {
+        const localSaved = localStorage.getItem("rf_business_services");
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setServicesList(parsed);
+            const firstMain = parsed.find((s: any) => !s.is_extra) || parsed[0];
+            setSelectedService(firstMain);
+          }
+        }
+      } catch {}
+
+      // Global Cloud API fetch
+      try {
+        const res = await fetch(`/api/business/services?slug=${businessSlug}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.services) && data.services.length > 0) {
+          setServicesList(data.services);
+          const firstMain = data.services.find((s: any) => !s.is_extra) || data.services[0];
+          setSelectedService(firstMain);
+          try {
+            localStorage.setItem("rf_business_services", JSON.stringify(data.services));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn("Failed to load cloud services:", err);
+      }
+    };
+
     syncLocationData();
     syncGalleryData();
+    syncServicesData();
 
     window.addEventListener("storage", syncLocationData);
     window.addEventListener("storage", syncGalleryData);
+    window.addEventListener("storage", syncServicesData);
 
     return () => {
       window.removeEventListener("storage", syncLocationData);
       window.removeEventListener("storage", syncGalleryData);
+      window.removeEventListener("storage", syncServicesData);
     };
-  }, []);
+  }, [businessSlug]);
+
+  // Derived Services: Main vs Extra (Add-ons)
+  const mainServices = servicesList.filter((s) => !s.is_extra);
+  const extraServices = servicesList.filter((s) => s.is_extra);
+
+  const totalDuration =
+    (selectedService?.duration_minutes || 30) +
+    selectedExtraServices.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+
+  const totalPrice =
+    (selectedService?.price || 0) +
+    selectedExtraServices.reduce((sum, s) => sum + (s.price || 0), 0);
+
+  const hasAnyPrice =
+    Boolean(selectedService?.price) || selectedExtraServices.some((s) => Boolean(s.price));
+
+  const toggleExtraService = (srv: Service) => {
+    if (selectedExtraServices.some((s) => s.id === srv.id)) {
+      setSelectedExtraServices(selectedExtraServices.filter((s) => s.id !== srv.id));
+    } else {
+      setSelectedExtraServices([...selectedExtraServices, srv]);
+    }
+  };
 
   // Generate 7 upcoming working days in Turkish
   const generateDays = () => {
@@ -222,7 +250,7 @@ export default function ErmanBarberWidget({
   const daysList = generateDays();
   const activeDate = daysList[selectedDateIndex]?.iso || daysList[0].iso;
 
-  // 30-minute standard slot template
+  // Standard slot template
   const ALL_SLOTS = [
     "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
     "12:00", "12:30", "13:30", "14:00", "14:30", "15:00",
@@ -230,12 +258,12 @@ export default function ErmanBarberWidget({
     "18:30", "19:00", "19:30"
   ];
 
-  // Fetch slots from API
+  // Fetch slots from API (taking totalDuration into account)
   useEffect(() => {
     async function loadSlots() {
       setLoadingSlots(true);
       try {
-        const res = await fetch(`/api/slots?slug=byerman&date=${activeDate}&duration=30`);
+        const res = await fetch(`/api/slots?slug=byerman&date=${activeDate}&duration=${totalDuration}`);
         const data = await res.json();
         if (data.slots && data.slots.length > 0) {
           const valid = data.slots
@@ -256,7 +284,7 @@ export default function ErmanBarberWidget({
     }
 
     loadSlots();
-  }, [activeDate]);
+  }, [activeDate, totalDuration]);
 
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -275,6 +303,12 @@ export default function ErmanBarberWidget({
 
     try {
       const startUtc = `${activeDate}T${selectedSlot}:00+03:00`;
+      const extraListStr = selectedExtraServices.length > 0
+        ? ` | Ekstra Hizmetler: ${selectedExtraServices.map((s) => s.name).join(", ")}`
+        : "";
+      const finalNotes = customerNote.trim()
+        ? `${customerNote.trim()}${extraListStr}`
+        : extraListStr ? extraListStr.replace(" | ", "") : "Erman Usta randevusu";
 
       const res = await fetch("/api/bookings", {
         method: "POST",
@@ -282,13 +316,20 @@ export default function ErmanBarberWidget({
         body: JSON.stringify({
           business_slug: "byerman",
           service_id: selectedService.id,
+          service_name: selectedService.name,
+          extra_services: selectedExtraServices.map((s) => ({
+            id: s.id,
+            name: s.name,
+            duration_minutes: s.duration_minutes,
+            price: s.price,
+          })),
           customer_name: customerName.trim(),
           user_name: customerName.trim(),
           customer_phone: customerPhone.trim(),
           user_phone: customerPhone.trim(),
           start_time: startUtc,
           end_time: startUtc,
-          notes: customerNote.trim() || "Erman Usta randevusu",
+          notes: finalNotes,
           staff_id: "erman-usta",
           kvkk_consent: true,
         }),
@@ -529,9 +570,17 @@ export default function ErmanBarberWidget({
 
             <div className="max-w-md mx-auto bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-left text-xs space-y-2">
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                <span className="text-slate-500">Hizmet:</span>
+                <span className="text-slate-500">Ana Hizmet:</span>
                 <span className="font-semibold text-[#0F2A4A]">{selectedService.name}</span>
               </div>
+              {selectedExtraServices.length > 0 && (
+                <div className="flex items-start justify-between border-b border-slate-200/60 pb-2 text-indigo-700">
+                  <span className="text-slate-500">Ekstra Hizmetler:</span>
+                  <span className="font-semibold text-right">
+                    {selectedExtraServices.map((s) => s.name).join(", ")}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                 <span className="text-slate-500">Randevu Günü:</span>
                 <span className="font-semibold text-[#0062FF]">
@@ -539,17 +588,17 @@ export default function ErmanBarberWidget({
                 </span>
               </div>
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                <span className="text-slate-500">Randevu Saati:</span>
-                <span className="font-bold text-emerald-600">{selectedSlot}</span>
+                <span className="text-slate-500">Randevu Saati &amp; Süre:</span>
+                <span className="font-bold text-emerald-600">{selectedSlot} ({totalDuration} dk)</span>
               </div>
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                 <span className="text-slate-500">Usta:</span>
                 <span className="font-semibold text-[#0F2A4A]">Erman Usta</span>
               </div>
-              {selectedService.price && (
+              {hasAnyPrice && totalPrice > 0 && (
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-slate-500">Ücret:</span>
-                  <span className="font-bold text-[#0062FF]">₺{selectedService.price}</span>
+                  <span className="text-slate-500">Toplam Ücret:</span>
+                  <span className="font-bold text-[#0062FF]">₺{totalPrice}</span>
                 </div>
               )}
             </div>
@@ -558,7 +607,11 @@ export default function ErmanBarberWidget({
             <div className="max-w-md mx-auto space-y-2.5">
               <a
                 href={`https://wa.me/905384809001?text=${encodeURIComponent(
-                  `Merhaba Erman Usta, ben ${customerName} (${customerPhone}). ${daysList[selectedDateIndex]?.label} saat ${selectedSlot} için ${selectedService.name} randevumu siteden oluşturdum.`
+                  `Merhaba Erman Usta, ben ${customerName} (${customerPhone}). ${daysList[selectedDateIndex]?.label} saat ${selectedSlot} için ${selectedService.name}${
+                    selectedExtraServices.length > 0
+                      ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})`
+                      : ""
+                  } randevumu siteden oluşturdum.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -665,8 +718,8 @@ export default function ErmanBarberWidget({
                   </div>
 
                   <div className="grid gap-2.5 sm:grid-cols-2 pt-1">
-                    {CLASSIC_SERVICES.map((srv) => {
-                      const isSelected = selectedService.id === srv.id;
+                    {mainServices.map((srv) => {
+                      const isSelected = selectedService?.id === srv.id;
                       return (
                         <button
                           key={srv.id}
@@ -700,7 +753,7 @@ export default function ErmanBarberWidget({
                             <span className="text-slate-500 text-[11px] flex items-center gap-1">
                               <Clock className="w-3 h-3 text-slate-400" /> {srv.duration_minutes} dk
                             </span>
-                            {srv.price && (
+                            {srv.price && srv.price > 0 && (
                               <span className="font-bold text-[#0062FF] bg-[#0062FF]/10 px-2 py-0.5 rounded-md text-xs">
                                 ₺{srv.price}
                               </span>
@@ -711,7 +764,89 @@ export default function ErmanBarberWidget({
                     })}
                   </div>
 
-                  <div className="pt-6 flex justify-end">
+                  {/* 1.3 Ekstra / Yan Hizmetler Seçim Alanı */}
+                  {extraServices.length > 0 && (
+                    <div className="mt-5 pt-5 border-t border-slate-100 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-indigo-600" />
+                          <h3 className="text-xs font-bold text-[#0F2A4A] uppercase tracking-wider">
+                            ✨ Ekstra Bakım &amp; Yan Hizmetler (İsteğe Bağlı)
+                          </h3>
+                        </div>
+                        <span className="text-[10px] text-slate-400">Birden fazla seçilebilir</span>
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {extraServices.map((extra) => {
+                          const isChecked = selectedExtraServices.some((s) => s.id === extra.id);
+                          return (
+                            <div
+                              key={extra.id}
+                              onClick={() => toggleExtraService(extra)}
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isChecked
+                                  ? "bg-indigo-50/50 border-indigo-400 ring-1 ring-indigo-400/30 shadow-2xs"
+                                  : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                              }`}
+                            >
+                              <div className="flex items-start gap-2.5">
+                                <div
+                                  className={`w-4 h-4 rounded mt-0.5 border shrink-0 flex items-center justify-center transition-colors ${
+                                    isChecked ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 bg-white"
+                                  }`}
+                                >
+                                  {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold text-[#0F2A4A]">{extra.name}</p>
+                                  {extra.description && (
+                                    <p className="text-[10px] text-slate-400 line-clamp-1">{extra.description}</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-medium text-slate-500 block">
+                                  +{extra.duration_minutes} dk
+                                </span>
+                                {extra.price && extra.price > 0 && (
+                                  <span className="text-[11px] font-bold text-indigo-700">
+                                    +₺{extra.price}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Seçim Özeti & İlerleme Çubuğu */}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-[#0F2A4A]">
+                      <Clock className="w-4 h-4 text-[#0062FF]" />
+                      <span>
+                        Seçilen: <strong>{selectedService?.name}</strong>
+                        {selectedExtraServices.length > 0 && (
+                          <span className="text-indigo-600 font-semibold ml-1">
+                            (+{selectedExtraServices.length} Ekstra)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 font-semibold self-end sm:self-auto">
+                      <span className="text-slate-600">Toplam Süre: {totalDuration} Dakika</span>
+                      {hasAnyPrice && totalPrice > 0 && (
+                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          ₺{totalPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
                     <button
                       type="button"
                       onClick={() => setStep(2)}
@@ -737,7 +872,13 @@ export default function ErmanBarberWidget({
                         Randevu Günü ve Saati
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {selectedService.name} • {selectedService.duration_minutes} dk
+                        {selectedService.name}
+                        {selectedExtraServices.length > 0 && (
+                          <span className="text-indigo-600 font-semibold ml-1">
+                            + [{selectedExtraServices.map((s) => s.name).join(", ")}]
+                          </span>
+                        )}{" "}
+                        • Toplam {totalDuration} dk
                       </p>
                     </div>
                     <button
@@ -859,6 +1000,30 @@ export default function ErmanBarberWidget({
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Seçilen Hizmet Özeti Kartı */}
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between font-semibold text-[#0F2A4A]">
+                        <span>Seçilen Ana Hizmet:</span>
+                        <span>{selectedService.name}</span>
+                      </div>
+                      {selectedExtraServices.length > 0 && (
+                        <div className="flex items-start justify-between text-indigo-700 text-[11px] pt-1.5 border-t border-slate-200/60">
+                          <span className="font-medium flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-indigo-500" /> Ekstra Hizmetler:
+                          </span>
+                          <span className="font-semibold text-right">
+                            {selectedExtraServices.map((s) => s.name).join(", ")}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-slate-500 text-[11px] pt-1.5 border-t border-slate-200/60">
+                        <span>Toplam Süre:</span>
+                        <span className="font-bold text-[#0F2A4A]">
+                          {totalDuration} Dakika {hasAnyPrice && totalPrice > 0 ? `• ₺${totalPrice}` : ""}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="grid sm:grid-cols-2 gap-3.5">
                       <div>
                         <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
