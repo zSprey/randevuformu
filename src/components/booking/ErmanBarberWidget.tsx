@@ -28,6 +28,9 @@ import {
   ShieldAlert,
   Info,
   Building,
+  UploadCloud,
+  Plus,
+  Camera,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,32 +42,13 @@ interface Service {
   description: string;
 }
 
-const SALON_GALLERY = [
-  {
-    id: 1,
-    title: "Modern Berber Koltuğu & Salon Ortamı",
-    subtitle: "Google Yorumcusu Görseli • By Erman Kadıköy",
-    url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1000&q=80",
-  },
-  {
-    id: 2,
-    title: "Özel Fade Saç Kesimi & Şekillendirme",
-    subtitle: "Usta Makas & Makine İşçiliği",
-    url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=1000&q=80",
-  },
-  {
-    id: 3,
-    title: "Geleneksel Ustura & Sıcak Havlu Bakımı",
-    subtitle: "Rahatlatıcı Buharlı Sakal Tıraşı",
-    url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1000&q=80",
-  },
-  {
-    id: 4,
-    title: "Sterilize Ekipmanlar & Hijyenik Bakım",
-    subtitle: "Tek Kullanımlık Havlu ve Dezenfeksiyon",
-    url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=1000&q=80",
-  },
-];
+export interface GalleryItem {
+  id: string | number;
+  title: string;
+  subtitle?: string;
+  url: string;
+  source?: "business_upload" | "google_maps";
+}
 
 const CLASSIC_SERVICES: Service[] = [
   {
@@ -133,17 +117,30 @@ export default function ErmanBarberWidget({
 
   // 3.2 Dynamic Location & Business Info State (defaults to By Erman, syncs from cloud/localStorage)
   const [googleMapsUrl, setGoogleMapsUrl] = useState<string>("https://share.google/gOW1xHwztRfGIc3F1");
-  const [businessAddress, setBusinessAddress] = useState<string>("Caferağa Mah. Moda Cad. No:12/A Kadıköy, İstanbul");
-  const [workingHoursText, setWorkingHoursText] = useState<string>("Pzt - Cmt: 09:00 - 21:00 | Paz: 10:00 - 19:00");
-  const [activePhoto, setActivePhoto] = useState<typeof SALON_GALLERY[0] | null>(null);
+  const [businessAddress, setBusinessAddress] = useState<string>("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
+  const [workingHoursText, setWorkingHoursText] = useState<string>("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
+  
+  // 3.3 Dynamic Cloud Gallery State
+  const [galleryPhotos, setGalleryPhotos] = useState<GalleryItem[]>([]);
+  const [loadingGallery, setLoadingGallery] = useState<boolean>(true);
+  const [activePhoto, setActivePhoto] = useState<GalleryItem | null>(null);
+
+  // 3.4 Business Owner Quick Upload State
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadTitle, setUploadTitle] = useState<string>("");
+  const [uploadSubtitle, setUploadSubtitle] = useState<string>("");
+  const [isUploadingToCloud, setIsUploadingToCloud] = useState<boolean>(false);
+  const [uploadToast, setUploadToast] = useState<string | null>(null);
 
   // 4. Submission & UI State
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Sync with cloud / localStorage business location settings
+  // Sync with cloud / localStorage business location & gallery settings
   useEffect(() => {
     if (typeof window === "undefined") return;
+
     const syncLocationData = () => {
       try {
         const savedLoc = localStorage.getItem("rf_business_location");
@@ -162,9 +159,46 @@ export default function ErmanBarberWidget({
       } catch {}
     };
 
+    const syncGalleryData = async () => {
+      // Instant cache read
+      try {
+        const localSaved = localStorage.getItem("rf_business_gallery_byerman");
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setGalleryPhotos(parsed);
+            setLoadingGallery(false);
+          }
+        }
+      } catch {}
+
+      // Global Cloud API fetch
+      try {
+        const res = await fetch("/api/business/gallery?slug=byerman");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.photos)) {
+          setGalleryPhotos(data.photos);
+          try {
+            localStorage.setItem("rf_business_gallery_byerman", JSON.stringify(data.photos));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn("Failed to load cloud gallery:", err);
+      } finally {
+        setLoadingGallery(false);
+      }
+    };
+
     syncLocationData();
+    syncGalleryData();
+
     window.addEventListener("storage", syncLocationData);
-    return () => window.removeEventListener("storage", syncLocationData);
+    window.addEventListener("storage", syncGalleryData);
+
+    return () => {
+      window.removeEventListener("storage", syncLocationData);
+      window.removeEventListener("storage", syncGalleryData);
+    };
   }, []);
 
   // Generate 7 upcoming working days in Turkish
@@ -234,6 +268,90 @@ export default function ErmanBarberWidget({
 
     loadSlots();
   }, [activeDate]);
+
+  // Client-side image selection and compression (< 400KB)
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+        setUploadPreview(compressedBase64);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload to Cloud API
+  const handleUploadToCloud = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadPreview) return;
+    setIsUploadingToCloud(true);
+
+    try {
+      const res = await fetch("/api/business/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: "byerman",
+          action: "add",
+          photo: {
+            url: uploadPreview,
+            title: uploadTitle.trim() || "Salon Fotoğrafı",
+            subtitle: uploadSubtitle.trim() || "By Erman Hair Studio",
+            source: "business_upload",
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        setGalleryPhotos(data.photos);
+        try {
+          localStorage.setItem("rf_business_gallery_byerman", JSON.stringify(data.photos));
+        } catch {}
+        window.dispatchEvent(new Event("storage"));
+        setShowUploadModal(false);
+        setUploadPreview(null);
+        setUploadTitle("");
+        setUploadSubtitle("");
+        setUploadToast("Fotoğraf başarıyla buluta yüklendi ve herkes için yayına alındı!");
+        setTimeout(() => setUploadToast(null), 4000);
+      } else {
+        alert(data.error || "Yükleme sırasında hata oluştu.");
+      }
+    } catch {
+      alert("Bulut sunucusuna bağlanılamadı.");
+    } finally {
+      setIsUploadingToCloud(false);
+    }
+  };
 
   // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -367,10 +485,9 @@ export default function ErmanBarberWidget({
             <Clock className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-bold text-[#0F2A4A] block">Çalışma Saatleri</span>
-              <div className="text-[11px] text-slate-600 space-y-0.5">
-                <p>• Hafta İçi &amp; Cmt: <strong>09:00 - 21:00</strong></p>
-                <p>• Pazar: <strong>10:00 - 19:00</strong></p>
-              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                {workingHoursText}
+              </p>
             </div>
           </div>
 
@@ -396,9 +513,9 @@ export default function ErmanBarberWidget({
           </div>
         </div>
 
-        {/* 1.2 Google Yorumlar & Salon Görselleri Bölümü */}
+        {/* 1.2 Google Yorumlar & Salon Görselleri Bölümü (Bulut Tabanlı & Doğrulanmış) */}
         <div className="mt-4 pt-4 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-[#0062FF]" />
               <span className="text-xs font-bold text-[#0F2A4A]">
@@ -408,31 +525,112 @@ export default function ErmanBarberWidget({
                 (4.9 ★ 148 Müşteri Değerlendirmesi)
               </span>
             </div>
-            <span className="text-[11px] text-slate-400">Büyütmek için tıklayın</span>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-[#0062FF] hover:underline flex items-center gap-1 font-medium"
+              >
+                <span>Google Maps Yorumları</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowUploadModal(true)}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0062FF] hover:bg-[#0051d4] px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95"
+              >
+                <UploadCloud className="w-3 h-3" />
+                <span>Fotoğraf Ekle</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {SALON_GALLERY.map((img) => (
-              <button
-                key={img.id}
-                type="button"
-                onClick={() => setActivePhoto(img)}
-                className="group relative rounded-xl overflow-hidden aspect-4/3 border border-slate-200 bg-slate-100 hover:shadow-md transition-all text-left"
+          {/* Toast Bildirimi */}
+          <AnimatePresence>
+            {uploadToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={img.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-white">
-                  <p className="text-[11px] font-bold line-clamp-1 leading-tight">{img.title}</p>
-                  <p className="text-[9px] text-slate-200 line-clamp-1">{img.subtitle}</p>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{uploadToast}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {loadingGallery ? (
+            <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#0062FF]" />
+              <span>Salon fotoğrafları yükleniyor...</span>
+            </div>
+          ) : galleryPhotos && galleryPhotos.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {galleryPhotos.map((img) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={() => setActivePhoto(img)}
+                  className="group relative rounded-xl overflow-hidden aspect-4/3 border border-slate-200 bg-slate-100 hover:shadow-md transition-all text-left"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt={img.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 text-white">
+                    <p className="text-[11px] font-bold line-clamp-1 leading-tight">{img.title}</p>
+                    <p className="text-[9px] text-slate-200 line-clamp-1">{img.subtitle || "By Erman Salonu"}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            /* Sahte stok fotoğraflar yerine temiz, kurumsal Google Haritalar Doğrulanmış Görünümü */
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <ShieldCheck className="w-3 h-3" /> Doğrulanmış Google İşletmesi
+                  </span>
+                  <span className="text-xs text-amber-500 font-bold flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" /> 4.9 (148 Yorum)
+                  </span>
                 </div>
-              </button>
-            ))}
-          </div>
+                <p className="text-xs font-semibold text-[#0F2A4A]">
+                  By Erman Hair Studio • Google Haritalar Fotoğrafları &amp; Müşteri İncelemeleri
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Salon ortamımızı ve gerçek müşteri sonuçlarını Google Haritalar üzerinden doğrudan inceleyebilirsiniz.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-[#0F2A4A] hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-all inline-flex items-center gap-1.5"
+                >
+                  <span>Haritada İncele</span>
+                  <ExternalLink className="w-3 h-3 text-[#0062FF]" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all inline-flex items-center gap-1.5"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Fotoğraf Yükle</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1037,6 +1235,124 @@ export default function ErmanBarberWidget({
                   <span>4.9 / 5.0</span>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 6. İşletme Sahibi: Hızlı Fotoğraf Yükleme Modalı */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+            onClick={() => setShowUploadModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-left space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2 text-[#0F2A4A] font-bold text-sm">
+                  <UploadCloud className="w-4 h-4 text-[#0062FF]" />
+                  <span>Salon Fotoğrafı Yükle (Bulut Galeri)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUploadToCloud} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Fotoğraf Seç (Telefon Kamerası veya Dosya)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoFileChange}
+                    required
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0062FF]/10 file:text-[#0062FF] hover:file:bg-[#0062FF]/20 cursor-pointer"
+                  />
+                </div>
+
+                {uploadPreview && (
+                  <div className="relative aspect-16/10 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={uploadPreview}
+                      alt="Önizleme"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Görsel Başlığı
+                  </label>
+                  <input
+                    type="text"
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                    placeholder="Örn: Saç Kesim & Şekillendirme İstasyonu"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Açıklama / Alt Başlık
+                  </label>
+                  <input
+                    type="text"
+                    value={uploadSubtitle}
+                    onChange={(e) => setUploadSubtitle(e.target.value)}
+                    placeholder="Örn: By Erman Usta Makas İşçiliği"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                  />
+                </div>
+
+                <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-[11px] text-blue-800 space-y-0.5">
+                  <p className="font-semibold">☁️ Bulut Senkronizasyonu:</p>
+                  <p>
+                    Yüklenen fotoğraf anında bulut sunucusuna kaydedilir ve internetteki tüm ziyaretçilerinize görünür.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadModal(false)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUploadingToCloud || !uploadPreview}
+                    className="px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-semibold flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  >
+                    {isUploadingToCloud ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Buluta Yükleniyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Buluta Yükle &amp; Yayına Al</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

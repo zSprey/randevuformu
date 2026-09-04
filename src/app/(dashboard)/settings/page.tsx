@@ -31,6 +31,8 @@ import {
   X,
   MapPin,
   ExternalLink,
+  Image as ImageIcon,
+  UploadCloud,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -148,6 +150,17 @@ export default function SettingsPage() {
   const [breakEndTime, setBreakEndTime] = useState("13:30");
   const [slotInterval, setSlotInterval] = useState("30");
 
+  // Cloud Gallery State
+  const [galleryPhotos, setGalleryPhotos] = useState<
+    Array<{ id: string; url: string; title: string; subtitle?: string; source?: string }>
+  >([]);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [galleryFilePreview, setGalleryFilePreview] = useState<string | null>(null);
+  const [galleryPhotoTitle, setGalleryPhotoTitle] = useState("");
+  const [galleryPhotoSubtitle, setGalleryPhotoSubtitle] = useState("");
+  const [galleryUrlInput, setGalleryUrlInput] = useState("");
+  const [galleryUploadMode, setGalleryUploadMode] = useState<"file" | "url">("file");
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -209,7 +222,8 @@ export default function SettingsPage() {
       } else if (isByErman) {
         setClinicName("By Erman Hair Studio");
         setClinicSlug("byerman");
-        setClinicAddress("Caferağa Mah. Moda Cad. No:12/A Kadıköy, İstanbul");
+        setClinicAddress("İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul");
+        setWorkingHoursSummary("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
       } else {
         const storedName = localStorage.getItem("rf_tenant_name");
         const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
@@ -304,6 +318,26 @@ export default function SettingsPage() {
           setIsDynamicDiscountActive(res.business.isDynamicDiscountActive);
           setDynamicDiscountPercent(res.business.dynamicDiscountPercent);
           setDiscountThresholdHours(res.business.discountThresholdHours);
+        }
+      } catch {}
+
+      // 8. Load Cloud Gallery Photos
+      try {
+        const targetSlug = isByErman ? "byerman" : "byerman";
+        const cached = localStorage.getItem(`rf_business_gallery_${targetSlug}`);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) setGalleryPhotos(parsed);
+          } catch {}
+        }
+        const gRes = await fetch(`/api/business/gallery?slug=${targetSlug}`);
+        const gData = await gRes.json();
+        if (gData.success && Array.isArray(gData.photos)) {
+          setGalleryPhotos(gData.photos);
+          try {
+            localStorage.setItem(`rf_business_gallery_${targetSlug}`, JSON.stringify(gData.photos));
+          } catch {}
         }
       } catch {}
     }
@@ -447,6 +481,163 @@ export default function SettingsPage() {
     showToast(`${type === "google" ? "Google Calendar" : "Outlook"} bağlantısı ${nextState ? "aktif edildi" : "kapatıldı"}.`);
   };
 
+  // Gallery Handlers: File selection with canvas compression (< 400KB)
+  const handleSelectGalleryFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+        setGalleryFilePreview(compressedBase64);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload photo to cloud
+  const handleUploadGalleryPhoto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryFilePreview) {
+      showToast("Lütfen yüklenecek bir fotoğraf seçin.");
+      return;
+    }
+
+    setIsUploadingGallery(true);
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          action: "add",
+          photo: {
+            url: galleryFilePreview,
+            title: galleryPhotoTitle.trim() || "Salon Fotoğrafı",
+            subtitle: galleryPhotoSubtitle.trim() || clinicName,
+            source: "business_upload",
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        setGalleryPhotos(data.photos);
+        localStorage.setItem(`rf_business_gallery_${targetSlug}`, JSON.stringify(data.photos));
+        window.dispatchEvent(new Event("storage"));
+        setGalleryFilePreview(null);
+        setGalleryPhotoTitle("");
+        setGalleryPhotoSubtitle("");
+        showToast("Fotoğraf buluta kaydedildi ve tüm ziyaretçilere açıldı!");
+      } else {
+        showToast(data.error || "Yükleme sırasında hata oluştu.");
+      }
+    } catch {
+      showToast("Bulut sunucusuna bağlanırken hata oluştu.");
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  // Add photo via URL (Google Maps or CDN link)
+  const handleAddPhotoByUrl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryUrlInput.trim()) {
+      showToast("Lütfen geçerli bir görsel bağlantısı girin.");
+      return;
+    }
+
+    setIsUploadingGallery(true);
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          action: "add",
+          photo: {
+            url: galleryUrlInput.trim(),
+            title: galleryPhotoTitle.trim() || "Google Haritalar Fotoğrafı",
+            subtitle: galleryPhotoSubtitle.trim() || "Google Yorumcusu Görseli",
+            source: "google_maps",
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        setGalleryPhotos(data.photos);
+        localStorage.setItem(`rf_business_gallery_${targetSlug}`, JSON.stringify(data.photos));
+        window.dispatchEvent(new Event("storage"));
+        setGalleryUrlInput("");
+        setGalleryPhotoTitle("");
+        setGalleryPhotoSubtitle("");
+        showToast("Görsel bağlantısı kaydedildi ve bulutta yayına alındı!");
+      } else {
+        showToast(data.error || "Eklenirken hata oluştu.");
+      }
+    } catch {
+      showToast("Bulut sunucusuna bağlanırken hata oluştu.");
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  // Delete photo from cloud
+  const handleDeleteGalleryPhoto = async (photoId: string) => {
+    if (!confirm("Bu fotoğrafı galeriden kaldırmak istediğinize emin misiniz?")) return;
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          action: "delete",
+          photoId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        setGalleryPhotos(data.photos);
+        localStorage.setItem(`rf_business_gallery_${targetSlug}`, JSON.stringify(data.photos));
+        window.dispatchEvent(new Event("storage"));
+        showToast("Fotoğraf galeriden silindi.");
+      }
+    } catch {
+      showToast("Silme işlemi sırasında hata oluştu.");
+    }
+  };
+
   // Service CRUD Handlers
   const handleSaveService = (e: React.FormEvent) => {
     e.preventDefault();
@@ -522,6 +713,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: "services", name: "Hizmetler & Randevu Tipleri", icon: Calendar },
     { id: "availability", name: "Çalışma Saatleri & Müsaitlik", icon: Clock },
+    { id: "gallery", name: "Salon & Galeri Fotoğrafları", icon: ImageIcon },
     { id: "whatsapp", name: "WhatsApp Otomasyonu", icon: MessageCircle },
     { id: "yield", name: "Akıllı Doluluk & İndirim Motoru", icon: Zap },
     { id: "profile", name: "Profil & Uzman Bilgileri", icon: User },
@@ -944,6 +1136,262 @@ export default function SettingsPage() {
             </form>
           )}
 
+          {/* TAB: SALON & GALLERY PHOTOS (CLOUD PERSISTENCE & GOOGLE MAPS) */}
+          {activeTab === "gallery" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5 text-[#0062FF]" />
+                    Salon &amp; Galeri Görselleri (Bulut Depolama)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    İşletmenizin gerçek fotoğraflarını yükleyin veya Google Haritalar görsellerini ekleyin. Yüklenen fotoğraflar buluta kaydedilir ve tüm ziyaretçilerinizin ekranında anında görünür.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium">
+                    {galleryPhotos.length} Fotoğraf Yayında
+                  </span>
+                </div>
+              </div>
+
+              {/* Upload Card */}
+              <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#0F2A4A]">Yeni Görsel Ekle</span>
+                  <div className="inline-flex rounded-xl p-0.5 bg-slate-200/70 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setGalleryUploadMode("file")}
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                        galleryUploadMode === "file"
+                          ? "bg-white text-[#0062FF] shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Dosya Yükle (Cihaz/Kamera)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryUploadMode("url")}
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                        galleryUploadMode === "url"
+                          ? "bg-white text-[#0062FF] shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Google Maps / URL ile Ekle
+                    </button>
+                  </div>
+                </div>
+
+                {galleryUploadMode === "file" ? (
+                  <form onSubmit={handleUploadGalleryPhoto} className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Fotoğraf Seçin (JPG, PNG, WebP)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSelectGalleryFile}
+                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0062FF]/10 file:text-[#0062FF] hover:file:bg-[#0062FF]/20 cursor-pointer"
+                      />
+                    </div>
+
+                    {galleryFilePreview && (
+                      <div className="relative max-w-sm aspect-16/10 rounded-xl overflow-hidden border border-slate-200 bg-black/5">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={galleryFilePreview}
+                          alt="Önizleme"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Fotoğraf Başlığı
+                        </label>
+                        <input
+                          type="text"
+                          value={galleryPhotoTitle}
+                          onChange={(e) => setGalleryPhotoTitle(e.target.value)}
+                          placeholder="Örn: Salon İçi &amp; Berber Koltukları"
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Alt Açıklama
+                        </label>
+                        <input
+                          type="text"
+                          value={galleryPhotoSubtitle}
+                          onChange={(e) => setGalleryPhotoSubtitle(e.target.value)}
+                          placeholder="Örn: By Erman Usta Makas İşçiliği"
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="submit"
+                        disabled={isUploadingGallery || !galleryFilePreview}
+                        className="px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {isUploadingGallery ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Buluta Kaydediliyor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="w-4 h-4" />
+                            <span>Fotoğrafı Buluta Yükle ve Canlıya Al</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleAddPhotoByUrl} className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Google Haritalar Fotoğraf Linki veya Görsel URL&apos;si
+                      </label>
+                      <input
+                        type="url"
+                        value={galleryUrlInput}
+                        onChange={(e) => setGalleryUrlInput(e.target.value)}
+                        placeholder="https://lh3.googleusercontent.com/... veya görsel web linki"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                        required
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Google Haritalar işletme profilinizdeki müşteri fotoğraflarının doğrudan bağlantısını yapıştırabilirsiniz.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Fotoğraf Başlığı
+                        </label>
+                        <input
+                          type="text"
+                          value={galleryPhotoTitle}
+                          onChange={(e) => setGalleryPhotoTitle(e.target.value)}
+                          placeholder="Örn: Google Yorumcusu Fotoğrafı"
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Alt Açıklama
+                        </label>
+                        <input
+                          type="text"
+                          value={galleryPhotoSubtitle}
+                          onChange={(e) => setGalleryPhotoSubtitle(e.target.value)}
+                          placeholder="Örn: 5 Yıldızlı Müşteri Deneyimi"
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="submit"
+                        disabled={isUploadingGallery || !galleryUrlInput.trim()}
+                        className="px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {isUploadingGallery ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Kaydediliyor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4" />
+                            <span>Görseli Galeriye Ekle</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Gallery Grid */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#0F2A4A] uppercase tracking-wider">
+                    Yayındaki Salon Fotoğrafları ({galleryPhotos.length})
+                  </h4>
+                  {galleryPhotos.length > 0 && (
+                    <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Tüm Ziyaretçilerde Canlıda
+                    </span>
+                  )}
+                </div>
+
+                {galleryPhotos.length === 0 ? (
+                  <div className="p-8 rounded-2xl border border-dashed border-slate-200 text-center space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-blue-50 text-[#0062FF] flex items-center justify-center mx-auto">
+                      <ImageIcon className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-bold text-[#0F2A4A]">Henüz özel salon fotoğrafı yüklenmedi</p>
+                    <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+                      Yukarıdaki formdan işletmenizin gerçek fotoğraflarını yükleyin. Randevu sayfanızda sahte stok görseller yerine işletmenizin gerçek fotoğrafları sergilensin.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {galleryPhotos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-2xs hover:shadow-md transition-all flex flex-col"
+                      >
+                        <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt={photo.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGalleryPhoto(photo.id)}
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white shadow-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Fotoğrafı Sil"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="p-3 space-y-1">
+                          <p className="text-xs font-bold text-[#0F2A4A] line-clamp-1">{photo.title}</p>
+                          <p className="text-[10px] text-slate-500 line-clamp-1">{photo.subtitle || "İşletme Görseli"}</p>
+                          <div className="pt-1 flex items-center justify-between">
+                            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              ☁️ Bulut
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB: WHATSAPP */}
           {activeTab === "whatsapp" && (
             <form onSubmit={handleSaveWhatsapp} className="space-y-6">
@@ -1331,6 +1779,28 @@ export default function SettingsPage() {
                   <option value="24">24 Saat Önceden (Önerilen)</option>
                   <option value="48">48 Saat Önceden</option>
                 </select>
+              </div>
+
+              {/* Salon Görselleri & Google Fotoğrafları Hızlı Erişim */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-2 rounded-lg bg-[#0062FF]/10 text-[#0062FF]">
+                    <ImageIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#0F2A4A]">Salon &amp; Mekan Fotoğrafları (Bulut Galeri)</h4>
+                    <p className="text-[11px] text-slate-500">
+                      Müşterilerinizin randevu sayfanızda göreceği gerçek salon, usta işçiliği ve Google fotoğraflarını yönetin ({galleryPhotos.length} fotoğraf aktif).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("gallery")}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shrink-0 shadow-2xs transition-all"
+                >
+                  Galeriye Git
+                </button>
               </div>
 
               <div className="pt-2 flex justify-end">
