@@ -360,11 +360,6 @@ export default function Home() {
             <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Platform</span>
             <ul className="space-y-2 text-slate-600 text-[13px]">
               <li>
-                <Link href="/kesfet" className="hover:text-[#0062FF] transition-colors">
-                  Uzman Dizini
-                </Link>
-              </li>
-              <li>
                 <Link href="/ornek" className="hover:text-[#0062FF] transition-colors">
                   Canlı Demolar
                 </Link>

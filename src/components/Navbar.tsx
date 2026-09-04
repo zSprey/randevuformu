@@ -10,7 +10,6 @@ const navLinks = [
   { label: "Çözümler", href: "#ihtiyaclar" },
   { label: "Sektörler", href: "#sektorler" },
   { label: "Canlı Demo", href: "/ornek" },
-  { label: "Keşfet", href: "/kesfet" },
   { label: "Blog", href: "/blog" },
   { label: "İletişim", href: "/contact" },
 ];
