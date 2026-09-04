@@ -76,7 +76,7 @@ export default function StaffManagementPage() {
       }
     }
 
-    // İlk olarak yerel veriyi hemen göster
+    // İlk olarak yerel veriyi hemen göster (instant UI)
     if (localStaff.length > 0) {
       setStaffList(localStaff);
     }
@@ -94,15 +94,18 @@ export default function StaffManagementPage() {
             !s.display_name?.includes("Emre Can")
         );
 
-        // Sunucuda gerçek veri varsa localStorage'ı güncelle; boş ise yerel veriyi SİLME!
+        // Sunucuda gerçek veri varsa localStorage'ı güncelle; boş ise yerel veriyi koru
         if (cleaned.length > 0) {
           setStaffList(cleaned);
           if (typeof window !== "undefined") {
             localStorage.setItem(storageKey, JSON.stringify(cleaned));
           }
         }
+      } else {
+        console.warn("Staff API returned non-OK status:", res.status);
       }
-    } catch {
+    } catch (err) {
+      console.warn("Staff API fetch error (offline mode - using local cache):", err);
       // API fallback: yerel veriyi koru
     } finally {
       setLoading(false);
@@ -140,7 +143,7 @@ export default function StaffManagementPage() {
     }
 
     try {
-      await fetch("/api/staff", {
+      const apiRes = await fetch("/api/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -151,8 +154,15 @@ export default function StaffManagementPage() {
           role: newMember.role,
         }),
       });
+      if (!apiRes.ok) {
+        console.warn("Staff save API warning: non-OK status", apiRes.status);
+        showToast(`${newMember.display_name} yerel olarak eklendi, sunucuya kaydedilemedi.`);
+      } else {
+        showToast(`${newMember.display_name} ekibinize başarıyla eklendi ve buluta kaydedildi!`);
+      }
     } catch (err) {
-      console.warn("Staff save API warning:", err);
+      console.warn("Staff save API error:", err);
+      showToast(`${newMember.display_name} yerel olarak eklendi, sunucuya kaydedilemedi.`);
     }
 
     setIsSaving(false);
@@ -161,7 +171,6 @@ export default function StaffManagementPage() {
     setNewStaffEmail("");
     setNewStaffPhone("");
     setNewStaffTitle("");
-    showToast(`${newMember.display_name} ekibinize başarıyla eklendi.`);
   };
 
   // Personel Durumunu Aktif/Pasif Yap

@@ -217,16 +217,45 @@ export default function SettingsPage() {
         } catch {}
       }
 
-      // Load from Cloud Profile API
+      // Load from Cloud Profile API (PRIMARY source of truth for ALL settings)
       try {
         const pRes = await fetch(`/api/business/profile?slug=${targetSlug}`);
         const pData = await pRes.json();
         if (pData.success && pData.profile) {
-          if (pData.profile.name) setClinicName(pData.profile.name);
-          if (pData.profile.address) setClinicAddress(pData.profile.address);
-          if (pData.profile.google_maps_url) setGoogleMapsUrl(pData.profile.google_maps_url);
-          if (pData.profile.working_hours) setWorkingHoursSummary(pData.profile.working_hours);
-          if (pData.profile.phone) setPhone(pData.profile.phone);
+          const p = pData.profile;
+
+          // İşletme Bilgileri
+          if (p.name) setClinicName(p.name);
+          if (p.address) setClinicAddress(p.address);
+          if (p.google_maps_url) setGoogleMapsUrl(p.google_maps_url);
+          if (p.working_hours) setWorkingHoursSummary(p.working_hours);
+          if (p.phone) setPhone(p.phone);
+          if (p.cancel_policy_hours) setCancelPolicyHours(p.cancel_policy_hours);
+
+          // Profil / Uzman Bilgileri
+          if (p.owner_full_name) setFullName(p.owner_full_name);
+          if (p.owner_email) setEmail(p.owner_email);
+          if (p.owner_phone) setPhone(p.owner_phone);
+          if (p.owner_title) setTitle(p.owner_title);
+          if (p.owner_bio) setBio(p.owner_bio);
+
+          // Müsaitlik & Çalışma Saatleri
+          if (p.working_days && typeof p.working_days === "object") setWorkingDays(p.working_days);
+          if (p.work_start_time) setWorkStartTime(p.work_start_time);
+          if (p.work_end_time) setWorkEndTime(p.work_end_time);
+          if (p.break_start_time) setBreakStartTime(p.break_start_time);
+          if (p.break_end_time) setBreakEndTime(p.break_end_time);
+          if (p.slot_interval) setSlotInterval(p.slot_interval);
+
+          // Bildirim Tercihleri
+          if (p.sms_enabled !== undefined) setSmsEnabled(Boolean(p.sms_enabled));
+          if (p.whatsapp_enabled !== undefined) setWhatsappEnabled(Boolean(p.whatsapp_enabled));
+          if (p.email_enabled !== undefined) setEmailEnabled(Boolean(p.email_enabled));
+          if (p.auto_confirm !== undefined) setAutoConfirm(Boolean(p.auto_confirm));
+
+          // Entegrasyon Durumları
+          if (p.google_calendar_connected !== undefined) setGoogleConnected(Boolean(p.google_calendar_connected));
+          if (p.outlook_connected !== undefined) setOutlookConnected(Boolean(p.outlook_connected));
         }
       } catch (err) {
         console.warn("Failed to load cloud profile:", err);
@@ -347,9 +376,11 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
-  // Save Availability Handler
-  const handleSaveAvailability = (e: React.FormEvent) => {
+  // Save Availability Handler (Cloud API + localStorage fallback)
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
+  const handleSaveAvailability = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSavingAvailability(true);
     const data = {
       workingDays,
       workStartTime,
@@ -359,16 +390,69 @@ export default function SettingsPage() {
       slotInterval,
     };
     localStorage.setItem("rf_business_hours", JSON.stringify(data));
-    showToast("Çalışma saatleri ve haftalık müsaitlik başarıyla kaydedildi.");
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          working_days: workingDays,
+          work_start_time: workStartTime,
+          work_end_time: workEndTime,
+          break_start_time: breakStartTime,
+          break_end_time: breakEndTime,
+          slot_interval: slotInterval,
+        }),
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast("Çalışma saatleri ve müsaitlik buluta kaydedildi!");
+      } else {
+        showToast("Çalışma saatleri yerel olarak kaydedildi, sunucuya aktarılamadı.");
+      }
+    } catch {
+      showToast("Çalışma saatleri yerel olarak kaydedildi, sunucuya aktarılamadı.");
+    } finally {
+      setIsSavingAvailability(false);
+    }
   };
 
-  // Save Profile Handler
-  const handleSaveProfile = (e: React.FormEvent) => {
+  // Save Profile Handler (Cloud API + localStorage fallback)
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSavingProfile(true);
     const data = { fullName, email, phone, title, bio };
     localStorage.setItem("rf_settings_profile", JSON.stringify(data));
     localStorage.setItem("rf_user_name", fullName);
-    showToast("Profil ve uzman bilgileriniz başarıyla kaydedildi.");
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          owner_full_name: fullName.trim(),
+          owner_email: email.trim(),
+          owner_phone: phone.trim(),
+          owner_title: title.trim(),
+          owner_bio: bio.trim(),
+        }),
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast("Profil ve uzman bilgileri buluta kaydedildi!");
+      } else {
+        showToast("Profil yerel olarak kaydedildi, sunucuya aktarılamadı.");
+      }
+    } catch {
+      showToast("Profil yerel olarak kaydedildi, sunucuya aktarılamadı.");
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   // Save Clinic & Location Settings Handler (Direct Cloud Persistence)
@@ -427,8 +511,8 @@ export default function SettingsPage() {
     }
   };
 
-  // Save Notifications Handler
-  const handleSaveNotifications = (
+  // Save Notifications Handler (Cloud API + localStorage fallback)
+  const handleSaveNotifications = async (
     newSms: boolean,
     newWhatsapp: boolean,
     newEmail: boolean,
@@ -441,7 +525,29 @@ export default function SettingsPage() {
       autoConfirm: newAutoConfirm,
     };
     localStorage.setItem("rf_settings_notifications", JSON.stringify(data));
-    showToast("Bildirim kanalı tercihleriniz kaydedildi.");
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      const res = await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          sms_enabled: newSms,
+          whatsapp_enabled: newWhatsapp,
+          email_enabled: newEmail,
+          auto_confirm: newAutoConfirm,
+        }),
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast("Bildirim tercihleri buluta kaydedildi!");
+      } else {
+        showToast("Bildirim tercihleri yerel olarak kaydedildi.");
+      }
+    } catch {
+      showToast("Bildirim kanalı tercihleriniz yerel olarak kaydedildi.");
+    }
   };
 
   // Save WhatsApp Hotline
@@ -500,8 +606,8 @@ export default function SettingsPage() {
     }
   };
 
-  // Toggle Integration
-  const toggleIntegration = (type: "google" | "outlook", nextState: boolean) => {
+  // Toggle Integration (Cloud API + localStorage fallback)
+  const toggleIntegration = async (type: "google" | "outlook", nextState: boolean) => {
     const updated = {
       googleConnected: type === "google" ? nextState : googleConnected,
       outlookConnected: type === "outlook" ? nextState : outlookConnected,
@@ -509,7 +615,22 @@ export default function SettingsPage() {
     if (type === "google") setGoogleConnected(nextState);
     if (type === "outlook") setOutlookConnected(nextState);
     localStorage.setItem("rf_settings_integrations", JSON.stringify(updated));
-    showToast(`${type === "google" ? "Google Calendar" : "Outlook"} bağlantısı ${nextState ? "aktif edildi" : "kapatıldı"}.`);
+
+    try {
+      const targetSlug = clinicSlug || "byerman";
+      await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          google_calendar_connected: updated.googleConnected,
+          outlook_connected: updated.outlookConnected,
+        }),
+      });
+      showToast(`${type === "google" ? "Google Calendar" : "Outlook"} bağlantısı ${nextState ? "aktif edildi" : "kapatıldı"} ve buluta kaydedildi.`);
+    } catch {
+      showToast(`${type === "google" ? "Google Calendar" : "Outlook"} bağlantısı ${nextState ? "aktif edildi" : "kapatıldı"} (yerel).`);
+    }
   };
 
   // Gallery Handlers: File selection with canvas compression (< 400KB)
