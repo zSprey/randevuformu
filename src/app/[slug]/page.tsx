@@ -8,7 +8,6 @@ import BookingWidget from "@/components/booking/BookingWidget";
 import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { SEKTOR_DATA } from "@/lib/sektorler";
-import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { CustomerChatbot } from "@/components/ai/CustomerChatbot";
 
 const ERMAN_USTA_DATA = {
@@ -298,14 +297,6 @@ export default function BusinessBookingPage({ params }: PageProps) {
           <span>Güvenli &amp; KVKK Uyumlu Randevu Altyapısı — randevuformu.com</span>
         </div>
       </footer>
-
-      {/* Modül 1: Sabit WhatsApp İletişim Butonu */}
-      {business?.phone && (
-        <WhatsAppButton
-          phoneNumber={business.phone}
-          defaultMessage={`Merhaba, ${business.name || 'işletmeniz'} için randevu almak istiyorum.`}
-        />
-      )}
 
       {/* Modül 2: Müşteri AI Randevu Asistanı Chatbotu */}
       <CustomerChatbot
