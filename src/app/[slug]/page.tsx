@@ -13,7 +13,7 @@ import { CustomerChatbot } from "@/components/ai/CustomerChatbot";
 
 const ERMAN_USTA_DATA = {
   id: "byerman-id",
-  name: "Erman Usta - Erkek Berberi",
+  name: "By Erman - Erkek Berberi",
   slug: "byerman",
   phone: "+90 538 480 90 01",
   category: "Erkek Berberi",
@@ -88,7 +88,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
             setIsDemo(false);
             setBusiness({
               id: "byerman-id",
-              name: "Erman Usta - Erkek Berberi",
+              name: "By Erman - Erkek Berberi",
               slug: slug,
               phone: "+90 538 480 90 01",
               category: "Erkek Berberi",

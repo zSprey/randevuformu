@@ -268,27 +268,30 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════════════════════════
-          CTA BAND
+          CTA BAND — Clean Light Corporate Design
           ═══════════════════════════════════════ */}
-      <section className="bg-[#0F2A4A] py-16 sm:py-20">
+      <section className="bg-gradient-to-b from-white to-slate-50/80 py-16 sm:py-24 border-t border-slate-200/90">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-[-0.02em] mb-4">
-            İşletmenizin randevu yönetimini modernize edin.
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#0062FF] bg-blue-50 border border-blue-200/60 px-3 py-1 rounded-full inline-block mb-3.5">
+            Hemen Başlayın
+          </span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0F2A4A] tracking-[-0.02em] mb-3 leading-tight">
+            İşletmenizin Randevu Yönetimini Modernize Edin
           </h2>
-          <p className="text-sm text-slate-300 mb-8 max-w-lg mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 mb-8 max-w-lg mx-auto leading-relaxed">
             30 saniyede ücretsiz randevu formunuzu oluşturun. Kredi kartı gerekmez.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-[#00BCD4] hover:bg-[#00acc1] text-white text-sm font-medium px-6 py-3 rounded-lg shadow-sm transition-all duration-150 active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-[#0051d4] text-white text-sm font-semibold px-7 py-3.5 rounded-xl shadow-md transition-all duration-150 active:scale-[0.98]"
             >
               Ücretsiz Başlayın
               <ArrowRight className="w-4 h-4" strokeWidth={2} />
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center text-sm font-medium text-slate-300 hover:text-white px-6 py-3 rounded-lg border border-slate-600 hover:border-slate-400 transition-all duration-150"
+              className="inline-flex items-center justify-center text-sm font-semibold text-slate-700 hover:text-[#0F2A4A] px-7 py-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-xs transition-all duration-150"
             >
               Kurumsal İletişim
             </Link>
@@ -297,30 +300,30 @@ export default function Home() {
       </section>
 
       {/* ═══════════════════════════════════════
-          FOOTER
+          FOOTER — Clean Light Corporate Design
           ═══════════════════════════════════════ */}
-      <footer className="bg-[#0F2A4A] border-t border-slate-700/30 py-12 px-4 sm:px-6 text-sm">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-8 pb-8 border-b border-slate-700/30">
+      <footer className="bg-white border-t border-slate-200/90 py-12 px-4 sm:px-6 text-sm">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-8 pb-8 border-b border-slate-100">
           <div className="space-y-2.5">
-            <span className="font-semibold text-white block text-[13px]">Ürün</span>
-            <ul className="space-y-2 text-slate-400 text-[13px]">
+            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Ürün</span>
+            <ul className="space-y-2 text-slate-600 text-[13px]">
               <li>
-                <Link href="/dashboard" className="hover:text-white transition-colors">
+                <Link href="/dashboard" className="hover:text-[#0062FF] transition-colors">
                   Gösterge Paneli
                 </Link>
               </li>
               <li>
-                <Link href="/calendar" className="hover:text-white transition-colors">
-                  Takvim & Randevu
+                <Link href="/calendar" className="hover:text-[#0062FF] transition-colors">
+                  Takvim &amp; Randevu
                 </Link>
               </li>
               <li>
-                <Link href="/staff" className="hover:text-white transition-colors">
+                <Link href="/staff" className="hover:text-[#0062FF] transition-colors">
                   Ekip Yönetimi
                 </Link>
               </li>
               <li>
-                <Link href="/qr-stand" className="hover:text-white transition-colors">
+                <Link href="/qr-stand" className="hover:text-[#0062FF] transition-colors">
                   QR Stand &amp; Masa Kartı
                 </Link>
               </li>
@@ -328,25 +331,25 @@ export default function Home() {
           </div>
 
           <div className="space-y-2.5">
-            <span className="font-semibold text-white block text-[13px]">Sektörler</span>
-            <ul className="space-y-2 text-slate-400 text-[13px]">
+            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Sektörler</span>
+            <ul className="space-y-2 text-slate-600 text-[13px]">
               <li>
-                <Link href="/sektorler/dis-hekimi" className="hover:text-white transition-colors">
+                <Link href="/sektorler/dis-hekimi" className="hover:text-[#0062FF] transition-colors">
                   Diş Hekimi
                 </Link>
               </li>
               <li>
-                <Link href="/sektorler/diyetisyen" className="hover:text-white transition-colors">
+                <Link href="/sektorler/diyetisyen" className="hover:text-[#0062FF] transition-colors">
                   Diyetisyen
                 </Link>
               </li>
               <li>
-                <Link href="/sektorler/kuafor" className="hover:text-white transition-colors">
-                  Kuaför & Güzellik
+                <Link href="/sektorler/kuafor" className="hover:text-[#0062FF] transition-colors">
+                  Kuaför &amp; Güzellik
                 </Link>
               </li>
               <li>
-                <Link href="/sektorler/veteriner" className="hover:text-white transition-colors">
+                <Link href="/sektorler/veteriner" className="hover:text-[#0062FF] transition-colors">
                   Veteriner
                 </Link>
               </li>
@@ -354,25 +357,25 @@ export default function Home() {
           </div>
 
           <div className="space-y-2.5">
-            <span className="font-semibold text-white block text-[13px]">Platform</span>
-            <ul className="space-y-2 text-slate-400 text-[13px]">
+            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Platform</span>
+            <ul className="space-y-2 text-slate-600 text-[13px]">
               <li>
-                <Link href="/kesfet" className="hover:text-white transition-colors">
+                <Link href="/kesfet" className="hover:text-[#0062FF] transition-colors">
                   Uzman Dizini
                 </Link>
               </li>
               <li>
-                <Link href="/ornek" className="hover:text-white transition-colors">
+                <Link href="/ornek" className="hover:text-[#0062FF] transition-colors">
                   Canlı Demolar
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-white transition-colors">
-                  Blog & Rehber
+                <Link href="/blog" className="hover:text-[#0062FF] transition-colors">
+                  Blog &amp; Rehber
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-white transition-colors">
+                <Link href="/contact" className="hover:text-[#0062FF] transition-colors">
                   B2B İletişim
                 </Link>
               </li>
@@ -380,15 +383,15 @@ export default function Home() {
           </div>
 
           <div className="space-y-2.5">
-            <span className="font-semibold text-white block text-[13px]">Şirket</span>
-            <ul className="space-y-2 text-slate-400 text-[13px]">
+            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Şirket</span>
+            <ul className="space-y-2 text-slate-600 text-[13px]">
               <li>
-                <a href="mailto:destek@randevuformu.com" className="hover:text-white transition-colors">
+                <a href="mailto:destek@randevuformu.com" className="hover:text-[#0062FF] transition-colors">
                   destek@randevuformu.com
                 </a>
               </li>
               <li>
-                <Link href="/login" className="hover:text-white transition-colors">
+                <Link href="/login" className="hover:text-[#0062FF] transition-colors">
                   Giriş Yap
                 </Link>
               </li>
@@ -399,10 +402,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-500">
           <p>&copy; {new Date().getFullYear()} randevuformu.com — Tüm hakları saklıdır.</p>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="hover:text-slate-300 transition-colors">
+            <Link href="/login" className="hover:text-[#0062FF] transition-colors">
               Giriş Yap
             </Link>
-            <Link href="/contact" className="hover:text-slate-300 transition-colors">
+            <Link href="/contact" className="hover:text-[#0062FF] transition-colors">
               İletişim
             </Link>
           </div>

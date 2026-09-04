@@ -25,6 +25,7 @@ import {
   MessageCircle,
   Building2,
   Sparkles,
+  X,
 } from "lucide-react";
 import {
   format,
@@ -98,6 +99,7 @@ export default function BookingWidget({
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
   const [kvkkConsent, setKvkkConsent] = useState(false);
+  const [showKvkkModal, setShowKvkkModal] = useState(false);
 
   // Flow & Feedback State
   const [paymentMethod, setPaymentMethod] = useState<"VENUE" | "STRIPE" | "IYZICO">("VENUE");
@@ -886,17 +888,26 @@ export default function BookingWidget({
                     </div>
                   </div>
 
-                  {/* KVKK Checkbox */}
-                  <div className="pt-1">
-                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 select-none">
+                  {/* KVKK Uyum & Zorunlu Onay Kutucuğu */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
                       <input
                         type="checkbox"
+                        required
                         checked={kvkkConsent}
                         onChange={(e) => setKvkkConsent(e.target.checked)}
                         className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0062FF] focus:ring-[#0062FF]"
                       />
-                      <span className="text-[11px] leading-relaxed">
-                        6698 sayılı KVKK kapsamında kişisel verilerimin randevu koordinasyonu ve WhatsApp/SMS bilgilendirmeleri amacıyla işlenmesini kabul ediyorum.
+                      <span className="text-[11px] leading-relaxed text-slate-600">
+                        <strong className="text-[#0F2A4A]">6698 Sayılı KVKK Uyarınca;</strong> kişisel verilerimin randevu koordinasyonu, onay/hatırlatma bildirimleri (WhatsApp/SMS) amacıyla işlenmesine dair{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowKvkkModal(true)}
+                          className="font-semibold text-[#0062FF] underline hover:text-[#0051d4] inline-flex items-center gap-0.5"
+                        >
+                          Aydınlatma Metni ve Açık Rıza Beyanı&apos;nı
+                        </button>{" "}
+                        okudum, anladım ve kabul ediyorum. *
                       </span>
                     </label>
                   </div>
@@ -1066,6 +1077,112 @@ export default function BookingWidget({
           </AnimatePresence>
         </div>
       </div>
+
+      {/* KVKK Aydınlatma Metni & Açık Rıza Modalı (Hukuki Koruma) */}
+      <AnimatePresence>
+        {showKvkkModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden text-left"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-[#0062FF]/10 text-[#0062FF]">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0F2A4A]">
+                      6698 Sayılı KVKK Kapsamında Aydınlatma Metni
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Kişisel Verilerin Korunması ve Açık Rıza Bilgilendirmesi
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowKvkkModal(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto text-xs text-slate-600 leading-relaxed space-y-4">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs mb-1">1. Veri Sorumlusunun Kimliği</h4>
+                  <p>
+                    İşbu Aydınlatma Metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) uyarınca, veri sorumlusu sıfatıyla <strong>{businessName}</strong> ve teknik altyapı sağlayıcısı <strong>randevuformu.com</strong> tarafından, randevu oluşturma ve iletişim süreçlerinde kişisel verilerinizin işlenmesine ilişkin sizleri bilgilendirmek amacıyla hazırlanmıştır.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs mb-1">2. İşlenen Kişisel Veriler</h4>
+                  <p>Randevu esnasında paylaştığınız;</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                    <li><strong>Kimlik Bilgisi:</strong> Ad ve Soyad</li>
+                    <li><strong>İletişim Bilgisi:</strong> Telefon Numarası, E-posta Adresi</li>
+                    <li><strong>Randevu Bilgisi:</strong> Tercih edilen hizmet, randevu günü ve saati, müşteriye ait özel notlar</li>
+                    <li><strong>İşlem Güvenliği:</strong> Randevu onay zaman damgası ve doğrulama kaydı</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs mb-1">3. Kişisel Verilerin İşlenme Amaçları</h4>
+                  <p>Toplanan kişisel verileriniz;</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                    <li>Randevu rezervasyonunuzun başarıyla kaydedilmesi ve teyit edilmesi,</li>
+                    <li>Randevu saatinizden önce tarafınıza WhatsApp, SMS ve E-posta yoluyla hatırlatma ve takvim davetiyesi iletilmesi,</li>
+                    <li>Randevu çakışmalarının ve mükerrer rezervasyonların engellenmesi,</li>
+                    <li>Olası saat değişikliği, rötar veya iptal durumlarında sizinle irtibat kurulması,</li>
+                    <li>Yetkili kamu kurum ve kuruluşlarına yasal bildirim yükümlülüklerinin yerine getirilmesi</li>
+                  </ul>
+                  <p className="mt-1">amaçlarıyla sınırlı ve ölçülü olarak işlenmektedir.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs mb-1">4. Verilerin Aktarımı ve Güvenliği</h4>
+                  <p>
+                    Kişisel verileriniz <strong>asla üçüncü şahıs veya kurumlara ticari veya reklam amaçlı devredilmez veya satılmaz.</strong> Yalnızca randevu bildirim mesajlarının (WhatsApp/SMS/E-posta) tarafınıza ulaştırılması amacıyla entegre iletişim servis sağlayıcıları altyapısı üzerinden SSL şifreleme ile iletilmektedir.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs mb-1">5. İlgili Kişinin Hakları (KVKK Madde 11)</h4>
+                  <p>
+                    KVKK’nın 11. maddesi uyarınca veri sahibi olarak; kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, eksik veya yanlış işlenmişse düzeltilmesini isteme ve silinmesini (KVKK Madde 7) talep etme haklarına sahipsiniz.
+                  </p>
+                  <p className="mt-1 font-medium text-slate-700">
+                    Başvuru ve Bilgi Talebi: kvkk@randevuformu.com üzerinden veri sorumlusuna iletilebilir.
+                  </p>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500">
+                  T.C. 6698 Sayılı Kanun Uyarınca Bağlayıcıdır
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKvkkConsent(true);
+                    setShowKvkkModal(false);
+                  }}
+                  className="px-5 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-bold transition-all shadow-xs"
+                >
+                  Okudum, Anladım ve Kabul Ediyorum
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

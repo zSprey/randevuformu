@@ -29,6 +29,8 @@ import {
   Tag,
   HelpCircle,
   X,
+  MapPin,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -99,10 +101,12 @@ export default function SettingsPage() {
   const [title, setTitle] = useState("Yetkili");
   const [bio, setBio] = useState("");
 
-  // Clinic Settings
+  // Clinic & Location Settings
   const [clinicName, setClinicName] = useState("İşletmem");
   const [clinicSlug, setClinicSlug] = useState("isletme");
   const [clinicAddress, setClinicAddress] = useState("");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("https://share.google/gOW1xHwztRfGIc3F1");
+  const [workingHoursSummary, setWorkingHoursSummary] = useState("Pzt - Cmt: 09:00 - 21:00 | Paz: 10:00 - 19:00");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
 
   // WhatsApp Hotline (Module 1)
@@ -190,7 +194,7 @@ export default function SettingsPage() {
         setTitle("Master Barber");
       }
 
-      // 2. Clinic Persistence
+      // 2. Clinic & Location Persistence
       const savedClinic = localStorage.getItem("rf_settings_clinic");
       if (savedClinic) {
         try {
@@ -198,11 +202,14 @@ export default function SettingsPage() {
           if (c.clinicName) setClinicName(c.clinicName);
           if (c.clinicSlug) setClinicSlug(c.clinicSlug);
           if (c.clinicAddress) setClinicAddress(c.clinicAddress);
+          if (c.googleMapsUrl) setGoogleMapsUrl(c.googleMapsUrl);
+          if (c.workingHoursSummary) setWorkingHoursSummary(c.workingHoursSummary);
           if (c.cancelPolicyHours) setCancelPolicyHours(c.cancelPolicyHours);
         } catch {}
       } else if (isByErman) {
         setClinicName("By Erman Hair Studio");
         setClinicSlug("byerman");
+        setClinicAddress("Caferağa Mah. Moda Cad. No:12/A Kadıköy, İstanbul");
       } else {
         const storedName = localStorage.getItem("rf_tenant_name");
         const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
@@ -214,6 +221,17 @@ export default function SettingsPage() {
         if (storedSlug && storedSlug !== "dashboard") {
           setClinicSlug(storedSlug);
         }
+      }
+
+      // Check specific location storage
+      const savedLoc = localStorage.getItem("rf_business_location");
+      if (savedLoc) {
+        try {
+          const l = JSON.parse(savedLoc);
+          if (l.googleMapsUrl) setGoogleMapsUrl(l.googleMapsUrl);
+          if (l.address) setClinicAddress(l.address);
+          if (l.workingHours) setWorkingHoursSummary(l.workingHours);
+        } catch {}
       }
 
       // 3. Notifications Persistence
@@ -317,7 +335,7 @@ export default function SettingsPage() {
     showToast("Profil ve uzman bilgileriniz başarıyla kaydedildi.");
   };
 
-  // Save Clinic Settings Handler
+  // Save Clinic & Location Settings Handler
   const handleSaveClinic = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanSlug = clinicSlug.toLowerCase().replace(/[^a-z0-9-_]/g, "");
@@ -325,13 +343,23 @@ export default function SettingsPage() {
       clinicName: clinicName.trim(),
       clinicSlug: cleanSlug,
       clinicAddress: clinicAddress.trim(),
+      googleMapsUrl: googleMapsUrl.trim(),
+      workingHoursSummary: workingHoursSummary.trim(),
       cancelPolicyHours,
     };
     localStorage.setItem("rf_settings_clinic", JSON.stringify(data));
+    localStorage.setItem(
+      "rf_business_location",
+      JSON.stringify({
+        googleMapsUrl: googleMapsUrl.trim(),
+        address: clinicAddress.trim(),
+        workingHours: workingHoursSummary.trim(),
+      })
+    );
     localStorage.setItem("rf_tenant_name", clinicName.trim());
     localStorage.setItem("rf_tenant_slug", cleanSlug);
     window.dispatchEvent(new Event("storage"));
-    showToast("Klinik ve rezervasyon ayarlarınız kaydedildi.");
+    showToast("İşletme adresi, Google Haritalar linki ve çalışma saatleri kaydedildi.");
   };
 
   // Save Notifications Handler
@@ -1241,6 +1269,53 @@ export default function SettingsPage() {
                   placeholder="Cadde, Mahalle, İlçe, İl"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/60 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#0062FF]" />
+                    <span>Google Haritalar / Konum Linki (Maps URL)</span>
+                  </label>
+                  {googleMapsUrl && (
+                    <a
+                      href={googleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-[#0062FF] hover:underline flex items-center gap-1"
+                    >
+                      <span>Haritada Test Et</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={googleMapsUrl}
+                  onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                  placeholder="https://share.google/gOW1xHwztRfGIc3F1 veya https://maps.google.com/..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/60 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Google Haritalar uygulamasından &quot;Paylaş&quot; butonuna basarak kopyaladığınız bağlantıyı buraya yapıştırın. Randevu sayfanızdaki &quot;Yol Tarifi Al&quot; butonuna bağlanır ve bulutta saklanır.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Çalışma Saatleri &amp; Randevu Mesai Özeti</span>
+                </label>
+                <input
+                  type="text"
+                  value={workingHoursSummary}
+                  onChange={(e) => setWorkingHoursSummary(e.target.value)}
+                  placeholder="Pzt - Cmt: 09:00 - 21:00 | Paz: 10:00 - 19:00"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/60 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Müşteri randevu sayfasında çalışma saatleri rozetinde görüntülenecek metin.
+                </p>
               </div>
 
               <div>
