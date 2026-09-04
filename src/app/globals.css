@@ -1,59 +1,125 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════
+   RANDEVUFORMU.COM — Enterprise Design Token System
+   Inspired by Linear, Vercel, Stripe surface hierarchy
+   ═══════════════════════════════════════════════════════ */
+
 :root {
-  --background: #020617;
-  --foreground: #f8fafc;
+  /* Brand Core Palette */
+  --brand-navy: #0F2A4A;
+  --brand-blue: #0062FF;
+  --brand-cyan: #00BCD4;
+
+  /* Surface Layering (Light Theme) */
+  --surface-0: #FAFBFC;
+  --surface-1: #FFFFFF;
+  --surface-2: #F1F5F9;
+
+  /* Border System */
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
+
+  /* Typography */
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+
+  /* Semantic Status */
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
+
+  /* Radius Standard */
+  --radius-sm: 0.375rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* Shadow System */
+  --shadow-xs: 0 1px 2px rgba(15, 42, 74, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 42, 74, 0.06), 0 1px 2px rgba(15, 42, 74, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 42, 74, 0.06), 0 2px 4px -2px rgba(15, 42, 74, 0.04);
+
+  --background: var(--surface-0);
+  --foreground: var(--text-primary);
 }
 
+/* Tailwind v4 Theme Extension */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
+/* ── Global Resets ── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: inherit;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  line-height: 1.6;
 }
 
-/* Dark Luxury Custom Scrollbars */
+/* ── Typography Precision ── */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--brand-navy);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+/* ── Focus Ring System (WCAG Compliant) ── */
+*:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Scrollbar (Subtle Professional) ── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: var(--border-strong);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f46e5;
+  background: var(--text-muted);
 }
 
-/* Glassmorphism Utilities */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* ── Tabular Nums ── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-.glass-nav {
-  background: rgba(11, 15, 23, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* ── Selection ── */
+::selection {
+  background: rgba(0, 98, 255, 0.15);
+  color: var(--brand-navy);
 }
 
-/* Print Rules for QR Stand */
+/* ── Print Rules for QR Stand ── */
 @media print {
   body * {
     visibility: hidden;
@@ -82,7 +148,7 @@ body {
   }
 }
 
-/* app/globals.css sonuna eklenecekler */
+/* ── Safe Area (iOS) ── */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
@@ -90,14 +156,4 @@ body {
   .bottom-safe {
     bottom: calc(1rem + env(safe-area-inset-bottom));
   }
-}
-
-/* Kırık beyaz kurumsal arka plan ve yüksek kontrast metinler */
-body {
-  @apply bg-zinc-50 text-zinc-900 antialiased;
-}
-
-/* Rakamların genişliklerinin eşit olmasını (titrememesini) sağlayan yapı */
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
 }
