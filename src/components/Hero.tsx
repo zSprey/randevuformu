@@ -23,17 +23,17 @@ function LiveBookingPreview() {
   const [isBooked, setIsBooked] = useState(false);
 
   const previewServices = [
-    { id: 0, name: "Klasik Saç Kesimi & Yıkama", duration: "35 dk", price: 350 },
-    { id: 1, name: "Sakal Tıraşı & Buhar Bakımı", duration: "20 dk", price: 200 },
-    { id: 2, name: "VIP Komple Bakım (Saç + Sakal)", duration: "55 dk", price: 500 },
-    { id: 3, name: "Stil Danışmanlığı & Analiz", duration: "15 dk", price: null }, // Opsiyonel fiyat: girilmezse fiyat etiketi gizlenir
+    { id: 0, name: "Saç Kesimi & Yıkama", duration: "30 dk", price: 350 },
+    { id: 1, name: "Sakal Tıraşı & Sıcak Havlu", duration: "30 dk", price: 200 },
+    { id: 2, name: "Saç + Sakal (Komple Tıraş)", duration: "60 dk", price: 500 },
+    { id: 3, name: "Özel Stil Danışmanlığı", duration: "15 dk", price: null }, // Opsiyonel fiyat: girilmezse fiyat etiketi gizlenir
   ];
 
   const slots = ["09:30", "11:00", "14:30", "16:00"];
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden">
-      {/* Real Booking Header */}
+      {/* Real Booking Header — By Erman Şablonu Minimizasyonu */}
       <div className="bg-[#0F2A4A] p-5 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -42,16 +42,16 @@ function LiveBookingPreview() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-white">Berber Ahmet &amp; VIP Studio</h3>
+                <h3 className="text-sm font-semibold text-white">Erman Usta - Erkek Berberi</h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </div>
               <p className="text-xs text-slate-300 flex items-center gap-1 mt-0.5">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.9 (148 Yorum) • Kadıköy
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.9 (148 Yorum) • Kadıköy, İstanbul
               </p>
             </div>
           </div>
           <span className="text-[11px] font-medium bg-[#00BCD4]/20 text-[#00BCD4] border border-[#00BCD4]/30 px-2.5 py-1 rounded-full">
-            Canlı Randevu
+            Canlı Şablon
           </span>
         </div>
       </div>
@@ -76,7 +76,7 @@ function LiveBookingPreview() {
             <div>
               <p className="text-xs font-semibold text-emerald-900">WhatsApp Bildirimi Gönderildi</p>
               <p className="text-[11px] text-emerald-700 mt-0.5">
-                İşletmeye ve müşteriye takvim davetiyle birlikte anında onay mesajı iletildi.
+                Erman Usta&apos;ya ve müşteriye takvim davetiyle birlikte anında onay mesajı iletildi.
               </p>
             </div>
           </div>

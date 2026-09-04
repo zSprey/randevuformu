@@ -2,41 +2,45 @@ const { chromium } = require("playwright");
 const path = require("path");
 
 async function run() {
-  const browser = await chromium.launch({ headless: true });
+  console.log("Launching Edge browser...");
+  const browser = await chromium.launch({ channel: "msedge", headless: true });
   const context = await browser.newContext({
-    viewport: { width: 1440, height: 1000 },
+    viewport: { width: 1440, height: 950 },
     deviceScaleFactor: 2
   });
   const page = await context.newPage();
 
-  console.log("Opening https://randevuformu.com ...");
-  await page.goto("https://randevuformu.com", { waitUntil: "networkidle", timeout: 30000 });
-  await page.waitForTimeout(2000);
+  console.log("Navigating to https://randevuformu.com ...");
+  await page.goto("https://randevuformu.com", { waitUntil: "networkidle", timeout: 45000 });
+  await page.waitForTimeout(2500);
 
-  // Take hero screenshot
+  // Take screenshot of hero visual card (dashboard mockup)
   const heroCard = page.locator("section").first().locator(".lg\\:grid-cols-2 > div:last-child");
   if (await heroCard.count() > 0) {
-    await heroCard.screenshot({ path: path.join(__dirname, "../public/live_dashboard_mockup.png") });
-    console.log("Saved live_dashboard_mockup.png");
+    const cardPath = path.join(__dirname, "../public/live_dashboard_mockup.png");
+    await heroCard.screenshot({ path: cardPath });
+    console.log("Saved live_dashboard_mockup.png to", cardPath);
   }
 
-  // Take whole hero section screenshot
+  // Full hero screenshot
   const heroSection = page.locator("section").first();
   await heroSection.screenshot({ path: path.join(__dirname, "../public/live_hero_section.png") });
   console.log("Saved live_hero_section.png");
 
-  // Take demo booking form screenshot
-  try {
-    await page.goto("https://randevuformu.com/kuafor", { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: path.join(__dirname, "../public/live_booking_kuafor.png") });
-    console.log("Saved live_booking_kuafor.png");
-  } catch (e) {
-    console.log("Booking demo capture error:", e.message);
-  }
+  // Also capture mobile viewport of the site (super popular for Instagram ad)
+  const mobileContext = await browser.newContext({
+    viewport: { width: 412, height: 915 },
+    deviceScaleFactor: 2,
+    isMobile: true
+  });
+  const mobilePage = await mobileContext.newPage();
+  await mobilePage.goto("https://randevuformu.com", { waitUntil: "networkidle", timeout: 45000 });
+  await mobilePage.waitForTimeout(2000);
+  await mobilePage.screenshot({ path: path.join(__dirname, "../public/live_mobile_view.png") });
+  console.log("Saved live_mobile_view.png");
 
   await browser.close();
-  console.log("CAPTURE_DONE");
+  console.log("ALL_CAPTURES_SUCCESSFUL");
 }
 
 run().catch(console.error);

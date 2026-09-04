@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>randevuformu.com Instagram Post</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0B1528;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      padding: 40px;
+      align-items: center;
+    }
+
+    /* Ambient Background Circles */
+    .bg-circle-1 {
+      position: absolute;
+      top: -180px;
+      right: -180px;
+      width: 650px;
+      height: 650px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 188, 212, 0.14) 0%, rgba(0, 98, 255, 0.05) 50%, transparent 70%);
+      pointer-events-none;
+    }
+    .bg-circle-2 {
+      position: absolute;
+      bottom: -200px;
+      left: -200px;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 98, 255, 0.08) 0%, transparent 70%);
+      pointer-events-none;
+    }
+
+    /* ══════════════════════════════════════════
+       PORTRAIT (1080 x 1350)
+       ══════════════════════════════════════════ */
+    .post-portrait {
+      width: 1080px;
+      height: 1350px;
+      background: #FAFBFC;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 60px 60px 50px 60px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-logo-img {
+      height: 68px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand-name {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0F2A4A;
+      letter-spacing: -0.8px;
+    }
+    .brand-name span {
+      color: #0062FF;
+    }
+    .badge-pill {
+      background: rgba(0, 98, 255, 0.08);
+      border: 1.5px solid rgba(0, 98, 255, 0.18);
+      color: #0062FF;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 10;
+      margin-top: 24px;
+      margin-bottom: 18px;
+    }
+    .headline {
+      font-size: 52px;
+      font-weight: 800;
+      color: #0F2A4A;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+    }
+    .headline .highlight-blue {
+      color: #0062FF;
+    }
+    .headline .highlight-teal {
+      color: #00BCD4;
+    }
+    .subheadline {
+      font-size: 21px;
+      font-weight: 500;
+      color: #475569;
+      margin-top: 14px;
+      line-height: 1.4;
+    }
+
+    .mockup-frame {
+      position: relative;
+      z-index: 10;
+      background: #FFFFFF;
+      border-radius: 28px;
+      box-shadow: 0 25px 55px -15px rgba(15, 42, 74, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.9);
+      overflow: hidden;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mockup-inner-img {
+      width: 100%;
+      height: auto;
+      max-height: 520px;
+      object-fit: contain;
+      border-radius: 18px;
+      display: block;
+    }
+
+    .feature-tags-row {
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .feature-tag-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 12px rgba(15, 42, 74, 0.03);
+    }
+    .tag-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .tag-icon-green { background: #ECFDF5; }
+    .tag-icon-blue { background: #EFF6FF; }
+    .tag-icon-teal { background: #E0F7FA; }
+    .tag-text-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F2A4A;
+      line-height: 1.2;
+    }
+    .tag-text-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748B;
+      margin-top: 2px;
+    }
+
+    .cta-bar {
+      position: relative;
+      z-index: 10;
+      background: #0F2A4A;
+      border-radius: 22px;
+      padding: 22px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #FFFFFF;
+      margin-top: 16px;
+    }
+    .cta-info-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .cta-info-sub {
+      font-size: 14px;
+      color: #94A3B8;
+      margin-top: 2px;
+    }
+    .cta-button {
+      background: #00BCD4;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 800;
+      padding: 16px 28px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 20px rgba(0, 188, 212, 0.35);
+    }
+
+    /* ══════════════════════════════════════════
+       SQUARE (1080 x 1080)
+       ══════════════════════════════════════════ */
+    .post-square {
+      width: 1080px;
+      height: 1080px;
+      background: #FAFBFC;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 50px 42px 50px;
+    }
+    .post-square .header-content {
+      margin-top: 14px;
+      margin-bottom: 12px;
+    }
+    .post-square .headline {
+      font-size: 44px;
+      line-height: 1.15;
+    }
+    .post-square .subheadline {
+      font-size: 18px;
+      margin-top: 8px;
+    }
+    .post-square .mockup-inner-img {
+      max-height: 420px;
+    }
+    .post-square .cta-bar {
+      padding: 18px 26px;
+      margin-top: 12px;
+    }
+    .post-square .cta-info-title {
+      font-size: 18px;
+    }
+    .post-square .cta-button {
+      font-size: 16px;
+      padding: 12px 22px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PORTRAIT VERSION (1080 x 1350) -->
+  <div id="canvas-portrait" class="post-portrait">
+    <div class="bg-circle-1"></div>
+    <div class="bg-circle-2"></div>
+
+    <div class="top-bar">
+      <div class="brand-logo-wrap">
+        <img src="logo.png" alt="Logo" class="brand-logo-img">
+        <span class="brand-name">randevuformu<span>.com</span></span>
+      </div>
+      <div class="badge-pill">7/24 Randevu &amp; Takvim</div>
+    </div>
+
+    <div class="header-content">
+      <h1 class="headline">
+        Telefon trafiğine son verin, <br>
+        <span class="highlight-blue">randevularınızı</span> <span class="highlight-teal">otomatikleştirin.</span>
+      </h1>
+      <p class="subheadline">
+        WhatsApp hatırlatmaları, otomatik takvim eşitleme ve online randevu formu.
+      </p>
+    </div>
+
+    <div class="mockup-frame">
+      <img src="live_dashboard_mockup.png" alt="Canlı Arayüz" class="mockup-inner-img">
+    </div>
+
+    <div class="feature-tags-row">
+      <div class="feature-tag-card">
+        <div class="tag-icon-wrap tag-icon-green">💬</div>
+        <div>
+          <div class="tag-text-title">WhatsApp Teyidi</div>
+          <div class="tag-text-sub">Unutulan randevulara son</div>
+        </div>
+      </div>
+      <div class="feature-tag-card">
+        <div class="tag-icon-wrap tag-icon-blue">🗓️</div>
+        <div>
+          <div class="tag-text-title">Takvim Eşitleme</div>
+          <div class="tag-text-sub">Google &amp; Outlook çakışmasız</div>
+        </div>
+      </div>
+      <div class="feature-tag-card">
+        <div class="tag-icon-wrap tag-icon-teal">⚡</div>
+        <div>
+          <div class="tag-text-title">1 Dakikada Hazır</div>
+          <div class="tag-text-sub">Kredi kartı gerekmez</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-bar">
+      <div>
+        <div class="cta-info-title">Hemen Ücretsiz Başlayın</div>
+        <div class="cta-info-sub">Profilimizdeki linke tıklayarak formunuzu oluşturun</div>
+      </div>
+      <div class="cta-button">
+        Biyografideki Linkte &rarr;
+      </div>
+    </div>
+  </div>
+
+  <!-- SQUARE VERSION (1080 x 1080) -->
+  <div id="canvas-square" class="post-square">
+    <div class="bg-circle-1"></div>
+    <div class="bg-circle-2"></div>
+
+    <div class="top-bar">
+      <div class="brand-logo-wrap">
+        <img src="logo.png" alt="Logo" class="brand-logo-img">
+        <span class="brand-name">randevuformu<span>.com</span></span>
+      </div>
+      <div class="badge-pill">7/24 Online Randevu</div>
+    </div>
+
+    <div class="header-content">
+      <h1 class="headline">
+        Randevularınızı <span class="highlight-blue">kolayca</span> yönetin, <br>
+        <span class="highlight-teal">işinize odaklanın.</span>
+      </h1>
+      <p class="subheadline">
+        WhatsApp teyitli, çift yönlü takvim eşitlemeli akıllı randevu altyapısı.
+      </p>
+    </div>
+
+    <div class="mockup-frame">
+      <img src="live_dashboard_mockup.png" alt="Canlı Arayüz" class="mockup-inner-img">
+    </div>
+
+    <div class="cta-bar">
+      <div>
+        <div class="cta-info-title">1 Dakikada Ücretsiz Kurulum</div>
+        <div class="cta-info-sub">randevuformu.com</div>
+      </div>
+      <div class="cta-button">
+        Profildeki Linkten Başlayın &rarr;
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

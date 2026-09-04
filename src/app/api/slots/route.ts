@@ -52,20 +52,22 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // 3. Define standard working hours (Erman Kuaför: 09:00-20:00 every 30 mins)
+    // 3. Define standard working hours (Dynamic or Business Default)
     const dateParts = date.split("-").map(Number);
     const targetDateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0));
     const dayOfWeek = targetDateObj.getUTCDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
     const isErmanKuafor = slug === "byerman" || slug === "ermankuafor";
+    const customStartTime = searchParams.get("startTime");
+    const customEndTime = searchParams.get("endTime");
 
     const workingHours = {
       dayOfWeek,
-      startTime: "09:00",
-      endTime: isErmanKuafor ? "20:00" : "18:00",
+      startTime: customStartTime || "09:00",
+      endTime: customEndTime || (isErmanKuafor ? "20:00" : "19:00"),
       breakStartTime: isErmanKuafor ? undefined : "12:30",
       breakEndTime: isErmanKuafor ? undefined : "13:30",
-      isOffDay: isErmanKuafor ? false : dayOfWeek === 0, // Erman Kuaför open every day
+      isOffDay: isErmanKuafor ? false : dayOfWeek === 0, // Pazar günleri varsayılan kapalı
     };
 
     // 4. Calculate available slots

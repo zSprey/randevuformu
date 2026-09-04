@@ -209,17 +209,17 @@ export default function BusinessBookingPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A0F1C] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center text-slate-700">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-[#0062FF] animate-spin" />
-          <p className="text-xs text-slate-400">Randevu sayfası yükleniyor...</p>
+          <p className="text-xs text-slate-500 font-medium">Randevu sayfası yükleniyor...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0B0F17] via-[#0D131F] to-[#070A0F] text-white flex flex-col justify-between py-8 px-4 sm:px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#FAFBFC] text-slate-800 flex flex-col justify-between py-8 px-4 sm:px-6 relative overflow-hidden font-sans antialiased">
       <SchemaMarkup
         type="LocalBusiness"
         data={{
@@ -229,15 +229,15 @@ export default function BusinessBookingPage({ params }: PageProps) {
         }}
       />
 
-      {/* Subtle Corporate Blue Ambient Glow — Purged Mor/Neon */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#0062FF]/10 blur-[130px] rounded-full pointer-events-none -z-10" />
+      {/* Subtle Corporate Blue Geometric Accent */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#0062FF]/[0.04] to-transparent rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none -z-10" />
 
       {/* Top Demo Banner if this is an example showcase — 100% Brand Palette */}
       {isDemo && (
-        <div className="max-w-4xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-[#0F2A4A] border border-blue-500/30 text-center text-xs text-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg shadow-blue-950/20">
+        <div className="max-w-5xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-[#0F2A4A] border border-blue-500/30 text-center text-xs text-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
           <div className="flex items-center gap-2 text-left">
             <Sparkles className="w-4 h-4 text-[#00BCD4] shrink-0" />
-            <span>💡 <strong>Örnek {business?.category || 'Sektör'} Şablonu:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış gerçekçi bir canlı demodur.</span>
+            <span>💡 <strong>Örnek {business?.category || 'Sektör'} Şablonu:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış canlı bir demodur.</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Link
@@ -257,7 +257,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
       )}
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto w-full">
+      <main className="max-w-5xl mx-auto w-full">
         {slug === "byerman" || slug === "ermankuafor" ? (
           <ErmanBarberWidget
             businessSlug={slug}
@@ -272,20 +272,20 @@ export default function BusinessBookingPage({ params }: PageProps) {
             tenantId={business.id}
           />
         ) : (
-          <div className="p-12 rounded-3xl bg-slate-900/80 border border-slate-800 text-center space-y-4 max-w-lg mx-auto">
-            <div className="w-12 h-12 rounded-2xl bg-[#0062FF]/15 text-[#00BCD4] border border-blue-500/30 flex items-center justify-center mx-auto">
+          <div className="p-10 rounded-2xl bg-white border border-slate-200 shadow-md text-center space-y-4 max-w-lg mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-[#0062FF]/10 text-[#0062FF] flex items-center justify-center mx-auto">
               <CalendarDays className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-white">{business?.name || slug}</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Bu işletmeye ait henüz aktif bir hizmet veya randevu formu tanımlanmamış.
+            <h2 className="text-xl font-bold text-[#0F2A4A]">{business?.name || slug}</h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Bu işletmeye ait henüz aktif bir randevu hizmeti tanımlanmamış.
             </p>
             <div className="pt-2">
               <Link
                 href="/login"
-                className="inline-flex px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-bold transition-all hover:scale-105"
+                className="inline-flex px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-bold transition-all shadow-sm"
               >
-                İşletme Girişi Yap & Formu Düzenle
+                İşletme Girişi Yap &amp; Formu Düzenle
               </Link>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
       <footer className="mt-12 text-center text-xs text-slate-500">
         <div className="flex items-center justify-center gap-2">
           <ShieldCheck className="w-4 h-4 text-[#00BCD4]" />
-          <span>Güvenli & KVKK Uyumlu Randevu Altyapısı — randevuformu.com</span>
+          <span>Güvenli &amp; KVKK Uyumlu Randevu Altyapısı — randevuformu.com</span>
         </div>
       </footer>
 

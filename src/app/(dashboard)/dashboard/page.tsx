@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Scissors,
   MessageSquare,
+  CalendarPlus,
 } from "lucide-react";
 import {
   AreaChart,
@@ -263,7 +264,7 @@ export default function DashboardPage() {
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-base text-[#0F2A4A] flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-[#0062FF]" />
+                <CalendarPlus className="w-5 h-5 text-[#0062FF]" />
                 <span>Manuel Randevu Ekle</span>
               </h3>
               <button

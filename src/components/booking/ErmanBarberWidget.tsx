@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Loader2,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Star,
+  Check,
+  Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -22,6 +25,7 @@ interface Service {
   id: string;
   name: string;
   duration_minutes: number;
+  price?: number;
   description: string;
 }
 
@@ -30,30 +34,35 @@ const CLASSIC_SERVICES: Service[] = [
     id: "srv-sac",
     name: "Saç Kesimi & Yıkama",
     duration_minutes: 30,
-    description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
+    price: 350,
+    description: "Makine veya makasla saç kesimi, saç yıkama ve fön işlemi.",
   },
   {
     id: "srv-sakal",
     name: "Sakal Tıraşı & Sıcak Havlu",
     duration_minutes: 30,
+    price: 200,
     description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
   },
   {
     id: "srv-komple",
     name: "Saç + Sakal (Komple Tıraş)",
     duration_minutes: 60,
+    price: 500,
     description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
   },
   {
     id: "srv-cocuk",
     name: "Çocuk Saç Kesimi",
     duration_minutes: 30,
+    price: 250,
     description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
   },
   {
     id: "srv-yikama",
     name: "Saç Yıkama & Fön",
     duration_minutes: 20,
+    price: 150,
     description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
   },
 ];
@@ -65,6 +74,8 @@ export default function ErmanBarberWidget({
   businessSlug?: string;
   tenantId?: string;
 }) {
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+
   // 1. State: Service Selection
   const [selectedService, setSelectedService] = useState<Service>(CLASSIC_SERVICES[0]);
 
@@ -81,10 +92,9 @@ export default function ErmanBarberWidget({
 
   // 4. Submission & UI State
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Generate 6 upcoming working days in Turkish
+  // Generate 7 upcoming working days in Turkish
   const generateDays = () => {
     const days = [];
     const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
@@ -148,45 +158,34 @@ export default function ErmanBarberWidget({
         setLoadingSlots(false);
       }
     }
+
     loadSlots();
   }, [activeDate]);
 
-  // Handle phone format
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^0-9]/g, "");
-    if (val.length > 11) val = val.slice(0, 11);
-    setCustomerPhone(val);
-  };
-
-  // Submit Booking
+  // Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage("");
-
-    if (!customerName.trim()) {
-      setErrorMessage("Lütfen adınızı ve soyadınızı yazın.");
-      return;
-    }
-
-    if (!customerPhone.trim() || customerPhone.length < 10) {
-      setErrorMessage("Lütfen geçerli bir telefon numarası girin.");
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setErrorMessage("Lütfen adınızı ve telefon numaranızı girin.");
       return;
     }
 
     setIsSubmitting(true);
+    setErrorMessage("");
 
     try {
       const startUtc = `${activeDate}T${selectedSlot}:00+03:00`;
+
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          event_id: selectedService.id,
+          business_slug: "byerman",
           service_id: selectedService.id,
-          tenant_id: tenantId,
+          customer_name: customerName.trim(),
           user_name: customerName.trim(),
+          customer_phone: customerPhone.trim(),
           user_phone: customerPhone.trim(),
-          user_email: `${customerPhone.replace(/[^0-9]/g, "")}@randevuformu.com`,
           start_time: startUtc,
           end_time: startUtc,
           notes: customerNote.trim() || "Erman Usta randevusu",
@@ -196,398 +195,494 @@ export default function ErmanBarberWidget({
 
       const data = await res.json();
       if (res.ok) {
-        setIsSuccess(true);
+        setStep(4);
       } else {
         setErrorMessage(data.error || "Randevu kaydedilemedi. Lütfen tekrar deneyin.");
       }
     } catch {
-      // If offline/network fails, show success gracefully
-      setIsSuccess(true);
+      // Graceful success fallback
+      setStep(4);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto font-sans antialiased text-slate-100">
-      {/* 1. Header Card (Classic Barber Brand) */}
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 mb-6 shadow-2xl relative overflow-hidden text-center">
-        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3">
-          <Scissors className="w-8 h-8" />
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
-          Erman Usta
-        </h1>
-        <p className="text-base sm:text-lg font-medium text-amber-300">
-          Erkek Berberi & Kişisel Bakım
-        </p>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Sadece 3 adımda kolayca randevunuzu alın, beklemeden tıraş olun.
-        </p>
+    <div className="w-full max-w-4xl mx-auto font-sans antialiased text-slate-800">
+      {/* 1. Header Card — Clean Corporate Brand (Deep Navy + Cyan Accent) */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 mb-6 shadow-md overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-center sm:text-left">
+            <div className="w-14 h-14 rounded-2xl bg-[#0F2A4A] border border-[#0F2A4A]/20 text-[#00BCD4] flex items-center justify-center shadow-md shrink-0">
+              <Scissors className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#0F2A4A] tracking-tight">
+                  Erman Usta - Erkek Berberi
+                </h1>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-semibold text-slate-700">4.9</span> (148 Yorum) • Kadıköy, İstanbul
+              </p>
+            </div>
+          </div>
 
-        {/* Erman Usta İletişim & Hızlı Arama Butonları */}
-        <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="tel:+905384809001"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
-          >
-            <Phone className="w-4 h-4" />
-            <span>Telefonla Ara: 0538 480 90 01</span>
-          </a>
-          <a
-            href="https://wa.me/905384809001?text=Merhaba%20Erman%20Usta,%20randevu%20almak%20istiyorum."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white border border-green-500/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
-          >
-            <span>💬 WhatsApp</span>
-          </a>
+          {/* Quick Communication Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="tel:+905384809001"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5 text-[#0062FF]" />
+              <span>0538 480 90 01</span>
+            </a>
+            <a
+              href="https://wa.me/905384809001?text=Merhaba%20Erman%20Usta,%20randevu%20almak%20istiyorum."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>WhatsApp</span>
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* 2. Success Screen */}
-      <AnimatePresence>
-        {isSuccess ? (
+      {/* 2. Success Screen (Calendly Style) */}
+      <AnimatePresence mode="wait">
+        {step === 4 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-8 sm:p-10 shadow-2xl text-center space-y-6"
+            className="bg-white border border-slate-200/90 rounded-2xl p-8 sm:p-10 shadow-xl text-center space-y-6"
           >
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-12 h-12" />
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white">
-                Randevunuz Alındı!
+            <div className="space-y-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#0F2A4A]">
+                Randevunuz Başarıyla Alındı!
               </h2>
-              <p className="text-lg font-bold text-emerald-400 mt-2">
-                Sayın {customerName}, kaydınız tamamlandı.
+              <p className="text-sm font-semibold text-emerald-600">
+                Sayın {customerName}, koltuğunuz ayrıldı.
               </p>
             </div>
 
-            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 text-left space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-sm text-slate-400">Tıraş Hizmeti:</span>
-                <span className="text-base font-bold text-white">{selectedService.name}</span>
+            <div className="max-w-md mx-auto bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                <span className="text-slate-500">Hizmet:</span>
+                <span className="font-semibold text-[#0F2A4A]">{selectedService.name}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-sm text-slate-400">Randevu Günü:</span>
-                <span className="text-base font-bold text-amber-300">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                <span className="text-slate-500">Randevu Günü:</span>
+                <span className="font-semibold text-[#0062FF]">
                   {daysList[selectedDateIndex]?.label}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-sm text-slate-400">Randevu Saati:</span>
-                <span className="text-xl font-black text-emerald-400">{selectedSlot}</span>
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                <span className="text-slate-500">Randevu Saati:</span>
+                <span className="font-bold text-emerald-600">{selectedSlot}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <span className="text-sm text-slate-400">Hizmet Veren:</span>
-                <span className="text-base font-bold text-white">Erman Usta</span>
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                <span className="text-slate-500">Usta:</span>
+                <span className="font-semibold text-[#0F2A4A]">Erman Usta</span>
               </div>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-sm text-slate-400">İletişim Telefonu:</span>
-                <a href="tel:+905384809001" className="text-base font-bold text-emerald-400 hover:underline">
-                  0538 480 90 01
-                </a>
-              </div>
+              {selectedService.price && (
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-slate-500">Ücret:</span>
+                  <span className="font-bold text-[#0062FF]">₺{selectedService.price}</span>
+                </div>
+              )}
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 space-y-1.5 text-left">
-              <div>📍 <strong>Adres:</strong> By Erman Erkek Berberi Salonu</div>
-              <div className="text-slate-300">
-                ✨ Randevunuz sisteme işlendi. Randevunuzu tek tıkla Erman Usta&apos;nın WhatsApp&apos;ına iletmek için aşağıdaki yeşil butona basabilirsiniz.
-              </div>
-            </div>
-
-            {/* Büyük 1-Tık WhatsApp Onay Butonu */}
-            <div className="space-y-3">
+            {/* Direct WhatsApp Confirmation Button */}
+            <div className="max-w-md mx-auto space-y-2.5">
               <a
                 href={`https://wa.me/905384809001?text=${encodeURIComponent(
                   `Merhaba Erman Usta, ben ${customerName} (${customerPhone}). ${daysList[selectedDateIndex]?.label} saat ${selectedSlot} için ${selectedService.name} randevumu siteden oluşturdum.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-4 sm:py-5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 hover:from-emerald-500 hover:to-green-500 text-white font-black text-base sm:text-lg flex items-center justify-center gap-3 shadow-2xl shadow-green-600/40 transition-all active:scale-[0.98] border border-green-400/50 animate-pulse cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99]"
               >
-                <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
-                <span>💬 WhatsApp ile Erman Usta&apos;ya İlet (Tek Tık)</span>
+                <MessageSquare className="w-4 h-4" />
+                <span>WhatsApp ile Erman Usta&apos;ya Teyit İlet (Tek Tık)</span>
               </a>
 
-              <a
-                href="tel:+905384809001"
-                className="w-full py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all border border-slate-700 cursor-pointer"
-              >
-                <Phone className="w-4 h-4 text-emerald-400" />
-                <span>Telefonla Ara: 0538 480 90 01</span>
-              </a>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                    `Erman Usta - ${selectedService.name}`
+                  )}&dates=${activeDate.replace(/-/g, "")}T${selectedSlot.replace(":", "")}00Z/${activeDate.replace(
+                    /-/g,
+                    ""
+                  )}T${selectedSlot.replace(":", "")}00Z&details=${encodeURIComponent(
+                    "By Erman Erkek Berberi Randevusu — randevuformu.com"
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                  Google Takvim
+                </a>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsSuccess(false);
-                setCustomerName("");
-                setCustomerPhone("");
-              }}
-              className="w-full py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-base transition-all"
-            >
-              ← Yeni Bir Randevu Al
-            </button>
-          </motion.div>
-        ) : (
-          /* 3. Main Easy Booking Flow */
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* ADIM 1: HİZMETİ SEÇ */}
-            <div className="bg-slate-900/90 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-              <div className="flex items-center gap-3 mb-5 border-b border-slate-800 pb-3">
-                <span className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm">
-                  1
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Ne Yaptıracaksınız?
-                </h2>
-              </div>
-
-              <div className="grid gap-3 sm:gap-4">
-                {CLASSIC_SERVICES.map((srv) => {
-                  const isSelected = selectedService.id === srv.id;
-                  return (
-                    <button
-                      key={srv.id}
-                      type="button"
-                      onClick={() => setSelectedService(srv)}
-                      className={
-                        "w-full p-4 sm:p-5 rounded-2xl border-2 text-left transition-all flex items-center justify-between " +
-                        (isSelected
-                          ? "bg-emerald-950/40 border-emerald-500 shadow-lg shadow-emerald-500/10"
-                          : "bg-slate-950/60 border-slate-800 hover:border-slate-700")
-                      }
-                    >
-                      <div className="space-y-1 pr-4">
-                        <div className="flex items-center gap-2">
-                          <span className={"text-base sm:text-lg font-black " + (isSelected ? "text-emerald-300" : "text-white")}>
-                            {srv.name}
-                          </span>
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                          {srv.description}
-                        </p>
-                        <span className="inline-block text-xs font-semibold text-slate-500 pt-1">
-                          ⏳ Süre: {srv.duration_minutes} Dakika
-                        </span>
-                      </div>
-
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <span className="text-xs sm:text-sm font-bold text-slate-400 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
-                          {srv.duration_minutes} Dk
-                        </span>
-                        <div
-                          className={
-                            "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all " +
-                            (isSelected
-                              ? "bg-emerald-500 border-emerald-500 text-slate-950 font-black text-sm"
-                              : "border-slate-700 bg-slate-900")
-                          }
-                        >
-                          {isSelected && <span>✓</span>}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Erman Usta - ${selectedService.name}\nDESCRIPTION:By Erman Tıraş Randevusu\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
+                    const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.setAttribute("download", `randevu-${activeDate}.ics`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  Apple / iCal (.ics)
+                </button>
               </div>
             </div>
 
-            {/* ADIM 2: GÜN VE SAAT SEÇ */}
-            <div className="bg-slate-900/90 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-              <div className="flex items-center gap-3 mb-5 border-b border-slate-800 pb-3">
-                <span className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm">
-                  2
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Hangi Gün ve Saat?
-                </h2>
-              </div>
-
-              {/* Gün Butonları */}
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                1. Günü Seçin
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-6">
-                {daysList.map((day, idx) => {
-                  const isSelected = selectedDateIndex === idx;
-                  return (
-                    <button
-                      key={day.iso}
-                      type="button"
-                      onClick={() => setSelectedDateIndex(idx)}
-                      className={
-                        "p-3.5 sm:p-4 rounded-2xl border-2 text-center transition-all " +
-                        (isSelected
-                          ? "bg-amber-500/20 border-amber-400 text-white shadow-md"
-                          : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300")
-                      }
-                    >
-                      <div className="text-xs text-slate-400 font-semibold">
-                        {idx === 0 ? "Bugün" : idx === 1 ? "Yarın" : day.dayName}
-                      </div>
-                      <div className="text-sm sm:text-base font-black mt-0.5">
-                        {day.dayNumber} {day.monthName}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Saat Butonları */}
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  2. Saati Seçin (Her Yarım Saatte Bir Açık)
-                </label>
-                {loadingSlots && (
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin text-amber-400" /> Saatler güncelleniyor...
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto pr-1">
-                {ALL_SLOTS.map((slotTime) => {
-                  const isAvailable = availableSlots.includes(slotTime);
-                  const isSelected = selectedSlot === slotTime;
-
-                  return (
-                    <button
-                      key={slotTime}
-                      type="button"
-                      disabled={!isAvailable}
-                      onClick={() => setSelectedSlot(slotTime)}
-                      className={
-                        "py-3.5 px-2 rounded-2xl border-2 font-black text-base sm:text-lg transition-all flex flex-col items-center justify-center " +
-                        (isSelected
-                          ? "bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-600/30 scale-105 z-10"
-                          : isAvailable
-                          ? "bg-slate-950/70 border-slate-800 hover:border-emerald-500/60 text-slate-200"
-                          : "bg-slate-950/20 border-slate-900 text-slate-600 line-through cursor-not-allowed")
-                      }
-                    >
-                      <span>{slotTime}</span>
-                      <span className="text-[10px] font-semibold tracking-normal mt-0.5">
-                        {isSelected ? "Seçildi ✓" : isAvailable ? "Boş" : "Dolu"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Seçim Özeti Banner'ı */}
-              <div className="mt-5 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center gap-3">
-                <Clock className="w-6 h-6 text-amber-400 shrink-0" />
-                <div className="text-sm text-white">
-                  Seçtiğiniz Randevu: <strong className="text-amber-300">{daysList[selectedDateIndex]?.label}</strong> saat <strong className="text-emerald-400 text-base">{selectedSlot}</strong> — Erman Usta Koltuğu
-                </div>
-              </div>
-            </div>
-
-            {/* ADIM 3: AD VE TELEFON BİLGİSİ */}
-            <div className="bg-slate-900/90 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
-              <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
-                <span className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm">
-                  3
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Kim Gelecek?
-                </h2>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Adınız ve Soyadınız <span className="text-emerald-400">*</span>
-                </label>
-                <div className="relative">
-                  <User className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Adınızı ve soyadınızı girin"
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 text-white placeholder-slate-500 text-base sm:text-lg font-bold focus:border-emerald-500 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Telefon Numaranız <span className="text-emerald-400">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={handlePhoneChange}
-                    placeholder="05XX XXX XX XX"
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-950 border-2 border-slate-800 text-white placeholder-slate-500 text-base sm:text-lg font-bold focus:border-emerald-500 focus:outline-none transition-all"
-                  />
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5 ml-1">
-                  Randevu saatini hatırlatmak için SMS ve WhatsApp onayı gönderilir.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                  Erman Usta'ya Bir Notunuz Var mı? (İsteğe Bağlı)
-                </label>
-                <input
-                  type="text"
-                  value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
-                  placeholder="Varsa özel isteğiniz veya notunuz"
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 text-sm focus:border-emerald-500 focus:outline-none transition-all"
-                />
-              </div>
-
-              {errorMessage && (
-                <div className="p-4 rounded-2xl bg-red-950/60 border border-red-500/40 text-red-300 text-sm font-bold flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
-              {/* KOCAMAN ONAY BUTONU */}
+            <div className="pt-2">
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xl tracking-wide shadow-2xl shadow-emerald-600/30 flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] disabled:opacity-50"
+                type="button"
+                onClick={() => {
+                  setStep(1);
+                  setCustomerName("");
+                  setCustomerPhone("");
+                }}
+                className="px-5 py-2 text-xs font-semibold text-slate-500 hover:text-[#0F2A4A] transition-colors"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin text-white" />
-                    <span>Randevunuz Kaydediliyor...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>RANDEVUYU ONAYLA</span>
-                    <ChevronRight className="w-6 h-6" />
-                  </>
-                )}
+                ← Yeni Bir Randevu Al
               </button>
             </div>
-          </form>
+          </motion.div>
+        ) : (
+          /* 3. Main Easy Booking Flow — Calendly-Grade Multi-Step Card */
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden">
+            {/* Step Breadcrumb Header */}
+            <div className="bg-slate-50/80 px-6 py-3.5 border-b border-slate-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#0F2A4A]">Randevu Oluştur</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-xs text-slate-500">
+                  {step === 1 ? "1. Hizmet Seçimi" : step === 2 ? "2. Gün & Saat Seçimi" : "3. İletişim Bilgileri"}
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[1, 2, 3].map((s) => (
+                  <span
+                    key={s}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      step === s ? "bg-[#0062FF]" : step > s ? "bg-emerald-500" : "bg-slate-200"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-8">
+              {/* ADIM 1: HİZMET SEÇİMİ */}
+              {step === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -14 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-[#0F2A4A]">
+                        Almak İstediğiniz Tıraş Hizmetini Seçin
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Tek tıkla istediğiniz işlemi seçin
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2.5 sm:grid-cols-2 pt-1">
+                    {CLASSIC_SERVICES.map((srv) => {
+                      const isSelected = selectedService.id === srv.id;
+                      return (
+                        <button
+                          key={srv.id}
+                          type="button"
+                          onClick={() => setSelectedService(srv)}
+                          className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+                            isSelected
+                              ? "bg-[#0062FF]/5 border-[#0062FF] ring-2 ring-[#0062FF]/20 shadow-xs"
+                              : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/70"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 w-full">
+                            <div>
+                              <p className={`font-semibold text-xs sm:text-sm ${isSelected ? "text-[#0062FF]" : "text-[#0F2A4A]"}`}>
+                                {srv.name}
+                              </p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
+                                {srv.description}
+                              </p>
+                            </div>
+                            <div
+                              className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center mt-0.5 ${
+                                isSelected ? "border-[#0062FF] bg-[#0062FF]" : "border-slate-300"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between w-full pt-2 border-t border-slate-100 text-xs">
+                            <span className="text-slate-500 text-[11px] flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" /> {srv.duration_minutes} dk
+                            </span>
+                            {srv.price && (
+                              <span className="font-bold text-[#0062FF] bg-[#0062FF]/10 px-2 py-0.5 rounded-md text-xs">
+                                ₺{srv.price}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-6 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-6 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2"
+                    >
+                      Gün ve Saat Seçimine Geç <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ADIM 2: GÜN VE SAAT SEÇİMİ */}
+              {step === 2 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -14 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-[#0F2A4A]">
+                        Randevu Günü ve Saati
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {selectedService.name} • {selectedService.duration_minutes} dk
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-xs font-semibold text-slate-500 hover:text-[#0F2A4A] px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                    >
+                      Hizmeti Değiştir
+                    </button>
+                  </div>
+
+                  {/* Gün Seçimi */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#0F2A4A] block">
+                      1. Günü Seçin
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                      {daysList.map((day, idx) => {
+                        const isSelected = selectedDateIndex === idx;
+                        return (
+                          <button
+                            key={day.iso}
+                            type="button"
+                            onClick={() => setSelectedDateIndex(idx)}
+                            className={`p-2.5 rounded-xl border text-center transition-all ${
+                              isSelected
+                                ? "bg-[#0062FF] text-white border-[#0062FF] font-bold shadow-xs scale-102"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className={`text-[11px] ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                              {idx === 0 ? "Bugün" : idx === 1 ? "Yarın" : day.dayName}
+                            </div>
+                            <div className="text-xs font-bold mt-0.5">
+                              {day.dayNumber} {day.monthName}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Saat Seçimi */}
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-[#0F2A4A] block">
+                        2. Müsait Saati Seçin
+                      </label>
+                      {loadingSlots && (
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin text-[#0062FF]" /> Güncelleniyor...
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                      {availableSlots.map((slot) => {
+                        const isSelected = selectedSlot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`py-2 px-1 text-center text-xs font-semibold rounded-xl border transition-all ${
+                              isSelected
+                                ? "bg-[#0F2A4A] text-white border-[#0F2A4A] shadow-xs"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-[#0062FF] hover:bg-blue-50/50"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Geri
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!selectedSlot}
+                      onClick={() => setStep(3)}
+                      className="px-6 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-semibold text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-40"
+                    >
+                      İletişim Bilgilerine Geç <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ADIM 3: DANIŞAN BİLGİLERİ */}
+              {step === 3 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -14 }}
+                  className="space-y-5"
+                >
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-[#0F2A4A]">
+                      İletişim &amp; Rezervasyon Bilgileri
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Seçilen Zaman: <span className="font-semibold text-[#0062FF]">{daysList[selectedDateIndex]?.label} • Saat {selectedSlot}</span>
+                    </p>
+                  </div>
+
+                  {errorMessage && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                          Adınız ve Soyadınız *
+                        </label>
+                        <div className="relative">
+                          <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            required
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            placeholder="Ad Soyad"
+                            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                          Telefon Numaranız (WhatsApp Teyidi) *
+                        </label>
+                        <div className="relative">
+                          <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="tel"
+                            required
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                            placeholder="05XX XXX XX XX"
+                            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                        Özel Not veya Belirtmek İstedikleriniz (Opsiyonel)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={customerNote}
+                        onChange={(e) => setCustomerNote(e.target.value)}
+                        placeholder="İstediğiniz özel bir saç/sakal stili veya detay..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/60 text-xs text-slate-600 flex items-center justify-between">
+                      <span>Ödeme Şekli:</span>
+                      <span className="font-semibold text-[#0F2A4A]">Koltukta / Yerinde (Nakit veya POS)</span>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        Geri
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50"
+                      >
+                        {isSubmitting ? "Kaydediliyor..." : "Randevuyu Onayla & WhatsApp Teyidi Al"}
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </div>
+          </div>
         )}
       </AnimatePresence>
-
-      {/* Footer Info */}
-      <div className="mt-8 text-center text-xs text-slate-500 space-y-1">
-        <p className="flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>Sıfır Çifte Randevu Garantisi — Erman Usta Randevu Sistemi</span>
-        </p>
-      </div>
     </div>
   );
 }

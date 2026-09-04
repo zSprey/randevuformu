@@ -10,6 +10,7 @@ import {
   Mail,
   CheckCircle2,
   Phone,
+  Calendar,
   CalendarDays,
   Sparkles,
   MessageCircle,
@@ -127,6 +128,22 @@ export default function SettingsPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState(false);
 
+  // Working Hours & Availability State (Calendly Style)
+  const [workingDays, setWorkingDays] = useState({
+    mon: true,
+    tue: true,
+    wed: true,
+    thu: true,
+    fri: true,
+    sat: true,
+    sun: false,
+  });
+  const [workStartTime, setWorkStartTime] = useState("09:00");
+  const [workEndTime, setWorkEndTime] = useState("19:00");
+  const [breakStartTime, setBreakStartTime] = useState("12:30");
+  const [breakEndTime, setBreakEndTime] = useState("13:30");
+  const [slotInterval, setSlotInterval] = useState("30");
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -243,6 +260,20 @@ export default function SettingsPage() {
         } catch {}
       }
 
+      // 6.1 Working Hours & Availability Persistence (Calendly Style)
+      const savedHours = localStorage.getItem("rf_business_hours");
+      if (savedHours) {
+        try {
+          const h = JSON.parse(savedHours);
+          if (h.workingDays) setWorkingDays(h.workingDays);
+          if (h.workStartTime) setWorkStartTime(h.workStartTime);
+          if (h.workEndTime) setWorkEndTime(h.workEndTime);
+          if (h.breakStartTime) setBreakStartTime(h.breakStartTime);
+          if (h.breakEndTime) setBreakEndTime(h.breakEndTime);
+          if (h.slotInterval) setSlotInterval(h.slotInterval);
+        } catch {}
+      }
+
       // 7. Supabase Business Settings
       try {
         const res = await getBusinessSettings(currentTenant);
@@ -261,6 +292,21 @@ export default function SettingsPage() {
 
     loadSettings();
   }, []);
+
+  // Save Availability Handler
+  const handleSaveAvailability = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = {
+      workingDays,
+      workStartTime,
+      workEndTime,
+      breakStartTime,
+      breakEndTime,
+      slotInterval,
+    };
+    localStorage.setItem("rf_business_hours", JSON.stringify(data));
+    showToast("Çalışma saatleri ve haftalık müsaitlik başarıyla kaydedildi.");
+  };
 
   // Save Profile Handler
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -446,11 +492,12 @@ export default function SettingsPage() {
   };
 
   const tabs = [
-    { id: "services", name: "Hizmetler & Randevu Tipleri", icon: Scissors },
-    { id: "whatsapp", name: "WhatsApp Hattı (Modül 1)", icon: MessageCircle },
-    { id: "yield", name: "Dinamik İndirim (Modül 3)", icon: Zap },
+    { id: "services", name: "Hizmetler & Randevu Tipleri", icon: Calendar },
+    { id: "availability", name: "Çalışma Saatleri & Müsaitlik", icon: Clock },
+    { id: "whatsapp", name: "WhatsApp Otomasyonu", icon: MessageCircle },
+    { id: "yield", name: "Akıllı Doluluk & İndirim Motoru", icon: Zap },
     { id: "profile", name: "Profil & Uzman Bilgileri", icon: User },
-    { id: "clinic", name: "Klinik & Rezervasyon", icon: Building },
+    { id: "clinic", name: "İşletme & Rezervasyon Kuralları", icon: Building },
     { id: "notifications", name: "SMS & E-Posta Bildirimleri", icon: Bell },
     { id: "integrations", name: "Takvim Entegrasyonları", icon: CalendarDays },
     { id: "billing", name: "Paket & Faturalandırma", icon: CreditCard },
@@ -515,11 +562,11 @@ export default function SettingsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                   <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
-                    <Scissors className="w-5 h-5 text-[#0062FF]" />
+                    <Calendar className="w-5 h-5 text-[#0062FF]" />
                     Hizmetler & Randevu Tipleri
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    İşletmenizin sunduğu saç, sakal, bakım, seans ve muayene kalemlerini özelleştirin.
+                    İşletmenizin sunduğu seans, muayene, bakım ve randevu kalemlerini özelleştirin.
                   </p>
                 </div>
                 {!isAddingService && !editingServiceId && (
@@ -723,7 +770,153 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* TAB: WHATSAPP (MODÜL 1) */}
+          {/* TAB: WORKING HOURS & AVAILABILITY (CALENDLY STYLE) */}
+          {activeTab === "availability" && (
+            <form onSubmit={handleSaveAvailability} className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-bold text-[#0F2A4A] flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[#0062FF]" />
+                    Çalışma Saatleri &amp; Müsaitlik (Weekly Hours)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Danışanların randevu formunda göreceği açık günler, mesai saatleri ve randevu periyotları.
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-95 text-white font-semibold text-xs shadow-xs transition-all shrink-0"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Müsaitliği Kaydet</span>
+                </button>
+              </div>
+
+              {/* Working Days Selector */}
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-[#0F2A4A]">
+                  Haftalık Hizmet Günleri (Tıklayarak Açın / Kapatın)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-7 gap-2">
+                  {[
+                    { key: "mon", label: "Pazartesi" },
+                    { key: "tue", label: "Salı" },
+                    { key: "wed", label: "Çarşamba" },
+                    { key: "thu", label: "Perşembe" },
+                    { key: "fri", label: "Cuma" },
+                    { key: "sat", label: "Cumartesi" },
+                    { key: "sun", label: "Pazar" },
+                  ].map((day) => {
+                    const isActive = workingDays[day.key as keyof typeof workingDays];
+                    return (
+                      <button
+                        key={day.key}
+                        type="button"
+                        onClick={() =>
+                          setWorkingDays((prev) => ({
+                            ...prev,
+                            [day.key]: !prev[day.key as keyof typeof workingDays],
+                          }))
+                        }
+                        className={`p-3 rounded-xl border text-center transition-all ${
+                          isActive
+                            ? "bg-[#0062FF] text-white border-[#0062FF] font-bold shadow-xs"
+                            : "bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span className="text-xs block">{day.label}</span>
+                        <span className="text-[10px] opacity-90 mt-0.5 block">
+                          {isActive ? "✓ Açık" : "Kapalı"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Hours Grid */}
+              <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <h4 className="font-semibold text-xs text-[#0F2A4A] flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#0062FF]" />
+                    Günlük Mesai Saatleri
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-1">Başlangıç</label>
+                      <input
+                        type="time"
+                        value={workStartTime}
+                        onChange={(e) => setWorkStartTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-[#0062FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-1">Bitiş</label>
+                      <input
+                        type="time"
+                        value={workEndTime}
+                        onChange={(e) => setWorkEndTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-[#0062FF]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <h4 className="font-semibold text-xs text-[#0F2A4A] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#00BCD4]" />
+                    Öğle Molası (Slot Bloke)
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-1">Mola Başlangıç</label>
+                      <input
+                        type="time"
+                        value={breakStartTime}
+                        onChange={(e) => setBreakStartTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-[#0062FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-500 mb-1">Mola Bitiş</label>
+                      <input
+                        type="time"
+                        value={breakEndTime}
+                        onChange={(e) => setBreakEndTime(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:border-[#0062FF]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slot Interval */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <label className="block text-xs font-semibold text-[#0F2A4A]">
+                  Randevu Slot Aralığı (Dakika)
+                </label>
+                <div className="flex gap-2">
+                  {["15", "30", "45", "60"].map((interval) => (
+                    <button
+                      key={interval}
+                      type="button"
+                      onClick={() => setSlotInterval(interval)}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold border transition ${
+                        slotInterval === interval
+                          ? "bg-[#0F2A4A] text-white border-[#0F2A4A]"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {interval} Dakika
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* TAB: WHATSAPP */}
           {activeTab === "whatsapp" && (
             <form onSubmit={handleSaveWhatsapp} className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100">

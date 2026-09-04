@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Sparkles, Calendar, Clock, Loader2 } from 'lucide-react';
+import { Bot, X, Send, Sparkles, Calendar, Clock, Loader2, MessageCircle } from 'lucide-react';
 
 interface CustomerChatbotProps {
   businessSlug?: string;
@@ -93,37 +93,36 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
 
   return (
     <>
-      {/* Floating Action Pill / Button */}
-      <div className="fixed right-4 bottom-safe z-40 mb-16 sm:mb-16">
+      {/* Floating Button — Ana sayfadakiyle birebir aynı sembol ve marka paleti */}
+      <div className="fixed right-6 bottom-6 z-50">
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-3 text-white shadow-xl transition-transform hover:scale-105 active:scale-95 border border-zinc-700 min-h-[44px]"
+            className="w-14 h-14 bg-[#0F2A4A] hover:bg-[#0062FF] text-white rounded-full shadow-lg shadow-[#0F2A4A]/25 border border-white/20 flex items-center justify-center transition-all cursor-pointer"
             aria-label="AI Randevu Asistanı"
           >
-            <Sparkles className="h-5 w-5 text-amber-400" />
-            <span className="text-xs font-semibold tracking-tight">AI Asistan</span>
+            <MessageCircle className="w-6 h-6 text-[#00BCD4]" strokeWidth={2} />
           </button>
         )}
       </div>
 
       {/* Chatbox Window */}
       {isOpen && (
-        <div className="fixed right-4 bottom-safe z-50 mb-16 w-[92vw] max-w-sm rounded-2xl border border-zinc-200/90 bg-white shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 max-h-[520px]">
-          {/* Header */}
-          <div className="flex items-center justify-between bg-zinc-900 px-4 py-3 text-white">
+        <div className="fixed right-6 bottom-6 z-50 w-[92vw] max-w-sm rounded-2xl border border-slate-200/90 bg-white shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 max-h-[520px]">
+          {/* Header — Kurumsal Deep Navy */}
+          <div className="flex items-center justify-between bg-[#0F2A4A] px-4 py-3.5 text-white">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-amber-400 border border-zinc-700">
-                <Bot className="h-4 w-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0062FF] text-white">
+                <Sparkles className="h-4 w-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold leading-tight">{businessName}</h4>
-                <span className="text-[10px] text-emerald-400 font-medium">● Çevrimiçi Asistan</span>
+                <h4 className="text-xs font-bold leading-tight text-white">{businessName}</h4>
+                <span className="text-[10px] text-[#00BCD4] font-medium">● Randevu Asistanı</span>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="rounded-lg p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="rounded-lg p-1.5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>

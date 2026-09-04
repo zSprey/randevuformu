@@ -9,13 +9,10 @@ import {
   User,
   Phone,
   Mail,
-  FileText,
   ShieldCheck,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
   CreditCard,
-  Building,
   AlertCircle,
   CheckCircle2,
   Lock,
@@ -24,10 +21,29 @@ import {
   Download,
   Video,
   Smartphone,
+  MapPin,
+  MessageCircle,
+  Building2,
+  Sparkles,
 } from "lucide-react";
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  isSameMonth,
+  isSameDay,
+  addDays,
+  isBefore,
+  startOfToday,
+} from "date-fns";
+import { tr } from "date-fns/locale";
 import SmartWaitlistWidget from "./SmartWaitlistWidget";
 
-interface ServiceItem {
+export interface ServiceItem {
   id: string;
   name: string;
   duration_minutes: number;
@@ -36,12 +52,18 @@ interface ServiceItem {
   description?: string;
 }
 
-interface BookingWidgetProps {
+export interface BookingWidgetProps {
   businessName: string;
   businessSlug: string;
   category?: string;
   services: ServiceItem[];
   tenantId?: string;
+}
+
+interface StaffOption {
+  id: string;
+  name: string;
+  role: string;
 }
 
 export default function BookingWidget({
@@ -53,11 +75,20 @@ export default function BookingWidget({
 }: BookingWidgetProps) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(services[0] || null);
+  
+  // Calendar month state
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  
+  // Staff state
+  const [staffList, setStaffList] = useState<StaffOption[]>([
+    { id: "ANY_STAFF", name: "⚡ İlk Müsait Uzman", role: "En Hızlı Seans" },
+  ]);
   const [selectedStaff, setSelectedStaff] = useState<string>("ANY_STAFF");
+  
   const [availableSlots, setAvailableSlots] = useState<{ displayTime: string; isAvailable: boolean; startUtc: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -68,12 +99,38 @@ export default function BookingWidget({
   const [customerNotes, setCustomerNotes] = useState("");
   const [kvkkConsent, setKvkkConsent] = useState(false);
 
-  // Lock & State
+  // Flow & Feedback State
   const [paymentMethod, setPaymentMethod] = useState<"VENUE" | "STRIPE" | "IYZICO">("VENUE");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [lockTimer, setLockTimer] = useState<number | null>(null);
+  const [walletSuccess, setWalletSuccess] = useState(false);
+
+  // Load custom staff for this business dynamically
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`rf_staff_${tenantId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const dynamicStaff: StaffOption[] = parsed
+              .filter((s: any) => s.is_active !== false)
+              .map((s: any) => ({
+                id: s.id,
+                name: s.display_name || s.name,
+                role: s.title || s.role || "Uzman",
+              }));
+            setStaffList([
+              { id: "ANY_STAFF", name: "⚡ İlk Müsait Uzman", role: "En Hızlı Seans" },
+              ...dynamicStaff,
+            ]);
+            return;
+          }
+        }
+      } catch {}
+    }
+  }, [tenantId]);
 
   // Fetch live calculated slots for the selected date
   const fetchSlots = async (date: string, duration: number) => {
@@ -102,16 +159,8 @@ export default function BookingWidget({
           }))
         );
       }
-    } catch (err) {
-      const isByErman = businessSlug === "byerman" || businessSlug === "ermankuafor";
-      const defaultTimes = isByErman
-        ? [
-            "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-            "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-            "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-            "18:00", "18:30", "19:00", "19:30"
-          ]
-        : ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+    } catch {
+      const defaultTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
       setAvailableSlots(
         defaultTimes.map((t) => ({
           displayTime: t,
@@ -133,7 +182,7 @@ export default function BookingWidget({
   // Lock slot on select
   const handleSlotSelect = async (slotTime: string, startUtc: string) => {
     setSelectedSlot(slotTime);
-    setLockTimer(300); // 5 minutes lock
+    setLockTimer(300); // 5 minutes atomic lock
     try {
       await fetch("/api/slots", {
         method: "POST",
@@ -145,20 +194,21 @@ export default function BookingWidget({
           sessionId: `${Date.now()}-${Math.random()}`,
         }),
       });
-    } catch (e) {
-      // Non-blocking lock fallback
+    } catch {
+      // Non-blocking fallback
     }
   };
 
-  // Submit appointment
+  // Submission handler
   const handleCompleteBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!kvkkConsent) {
-      setErrorMessage("Lütfen KVKK Aydınlatma Metnini onaylayınız.");
+    if (!customerName.trim() || !customerPhone.trim() || !customerEmail.trim()) {
+      setErrorMessage("Lütfen tüm zorunlu alanları doldurun.");
       return;
     }
-    if (!selectedService || !selectedSlot) {
-      setErrorMessage("Lütfen hizmet ve randevu saati seçiniz.");
+
+    if (!kvkkConsent) {
+      setErrorMessage("Lütfen KVKK onay kutusunu işaretleyin.");
       return;
     }
 
@@ -166,37 +216,19 @@ export default function BookingWidget({
     setErrorMessage("");
 
     try {
-      let resolvedStaffId = selectedStaff;
-      if (selectedStaff === "ANY_STAFF") {
-        try {
-          const routeRes = await fetch("/api/routing", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tenantId,
-              serviceId: selectedService.id,
-              date: selectedDate,
-              startUtc: `${selectedDate}T${selectedSlot}:00+03:00`,
-              strategy: "ROUND_ROBIN",
-            }),
-          });
-          const routeData = await routeRes.json();
-          if (routeData.assignedStaff?.id) {
-            resolvedStaffId = routeData.assignedStaff.id;
-          }
-        } catch {
-          resolvedStaffId = "staff-1";
-        }
-      }
+      const resolvedStaffId = selectedStaff === "ANY_STAFF" ? "auto-assigned-staff" : selectedStaff;
 
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          event_id: selectedService.id,
-          tenant_id: tenantId || "byerman-id",
+          business_slug: businessSlug,
+          service_id: selectedService?.id || "default",
+          customer_name: customerName,
           user_name: customerName,
+          customer_email: customerEmail,
           user_email: customerEmail,
+          customer_phone: customerPhone,
           user_phone: customerPhone,
           notes: customerNotes,
           staff_id: resolvedStaffId,
@@ -208,11 +240,11 @@ export default function BookingWidget({
       const data = await res.json();
       if (res.ok) {
         const servicePrice =
-          selectedService.price ||
-          parseFloat(selectedService.price_text?.replace(/[^0-9.]/g, "") || "0") ||
+          selectedService?.price ||
+          parseFloat(selectedService?.price_text?.replace(/[^0-9.]/g, "") || "0") ||
           0;
 
-        // Online Payment Flow
+        // Online Payment Flow (if enabled and price > 0)
         if (paymentMethod === "STRIPE" && servicePrice > 0) {
           try {
             const payRes = await fetch("/api/checkout/stripe", {
@@ -220,7 +252,7 @@ export default function BookingWidget({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 appointmentId: data.booking?.id || `bk_${Date.now()}`,
-                serviceName: selectedService.name,
+                serviceName: selectedService?.name,
                 amount: servicePrice,
                 customerEmail,
                 customerName,
@@ -243,7 +275,7 @@ export default function BookingWidget({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 appointmentId: data.booking?.id || `bk_${Date.now()}`,
-                serviceName: selectedService.name,
+                serviceName: selectedService?.name,
                 amount: servicePrice,
                 customerName,
                 customerEmail,
@@ -261,48 +293,74 @@ export default function BookingWidget({
           }
         }
 
-        setBookingSuccess(true);
         setStep(4);
       } else {
         setErrorMessage(data.error || "Randevu oluşturulamadı. Lütfen tekrar deneyin.");
       }
-    } catch (error) {
-      setErrorMessage("Bağlantı hatası oluştu.");
+    } catch {
+      setErrorMessage("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Monthly Calendar Generator Helpers
+  const today = startOfToday();
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  const calendarDays: Date[] = [];
+  let dayIterator = startDate;
+  while (dayIterator <= endDate) {
+    calendarDays.push(dayIterator);
+    dayIterator = addDays(dayIterator, 1);
+  }
+
+  const selectedDateObj = new Date(selectedDate);
+  const formattedSelectedDateHeader = format(selectedDateObj, "EEEE, d MMMM", { locale: tr });
+
+  // Optional Pricing badge check
+  const hasPrice = Boolean(
+    selectedService &&
+    selectedService.price &&
+    selectedService.price > 0
+  );
+
   return (
-    <div className="w-full max-w-4xl mx-auto bg-slate-900/90 border border-white/10 rounded-3xl backdrop-blur-2xl shadow-2xl overflow-hidden text-white">
-      {/* Top Progress Bar */}
-      <div className="bg-slate-950/60 p-6 border-b border-white/10 flex items-center justify-between">
+    <div className="w-full max-w-5xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden text-slate-800 transition-all">
+      {/* Top Header Bar — Calendly Corporate Aesthetic */}
+      <div className="bg-[#0F2A4A] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0062FF]/20 border border-[#0062FF]/40 flex items-center justify-center font-bold text-[#00BCD4]">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-[#00BCD4] text-sm">
             {businessName.charAt(0)}
           </div>
           <div>
-            <h2 className="font-bold text-lg text-white">{businessName}</h2>
-            <p className="text-xs text-slate-400">{category}</p>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-sm sm:text-base text-white">{businessName}</h2>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            </div>
+            <p className="text-xs text-slate-300">{category}</p>
           </div>
         </div>
 
-        {/* Step Indicators */}
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold">
+        {/* Step Indicator Pills */}
+        <div className="flex items-center gap-1.5 text-xs font-medium">
           {[
             { num: 1, label: "Hizmet" },
-            { num: 2, label: "Saat" },
+            { num: 2, label: "Tarih & Saat" },
             { num: 3, label: "Bilgiler" },
             { num: 4, label: "Onay" },
           ].map((s) => (
             <div
               key={s.num}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-colors ${
                 step === s.num
-                  ? "bg-[#0062FF] text-white shadow-md shadow-[#0062FF]/30"
+                  ? "bg-[#00BCD4] text-[#0F2A4A] font-bold shadow-xs"
                   : step > s.num
-                  ? "bg-emerald-500/20 text-emerald-300"
-                  : "text-slate-500 bg-white/5"
+                  ? "bg-emerald-500/20 text-emerald-300 font-medium"
+                  : "text-slate-400 bg-white/5"
               }`}
             >
               <span>{s.num}.</span>
@@ -312,562 +370,701 @@ export default function BookingWidget({
         </div>
       </div>
 
-      {/* Body Content */}
-      <div className="p-6 sm:p-8">
-        <AnimatePresence mode="wait">
-          {/* STEP 1: SERVICE SELECTION */}
-          {step === 1 && (
-            <motion.div
-              key="step-1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-white tracking-tight">Almak İstediğiniz Hizmeti Seçin</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Uzmanımız tarafından sunulan seans süreleri ve detayları
-                </p>
+      {/* Main Split Layout: Left Info Summary / Right Action View */}
+      <div className="grid lg:grid-cols-12 min-h-[540px]">
+        {/* Left Summary Sidebar (Calendly Style Host Details) */}
+        <div className="lg:col-span-4 p-6 sm:p-7 bg-[#FAFBFC] border-b lg:border-b-0 lg:border-r border-slate-200/80 space-y-6 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                İşletme Detayı
+              </span>
+              <h3 className="text-lg font-bold text-[#0F2A4A] leading-tight">
+                {selectedService ? selectedService.name : "Hizmet Seçimi"}
+              </h3>
+            </div>
+
+            {selectedService && (
+              <div className="space-y-2.5 text-xs text-slate-600">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#0062FF] shrink-0" />
+                  <span className="font-medium">{selectedService.duration_minutes} Dakika</span>
+                </div>
+
+                {/* Optional Price: Only renders if price > 0, completely omitted otherwise */}
+                {hasPrice ? (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center font-bold text-[#0062FF] bg-[#0062FF]/10 px-2.5 py-0.5 rounded-md text-xs">
+                      ₺{selectedService.price?.toLocaleString("tr-TR")}
+                    </span>
+                    <span className="text-[11px] text-slate-400">Sabit Seans Ücreti</span>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Otomatik WhatsApp &amp; Takvim Teyitli</span>
+                </div>
+
+                {selectedDate && selectedSlot && (
+                  <div className="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl space-y-1 text-slate-700">
+                    <p className="text-[11px] text-[#0062FF] font-semibold">Seçilen Randevu Zamanı:</p>
+                    <p className="font-bold text-xs text-[#0F2A4A]">
+                      {formattedSelectedDateHeader} • Saat: {selectedSlot}
+                    </p>
+                  </div>
+                )}
               </div>
+            )}
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {services.map((s) => {
-                  const isSelected = selectedService?.id === s.id;
-                  const hasPrice = Boolean(
-                    (s.price && s.price > 0) ||
-                    (s.price_text && s.price_text !== "Ücretsiz" && s.price_text !== "0 TL" && s.price_text !== "₺0")
-                  );
-                  return (
-                    <div
-                      key={s.id}
-                      onClick={() => setSelectedService(s)}
-                      className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? "bg-[#0062FF]/20 border-[#0062FF] shadow-lg shadow-[#0062FF]/10 scale-[1.01]"
-                          : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="font-bold text-white text-base leading-snug">{s.name}</h4>
-                          {hasPrice && (
-                            <span className="text-xs font-bold px-2.5 py-1 bg-[#0062FF]/20 text-[#00BCD4] border border-[#0062FF]/30 rounded-lg shrink-0">
-                              {s.price && s.price > 0 ? `₺${s.price.toLocaleString("tr-TR")}` : s.price_text}
-                            </span>
-                          )}
-                        </div>
-                        {s.description && (
-                          <p className="text-xs text-slate-400 mt-2 line-clamp-2">
-                            {s.description}
-                          </p>
-                        )}
-                      </div>
+            {selectedService?.description && (
+              <p className="text-xs text-slate-500 leading-relaxed pt-2 border-t border-slate-200">
+                {selectedService.description}
+              </p>
+            )}
+          </div>
 
-                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-[#00BCD4]" />
-                          {s.duration_minutes} Dakika
-                        </span>
-                        {isSelected && (
-                          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                            <Check className="w-4 h-4" /> Seçildi
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="pt-4 border-t border-slate-200/80 text-[11px] text-slate-400 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              256-Bit SSL Şifreleme
+            </span>
+            <span className="font-mono text-[10px]">randevuformu.com</span>
+          </div>
+        </div>
 
-              <div className="mt-8 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="px-6 py-3.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-sm shadow-lg shadow-[#0062FF]/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-                >
-                  Tarih ve Saat Seçimine Geç <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 2: DATE & TIME SLOT SELECTION */}
-          {step === 2 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center justify-between">
+        {/* Right Interaction Column */}
+        <div className="lg:col-span-8 p-6 sm:p-8 flex flex-col justify-between">
+          <AnimatePresence mode="wait">
+            {/* ═══════════════════════════════════════
+                STEP 1: SERVICE SELECTION
+                ═══════════════════════════════════════ */}
+            {step === 1 && (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="space-y-4"
+              >
                 <div>
-                  <h3 className="text-xl font-bold text-white">Tarih & Müsait Saat Seçimi</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {selectedService?.name} ({selectedService?.duration_minutes} dk)
+                  <h3 className="text-lg sm:text-xl font-bold text-[#0F2A4A]">
+                    Almak İstediğiniz Hizmeti Seçin
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    İşletmemizin sunduğu seanslar ve süreleri
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Hizmeti Değiştir
-                </button>
-              </div>
 
-              {/* Multi-Staff Specialist Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                  Uzman / Hekim Tercihi
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(businessSlug === "byerman" || businessSlug === "ermankuafor" || category?.toLowerCase().includes("kuaför")
-                    ? [
-                        { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Fark Etmez" },
-                        { id: "staff-1", name: "Erman Usta", role: "Baş Stilist & Kurucu" },
-                        { id: "staff-2", name: "Murat Usta", role: "Kuaför & Saç Tasarım" },
-                        { id: "staff-3", name: "Caner", role: "Sakal & Cilt Uzmanı" },
-                      ]
-                    : [
-                        { id: "ANY_STAFF", name: "⚡ İlk Müsait", role: "Hızlı Randevu" },
-                        { id: "staff-1", name: "Dr. Ahmet Y.", role: "Başhekim" },
-                        { id: "staff-2", name: "Dt. Zeynep K.", role: "Ortodonti" },
-                      ]
-                  ).map((st) => {
-                    const isSelected = selectedStaff === st.id;
+                <div className="grid gap-2.5 sm:grid-cols-2 pt-2">
+                  {services.map((s) => {
+                    const isSelected = selectedService?.id === s.id;
+                    const itemHasPrice = Boolean(s.price && s.price > 0);
                     return (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedStaff(st.id);
-                          setSelectedSlot(null);
-                        }}
-                        className={`p-3 rounded-2xl border text-left transition-all ${
+                      <div
+                        key={s.id}
+                        onClick={() => setSelectedService(s)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                           isSelected
-                            ? "bg-[#0062FF]/25 border-[#0062FF] shadow-md shadow-[#0062FF]/20 text-white"
-                            : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
+                            ? "bg-[#0062FF]/5 border-[#0062FF] ring-2 ring-[#0062FF]/20 shadow-sm"
+                            : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/70"
                         }`}
                       >
-                        <div className="font-bold text-xs">{st.name}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{st.role}</div>
-                      </button>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <h4 className={`font-semibold text-xs sm:text-sm ${isSelected ? "text-[#0062FF]" : "text-[#0F2A4A]"}`}>
+                              {s.name}
+                            </h4>
+                            <p className="text-[11px] text-slate-400 line-clamp-2">
+                              {s.description || "Standart seans ve danışmanlık hizmeti."}
+                            </p>
+                          </div>
+                          <div
+                            className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center mt-0.5 ${
+                              isSelected ? "border-[#0062FF] bg-[#0062FF]" : "border-slate-300"
+                            }`}
+                          >
+                            {isSelected && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                          <span className="text-slate-500 flex items-center gap-1 text-[11px]">
+                            <Clock className="w-3 h-3 text-slate-400" /> {s.duration_minutes} dk
+                          </span>
+
+                          {/* Optional Price badge */}
+                          {itemHasPrice ? (
+                            <span className="font-bold text-[#0062FF] bg-[#0062FF]/10 px-2 py-0.5 rounded-md text-xs">
+                              ₺{s.price?.toLocaleString("tr-TR")}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-              </div>
 
-              <div className="grid md:grid-cols-12 gap-6">
-                {/* Date Picker Input */}
-                <div className="md:col-span-5 space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                    Randevu Günü
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setSelectedSlot(null);
-                    }}
-                    className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    * Pazar günleri hariç tüm günler 09:00 - 18:00 arası açıktır.
-                  </p>
+                <div className="pt-6 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={!selectedService}
+                    onClick={() => setStep(2)}
+                    className="px-6 py-3 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    Tarih ve Saat Seçimine Geç <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ═══════════════════════════════════════
+                STEP 2: CALENDLY MONTH CALENDAR & SLOTS
+                ═══════════════════════════════════════ */}
+            {step === 2 && (
+              <motion.div
+                key="step-2"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-[#0F2A4A]">
+                      Tarih ve Saat Seçin
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {selectedService?.name} • {selectedService?.duration_minutes} dk
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-xs font-semibold text-slate-500 hover:text-[#0F2A4A] flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Hizmeti Değiştir
+                  </button>
                 </div>
 
-                {/* Slots Grid */}
-                <div className="md:col-span-7 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Müsait Saat Dilimleri
-                    </label>
-                    {lockTimer && (
-                      <span className="text-[11px] text-amber-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Slot Kilitlendi (5 dk)
-                      </span>
-                    )}
-                  </div>
-
-                  {loadingSlots ? (
-                    <div className="p-8 rounded-xl bg-white/5 text-center text-xs text-slate-400 animate-pulse">
-                      Saatler taranıyor ve çakışmalar hesaplanıyor...
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
-                      {availableSlots.map((slot) => {
-                        const isSelected = selectedSlot === slot.displayTime;
+                {/* Specialist Selector Chips */}
+                {staffList.length > 1 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                      Uzman / Temsilci Tercihi
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {staffList.map((st) => {
+                        const isSelected = selectedStaff === st.id;
                         return (
                           <button
-                            key={slot.displayTime}
+                            key={st.id}
                             type="button"
-                            disabled={!slot.isAvailable}
-                            onClick={() => handleSlotSelect(slot.displayTime, slot.startUtc)}
-                            className={`py-3 px-2 text-xs font-bold rounded-xl border transition-all ${
+                            onClick={() => {
+                              setSelectedStaff(st.id);
+                              setSelectedSlot(null);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl border text-xs transition-all flex items-center gap-1.5 ${
                               isSelected
-                                ? "bg-[#0062FF] text-white border-[#0062FF] shadow-lg shadow-[#0062FF]/30 scale-105"
-                                : slot.isAvailable
-                                ? "bg-white/5 text-slate-200 border-white/10 hover:bg-white/15 hover:border-[#0062FF]/50"
-                                : "bg-white/[0.02] text-slate-600 border-white/5 cursor-not-allowed line-through"
+                                ? "bg-[#0062FF] text-white border-[#0062FF] font-semibold shadow-xs"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                             }`}
                           >
-                            {slot.displayTime}
+                            <span>{st.name}</span>
+                            <span className={`text-[10px] ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                              ({st.role})
+                            </span>
                           </button>
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
 
-              {/* AI Smart Waitlist Integration */}
-              <div className="pt-2">
-                <SmartWaitlistWidget
-                  tenantId={tenantId}
-                  serviceId={selectedService?.id}
-                  businessName={businessName}
-                  selectedDate={selectedDate}
-                />
-              </div>
+                {/* Dual Grid: Monthly Calendar on Left, Time Slots on Right */}
+                <div className="grid md:grid-cols-12 gap-6 items-start">
+                  {/* Monthly Interactive Calendar */}
+                  <div className="md:col-span-6 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                    {/* Month Nav Header */}
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-xs font-bold text-[#0F2A4A] capitalize">
+                        {format(currentMonth, "MMMM yyyy", { locale: tr })}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 transition-colors"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 transition-colors"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
 
-              <div className="mt-8 flex justify-between items-center pt-4 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300"
-                >
-                  Geri
-                </button>
-                <button
-                  type="button"
-                  disabled={!selectedSlot}
-                  onClick={() => setStep(3)}
-                  className="px-6 py-3.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-sm shadow-lg shadow-[#0062FF]/30 flex items-center gap-2 disabled:opacity-40 transition-all hover:scale-105 active:scale-95"
-                >
-                  Bilgilerinizi Girin <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
+                    {/* Weekday Labels */}
+                    <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-slate-400">
+                      {["Pzt", "Sal", "Çar", "Per", "Cum", "Cts", "Paz"].map((d) => (
+                        <div key={d} className="py-1">{d}</div>
+                      ))}
+                    </div>
 
-          {/* STEP 3: CUSTOMER DETAILS & KVKK FORM */}
-          {step === 3 && (
-            <motion.div
-              key="step-3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div>
-                <h3 className="text-xl font-bold text-white">İletişim & Randevu Detayları</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Seçilen Zaman: <span className="text-[#00BCD4] font-semibold">{selectedDate} - {selectedSlot}</span>
-                </p>
-              </div>
+                    {/* Calendar Days Matrix */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                      {calendarDays.map((calDay) => {
+                        const dateIso = format(calDay, "yyyy-MM-dd");
+                        const isCurrentM = isSameMonth(calDay, currentMonth);
+                        const isPast = isBefore(calDay, today);
+                        const isDaySelected = selectedDate === dateIso;
+                        const isToday = isSameDay(calDay, today);
 
-              {errorMessage && (
-                <div className="p-3.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-200 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400" />
-                  {errorMessage}
-                </div>
-              )}
+                        if (!isCurrentM) {
+                          return <div key={dateIso} className="py-2 text-slate-200 select-none text-[11px]">—</div>;
+                        }
 
-              <form onSubmit={handleCompleteBooking} className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1 ml-1">
-                      Ad Soyad *
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Adınız ve Soyadınız"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
-                      />
+                        if (isPast) {
+                          return (
+                            <div
+                              key={dateIso}
+                              className="py-2 text-slate-300 cursor-not-allowed select-none text-[11px]"
+                            >
+                              {format(calDay, "d")}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={dateIso}
+                            type="button"
+                            onClick={() => {
+                              setSelectedDate(dateIso);
+                              setSelectedSlot(null);
+                            }}
+                            className={`py-2 rounded-xl font-medium transition-all text-[11px] relative ${
+                              isDaySelected
+                                ? "bg-[#0062FF] text-white font-bold shadow-xs scale-105"
+                                : isToday
+                                ? "border border-[#0062FF] text-[#0062FF] font-bold hover:bg-blue-50"
+                                : "text-slate-700 hover:bg-white hover:shadow-2xs"
+                            }`}
+                          >
+                            {format(calDay, "d")}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1 ml-1">
-                      Telefon Numarası (WhatsApp Onayı İçin) *
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="tel"
-                        required
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="05XX XXX XX XX"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
+                  {/* Time Slots Column */}
+                  <div className="md:col-span-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-[#0F2A4A]">
+                        {formattedSelectedDateHeader}
+                      </span>
+                      {lockTimer && (
+                        <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Slot Rezerve Edildi
+                        </span>
+                      )}
+                    </div>
+
+                    {loadingSlots ? (
+                      <div className="py-12 text-center text-xs text-slate-400 bg-slate-50/60 rounded-2xl border border-slate-100 animate-pulse">
+                        Müsait saatler hesaplanıyor...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                        {availableSlots.map((slot) => {
+                          const isSelected = selectedSlot === slot.displayTime;
+                          return (
+                            <button
+                              key={slot.displayTime}
+                              type="button"
+                              disabled={!slot.isAvailable}
+                              onClick={() => handleSlotSelect(slot.displayTime, slot.startUtc)}
+                              className={`py-2.5 px-2 text-xs font-semibold rounded-xl border transition-all ${
+                                isSelected
+                                  ? "bg-[#0062FF] text-white border-[#0062FF] shadow-xs scale-102"
+                                  : slot.isAvailable
+                                  ? "bg-white text-slate-700 border-slate-200 hover:border-[#0062FF] hover:bg-blue-50/50"
+                                  : "bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed line-through opacity-50"
+                              }`}
+                            >
+                              {slot.displayTime}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Waitlist fallback if needed */}
+                    <div className="pt-2">
+                      <SmartWaitlistWidget
+                        tenantId={tenantId}
+                        serviceId={selectedService?.id}
+                        businessName={businessName}
+                        selectedDate={selectedDate}
                       />
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 ml-1">
-                    E-Posta Adresi (Takvim Daveti & Onay İçin) *
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="eposta@adresiniz.com"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 ml-1">
-                    Özel Not veya Belirtmek İstedikleriniz (Opsiyonel)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={customerNotes}
-                    onChange={(e) => setCustomerNotes(e.target.value)}
-                    placeholder="Varsa şikayetiniz, talebiniz veya özel notunuz..."
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0062FF]"
-                  />
-                </div>
-
-                {/* Payment Method Selector */}
-                <div className="pt-2 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-300 ml-1">
-                    Ödeme Yöntemi Tercihi
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("VENUE")}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        paymentMethod === "VENUE"
-                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Wallet className="w-4 h-4 text-[#00BCD4]" />
-                        <span className="text-xs font-bold">Klinikte / Yerinde</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Nakit veya POS ile seans günü ödeyin.</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("STRIPE")}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        paymentMethod === "STRIPE"
-                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="w-4 h-4 text-[#00BCD4]" />
-                        <span className="text-xs font-bold">Kredi Kartı (Stripe)</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Global & Güvenli online kart ödemesi.</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("IYZICO")}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        paymentMethod === "IYZICO"
-                          ? "bg-[#0062FF]/20 border-[#0062FF] text-white shadow-md shadow-[#0062FF]/20"
-                          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-bold">İyzico 3D Secure</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Tüm yerli banka ve taksit seçenekleri.</p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* KVKK Consent Checkbox */}
-                <div className="pt-2">
-                  <label className="flex items-start gap-3 cursor-pointer text-xs text-slate-300 select-none">
-                    <input
-                      type="checkbox"
-                      checked={kvkkConsent}
-                      onChange={(e) => setKvkkConsent(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded bg-white/10 border-white/20 text-[#0062FF] focus:ring-[#0062FF]"
-                    />
-                    <span>
-                      6698 sayılı KVKK kapsamında kişisel verilerimin randevu koordinasyonu, SMS ve WhatsApp bilgilendirmeleri amacıyla işlenmesini kabul ediyorum.
-                    </span>
-                  </label>
-                </div>
-
-                <div className="mt-8 flex justify-between items-center pt-4 border-t border-white/10">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
-                    className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300"
+                    onClick={() => setStep(1)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     Geri
                   </button>
                   <button
-                    type="submit"
-                    disabled={isSubmitting || !kvkkConsent}
-                    className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-2 disabled:opacity-40 transition-all hover:scale-105 active:scale-95"
+                    type="button"
+                    disabled={!selectedSlot}
+                    onClick={() => setStep(3)}
+                    className="px-6 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold shadow-md flex items-center gap-1.5 disabled:opacity-40 transition-all active:scale-[0.99]"
                   >
-                    {isSubmitting ? "Randevu Oluşturuluyor..." : "Randevuyu Onayla"}
-                    <CheckCircle2 className="w-4 h-4" />
+                    İletişim Bilgilerine Geç <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
-              </form>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* STEP 4: SUCCESS CONFIRMATION */}
-          {step === 4 && (
-            <motion.div
-              key="step-4"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-8 space-y-6"
-            >
-              <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/20">
-                <CheckCircle2 className="w-10 h-10" />
-              </div>
-
-              <div>
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  Randevunuz Başarıyla Oluşturuldu!
-                </h3>
-                <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-                  {businessName} randevunuz için onay bilgileri ve takvim daveti{" "}
-                  <span className="text-sky-300 font-semibold">{customerEmail}</span> adresine iletildi.
-                </p>
-              </div>
-
-              <div className="max-w-md mx-auto p-5 rounded-2xl bg-white/5 border border-white/10 text-left text-xs space-y-2.5">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Hizmet:</span>
-                  <span className="font-semibold text-white">{selectedService?.name}</span>
+            {/* ═══════════════════════════════════════
+                STEP 3: CUSTOMER DETAILS FORM
+                ═══════════════════════════════════════ */}
+            {step === 3 && (
+              <motion.div
+                key="step-3"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="space-y-5"
+              >
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-[#0F2A4A]">
+                    İletişim &amp; Teyit Bilgileri
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Randevu onayınız WhatsApp ve e-posta ile otomatik iletilecektir.
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Tarih & Saat:</span>
-                  <span className="font-semibold text-[#00BCD4]">{selectedDate} - {selectedSlot}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Danışan:</span>
-                  <span className="font-semibold text-white">{customerName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Tutar / Durum:</span>
-                  <span className="font-semibold text-emerald-400">
-                    {selectedService?.price && selectedService.price > 0
-                      ? `₺${selectedService.price.toLocaleString("tr-TR")} (Onaylandı)`
-                      : "Onaylandı"}
-                  </span>
-                </div>
-              </div>
 
-              {/* Online Meeting Action & Calendar Export */}
-              <div className="max-w-md mx-auto space-y-3 pt-2">
-                <a
-                  href={`https://meet.google.com/rf-${(selectedSlot || "1400").replace(":", "")}-live`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-semibold text-xs shadow-sm flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Video className="w-4 h-4 text-slate-950" />
-                  <span>Google Meet Görüşmesine Katıl</span>
-                </a>
+                {errorMessage && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <form onSubmit={handleCompleteBooking} className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                        Ad Soyad *
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          required
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          placeholder="Adınız ve Soyadınız"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                        Telefon Numarası (WhatsApp Teyidi) *
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="tel"
+                          required
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          placeholder="05XX XXX XX XX"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                      E-Posta Adresi (Takvim Daveti İçin) *
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        required
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="eposta@adresiniz.com"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#0F2A4A] mb-1">
+                      Özel Not veya İstekleriniz (Opsiyonel)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={customerNotes}
+                      onChange={(e) => setCustomerNotes(e.target.value)}
+                      placeholder="Belirtmek istediğiniz ek bir durum veya tercihiniz..."
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/10 text-xs text-slate-800 placeholder-slate-400 outline-none transition"
+                    />
+                  </div>
+
+                  {/* Payment Method Selector */}
+                  <div className="space-y-2 pt-1">
+                    <label className="block text-xs font-semibold text-[#0F2A4A]">
+                      Ödeme Yöntemi Tercihi
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("VENUE")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          paymentMethod === "VENUE"
+                            ? "border-[#0062FF] bg-[#0062FF]/5 ring-1 ring-[#0062FF]/20"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-semibold text-xs text-[#0F2A4A] mb-0.5">
+                          <Wallet className="w-3.5 h-3.5 text-[#0062FF]" />
+                          <span>İşletmede / Yerinde</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Randevu günü nakit veya POS ile ödeyin.</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("STRIPE")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          paymentMethod === "STRIPE"
+                            ? "border-[#0062FF] bg-[#0062FF]/5 ring-1 ring-[#0062FF]/20"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-semibold text-xs text-[#0F2A4A] mb-0.5">
+                          <CreditCard className="w-3.5 h-3.5 text-[#0062FF]" />
+                          <span>Kredi Kartı (Stripe)</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Global kart altyapısıyla güvenli ödeme.</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("IYZICO")}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          paymentMethod === "IYZICO"
+                            ? "border-[#0062FF] bg-[#0062FF]/5 ring-1 ring-[#0062FF]/20"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-semibold text-xs text-[#0F2A4A] mb-0.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>İyzico 3D Secure</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Yerli bankalar ve taksit imkanı.</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* KVKK Checkbox */}
+                  <div className="pt-1">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 select-none">
+                      <input
+                        type="checkbox"
+                        checked={kvkkConsent}
+                        onChange={(e) => setKvkkConsent(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0062FF] focus:ring-[#0062FF]"
+                      />
+                      <span className="text-[11px] leading-relaxed">
+                        6698 sayılı KVKK kapsamında kişisel verilerimin randevu koordinasyonu ve WhatsApp/SMS bilgilendirmeleri amacıyla işlenmesini kabul ediyorum.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Geri
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !kvkkConsent}
+                      className="px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md flex items-center gap-1.5 disabled:opacity-40 transition-all active:scale-[0.99]"
+                    >
+                      {isSubmitting ? "Oluşturuluyor..." : "Randevuyu Onayla"}
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+
+            {/* ═══════════════════════════════════════
+                STEP 4: CALENDLY-GRADE SUCCESS CONFIRMATION
+                ═══════════════════════════════════════ */}
+            {step === 4 && (
+              <motion.div
+                key="step-4"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-6 space-y-5"
+              >
+                <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#0F2A4A]">
+                    Randevunuz Başarıyla Oluşturuldu!
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Detaylar ve takvim davetiyesi <span className="font-semibold text-slate-700">{customerEmail}</span> adresine iletildi.
+                  </p>
+                </div>
+
+                {/* Summary Card */}
+                <div className="max-w-md mx-auto p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-left text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Hizmet:</span>
+                    <span className="font-semibold text-[#0F2A4A]">{selectedService?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tarih &amp; Saat:</span>
+                    <span className="font-semibold text-[#0062FF]">
+                      {formattedSelectedDateHeader} • {selectedSlot}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Danışan:</span>
+                    <span className="font-semibold text-[#0F2A4A]">{customerName}</span>
+                  </div>
+                  {hasPrice && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Tutar:</span>
+                      <span className="font-semibold text-emerald-600">
+                        ₺{selectedService?.price?.toLocaleString("tr-TR")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Calendar Add & Meeting Actions */}
+                <div className="max-w-md mx-auto space-y-2.5 pt-2">
                   <a
-                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(businessName + " - " + (selectedService?.name || "Randevu"))}&dates=${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z/${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z&details=${encodeURIComponent("Online Randevu — Powered by randevuformu.com")}`}
+                    href={`https://meet.google.com/rf-${(selectedSlot || "1400").replace(":", "")}-live`}
                     target="_blank"
                     rel="noreferrer"
-                    className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#0F2A4A] hover:bg-[#1a385c] text-white font-semibold text-xs shadow-sm flex items-center justify-center gap-2 transition-colors"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    Google Takvim
+                    <Video className="w-4 h-4 text-[#00BCD4]" />
+                    <span>Google Meet Görüşmesine Katıl</span>
                   </a>
 
+                  <div className="grid grid-cols-2 gap-2">
+                    <a
+                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(businessName + " - " + (selectedService?.name || "Randevu"))}&dates=${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z/${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z&details=${encodeURIComponent("Online Randevu — randevuformu.com")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                      Google Takvim
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${businessName} - ${selectedService?.name}\nDESCRIPTION:Randevu Onayı\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
+                        const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.setAttribute("download", `randevu-${selectedDate || "onay"}.ics`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5 text-slate-500" />
+                      Apple / iCal (.ics)
+                    </button>
+                  </div>
+
+                  {/* Digital Wallet Card — Clean In-App Feedback (No alert popup!) */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/wallet/pass", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            bookingId: `bk-${Date.now()}`,
+                            customerName,
+                            businessName,
+                            serviceName: selectedService?.name,
+                            appointmentDate: selectedDate,
+                            appointmentTime: selectedSlot,
+                          }),
+                        });
+                        setWalletSuccess(true);
+                      } catch {
+                        setWalletSuccess(true);
+                      }
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Smartphone className="w-3.5 h-3.5 text-slate-600" />
+                    <span>{walletSuccess ? "✓ Dijital Cüzdan Kartı Hazırlandı" : "Apple & Google Cüzdan Kartı Ekle"}</span>
+                  </button>
+
+                  {walletSuccess && (
+                    <p className="text-[11px] text-emerald-600 font-medium animate-fade-in">
+                      ✓ Randevu kartınız hazırlandı. Apple Wallet / Google Cüzdan uygulamanıza aktarılabilir.
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-4">
                   <button
                     type="button"
                     onClick={() => {
-                      const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${businessName} - ${selectedService?.name}\nDESCRIPTION:Randevu Onayı\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
-                      const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
-                      const link = document.createElement("a");
-                      link.href = URL.createObjectURL(blob);
-                      link.setAttribute("download", `randevu-${selectedDate || "onay"}.ics`);
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      setStep(1);
+                      setSelectedSlot(null);
+                      setWalletSuccess(false);
                     }}
-                    className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5 transition-colors"
+                    className="px-5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-[#0F2A4A] transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5 text-slate-400" />
-                    Apple / iCal (.ics)
+                    Yeni Bir Randevu Oluştur
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch("/api/wallet/pass", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          bookingId: `bk-${Date.now()}`,
-                          customerName,
-                          businessName,
-                          serviceName: selectedService?.name,
-                          appointmentDate: selectedDate,
-                          appointmentTime: selectedSlot,
-                        }),
-                      });
-                      await res.json();
-                      alert("Dijital Randevu Kartınız Hazırlandı. Apple Wallet / Google Cüzdan uygulamanıza eklenebilir.");
-                    } catch (e) {
-                      alert("Kart oluşturuldu.");
-                    }
-                  }}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 font-medium text-xs shadow-sm flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Apple & Google Cüzdan Kartı Ekle</span>
-                </button>
-              </div>
-
-              <div className="pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep(1);
-                    setBookingSuccess(false);
-                    setSelectedSlot(null);
-                  }}
-                  className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-400 hover:text-white transition-all"
-                >
-                  Yeni Bir Randevu Oluştur
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

@@ -26,6 +26,8 @@ import {
   QrCode,
   BookOpen,
   HeartPulse,
+  Copy,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -50,6 +52,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const [tenantName, setTenantName] = useState("İşletme Yönetim Paneli");
   const [tenantSlug, setTenantSlug] = useState("dashboard");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://randevuformu.com";
+    const url = `${origin}/${tenantSlug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   useEffect(() => {
     const updateTenantInfo = () => {
@@ -249,12 +260,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          <div className="flex items-center gap-3 relative">
+          <div className="flex items-center gap-2.5 relative">
+            {/* Calendly-style Quick Link Copy */}
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0F2A4A] text-white hover:bg-[#0062FF] transition-all shadow-xs cursor-pointer active:scale-95"
+              title="Müşterilerinizle paylaşacağınız canlı randevu linkini kopyalayın"
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-[#00BCD4]" />
+                  <span>Kopyalandı!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-[#00BCD4]" />
+                  <span className="hidden sm:inline">Randevu Linkini Kopyala</span>
+                  <span className="sm:hidden">Linki Kopyala</span>
+                </>
+              )}
+            </button>
+
             {/* Quick Live Preview Link */}
             <Link
               href={`/${tenantSlug}`}
               target="_blank"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-[#0062FF]" />
               <span>Canlı Sayfamı Aç</span>
