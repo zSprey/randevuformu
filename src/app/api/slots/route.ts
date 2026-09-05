@@ -1,7 +1,16 @@
 import { NextResponse, NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { calculateAvailableSlots } from "@/lib/engine/slotCalculator";
+import { StaffRouter } from "@/lib/engine/staffRouter";
 import { slotLockManager } from "@/lib/engine/lockManager";
+import {
+  getByErmanStaffAsEngineStaff,
+  getStaffWorkingHours,
+  getStaffById,
+  BYERMAN_STAFF_LIST,
+} from "@/lib/storage/staffStore";
+import { getStoredAppointments } from "@/lib/storage/appointmentsStore";
+import { Appointment } from "@/types/schema";
 import {
   apiSuccess,
   apiBadRequest,
@@ -9,100 +18,190 @@ import {
   handleApiError,
 } from "@/lib/apiResponse";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const slug = searchParams.get("slug") || "dr-ahmet";
+    const slug = searchParams.get("slug") || searchParams.get("tenant") || "byerman";
     const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
     const duration = parseInt(searchParams.get("duration") || "30", 10);
-    const staffId = searchParams.get("staffId") || undefined;
+    const staffId = searchParams.get("staffId") || searchParams.get("staff_id") || undefined;
     const serviceId = searchParams.get("serviceId") || "default-service";
     const maxCapacity = parseInt(searchParams.get("maxCapacity") || "1", 10);
+
+    const isErmanKuafor = slug === "byerman" || slug === "ermankuafor";
 
     // 1. Fetch business ID
     const { data: business } = await supabase
       .from("businesses")
       .select("id, name")
       .eq("slug", slug)
-      .single();
+      .maybeSingle();
 
-    const businessId = business?.id || "demo-business-id";
+    const businessId = business?.id || (isErmanKuafor ? "byerman-id" : "demo-business-id");
 
-    // 2. Fetch existing appointments for this day
-    let query = supabase
+    // 2. Fetch existing appointments from dual storage (Edge Config + Supabase)
+    const storedApps = await getStoredAppointments(slug);
+    
+    // Also query Supabase directly for any external entries
+    let dbQuery = supabase
       .from("appointments")
-      .select("appointment_date, appointment_time, status, staff_id")
-      .eq("business_id", businessId)
+      .select("id, appointment_date, appointment_time, status, staff_id")
       .eq("appointment_date", date);
 
-    if (staffId && staffId !== "ANY_STAFF") {
-      query = query.eq("staff_id", staffId);
+    if (isErmanKuafor) {
+      dbQuery = dbQuery.or("business_id.eq.byerman,tenant_id.eq.byerman,tenant.eq.byerman");
+    } else {
+      dbQuery = dbQuery.eq("business_id", businessId);
     }
 
-    const { data: dbAppointments } = await query;
+    const { data: dbAppointments } = await dbQuery;
 
-    const existingBookings = (dbAppointments || []).map((a: any) => {
+    // Merge and deduplicate appointments
+    const appointmentMap = new Map<string, any>();
+
+    for (const a of storedApps) {
+      if (a.appointment_date === date && a.status !== "cancelled") {
+        appointmentMap.set(a.id, a);
+      }
+    }
+
+    for (const a of dbAppointments || []) {
+      if (a.status !== "cancelled" && a.status !== "CANCELLED") {
+        if (!appointmentMap.has(a.id)) {
+          appointmentMap.set(a.id, a);
+        }
+      }
+    }
+
+    // Convert to Appointment objects suitable for StaffRouter & slot calculator
+    const existingBookings: Appointment[] = Array.from(appointmentMap.values()).map((a) => {
       const timeClean = a.appointment_time?.slice(0, 5) || "09:00";
       const startUtc = new Date(`${a.appointment_date}T${timeClean}:00+03:00`).toISOString();
       const endUtc = new Date(new Date(startUtc).getTime() + duration * 60000).toISOString();
       return {
+        id: a.id,
+        tenantId: slug,
+        serviceId: serviceId,
+        staffId: a.staff_id || "erman-usta",
+        customerId: "cust",
+        customerName: a.customer_name || "",
+        customerEmail: "",
+        customerPhone: a.customer_phone || "",
         startUtc,
         endUtc,
-        status: a.status || "confirmed",
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        paymentAmount: 0,
+        cancellationToken: "",
+        rescheduleToken: "",
+        createdAt: a.created_at || new Date().toISOString(),
+        updatedAt: a.created_at || new Date().toISOString(),
       };
     });
 
-    // 3. Define standard working hours (Dynamic or Business Default)
+    const isAnyStaff = !staffId || staffId === "ANY_STAFF";
+
+    // 3. Multi-Staff Resolution: If ANY_STAFF or undefined, use StaffRouter.calculateAggregatedSlots
+    if (isAnyStaff && isErmanKuafor) {
+      const engineStaff = await getByErmanStaffAsEngineStaff();
+
+      const aggregated = StaffRouter.calculateAggregatedSlots({
+        date,
+        service: {
+          id: serviceId,
+          tenantId: businessId,
+          name: "Tıraş Hizmeti",
+          slug: "tiras",
+          durationMinutes: duration,
+          bufferTimeBeforeMinutes: isErmanKuafor ? 0 : 5,
+          bufferTimeAfterMinutes: isErmanKuafor ? 0 : 5,
+          price: 350,
+          currency: "TRY",
+          requirePrepayment: false,
+          maxCapacityPerSlot: maxCapacity,
+          assignedStaffIds: [],
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        staffList: engineStaff,
+        existingBookings,
+        slotIntervalMinutes: 30,
+        timezone: "Europe/Istanbul",
+        checkLockManager: true,
+      });
+
+      return apiSuccess({
+        date,
+        totalSlots: aggregated.slots.length,
+        availableSlotsCount: aggregated.totalAvailableSlots,
+        slots: aggregated.slots,
+      });
+    }
+
+    // 4. Single Staff Slot Calculation (or non-Erman salon)
+    const effectiveStaffId = staffId || "erman-usta";
+    const staffMeta = getStaffById(effectiveStaffId);
+    const staffName = staffMeta?.name || (effectiveStaffId === "erman-usta" ? "Erman Usta" : "Ahmet Kalfa");
+
     const dateParts = date.split("-").map(Number);
     const targetDateObj = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0));
     const dayOfWeek = targetDateObj.getUTCDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-    const isErmanKuafor = slug === "byerman" || slug === "ermankuafor";
-    const customStartTime = searchParams.get("startTime");
-    const customEndTime = searchParams.get("endTime");
-
-    const workingHours = {
+    const staffWeeklyHours = await getStaffWorkingHours(effectiveStaffId, slug);
+    const daySchedule = staffWeeklyHours.find((wh) => wh.dayOfWeek === dayOfWeek) || {
       dayOfWeek,
-      startTime: customStartTime || "09:00",
-      endTime: customEndTime || (isErmanKuafor ? "20:00" : "19:00"),
-      breakStartTime: isErmanKuafor ? undefined : "12:30",
-      breakEndTime: isErmanKuafor ? undefined : "13:30",
-      isOffDay: isErmanKuafor ? false : dayOfWeek === 0, // Pazar günleri varsayılan kapalı
+      startTime: "09:00",
+      endTime: "20:00",
+      breakStartTime: effectiveStaffId === "ahmet-kalfa" ? "14:00" : "13:00",
+      breakEndTime: effectiveStaffId === "ahmet-kalfa" ? "15:00" : "14:00",
+      isOffDay: false,
     };
 
-    // 4. Calculate available slots
+    // Filter bookings assigned to this staff member
+    const staffBookings = existingBookings
+      .filter((b) => b.staffId === effectiveStaffId)
+      .map((b) => ({
+        startUtc: b.startUtc,
+        endUtc: b.endUtc,
+        status: b.status,
+      }));
+
     const slots = calculateAvailableSlots({
       date,
       durationMinutes: duration,
       bufferTimeBeforeMinutes: isErmanKuafor ? 0 : 5,
       bufferTimeAfterMinutes: isErmanKuafor ? 0 : 5,
-      workingHours,
-      existingBookings,
+      workingHours: daySchedule,
+      existingBookings: staffBookings,
       slotIntervalMinutes: 30,
     });
 
-    // 5. Annotate slots with real-time capacity and lock status
+    // Annotate slots with real-time capacity and lock status
     const annotatedSlots = slots.map((slot) => {
       const lockStatus = slotLockManager.getSlotCapacityStatus(
         businessId,
         slot.startUtc,
         serviceId,
-        staffId || "any",
+        effectiveStaffId,
         maxCapacity
       );
 
-      if (lockStatus.isFullyLocked) {
-        return {
-          ...slot,
-          isAvailable: false,
-          remainingCapacity: 0,
-          reasonIfNotAvailable: "Şu anda başka bir danışan işlem yapıyor (Kilitli)",
-        };
-      }
+      const isLocked = lockStatus.isFullyLocked;
+      const isAvailable = slot.isAvailable && !isLocked;
 
       return {
         ...slot,
-        remainingCapacity: lockStatus.remainingCapacity,
+        isAvailable,
+        availableStaffIds: isAvailable ? [effectiveStaffId] : [],
+        availableStaffNames: isAvailable ? [staffName] : [],
+        availableStaffCount: isAvailable ? 1 : 0,
+        remainingCapacity: isLocked ? 0 : lockStatus.remainingCapacity,
+        reasonIfNotAvailable: isLocked
+          ? "Şu anda başka bir danışan işlem yapıyor (Kilitli)"
+          : slot.reasonIfNotAvailable,
       };
     });
 

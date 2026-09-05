@@ -163,7 +163,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (subdomain === 'www' || subdomain === 'admin' || subdomain === hostHeader) {
+  const RESERVED_SUBDOMAINS = new Set([
+    'www', 'admin', 'api', 'app', 'login', 'panel', 'dashboard',
+    'settings', 'staff', 'calendar', 'clients', 'packages', 'retention',
+    'qr-stand', 'blog', 'sektorler', 'kesfet', 'contact', 'ornek',
+    'tv', 'widget', 'auth', 'mail', 'status', 'assets', 'cdn', 'static'
+  ]);
+
+  if (RESERVED_SUBDOMAINS.has(subdomain) || subdomain === hostHeader) {
     subdomain = ''
   }
 

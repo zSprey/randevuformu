@@ -35,6 +35,8 @@ import {
   UploadCloud,
   Star,
   MessageSquare,
+  Copy,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -87,6 +89,56 @@ export default function SettingsPage() {
   const [workingHoursSummary, setWorkingHoursSummary] = useState("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
   const [isSavingClinic, setIsSavingClinic] = useState(false);
+  const [subdomainStatus, setSubdomainStatus] = useState<{
+    checking: boolean;
+    available?: boolean;
+    reason?: string;
+    fullUrl?: string;
+  }>({ checking: false, available: true, reason: "Mevcut alan adınız yayında." });
+
+  // Subdomain Sanitizer & Live Checker
+  const handleSubdomainChange = (val: string) => {
+    const trMap: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" };
+    let cleaned = val.toLowerCase().replace(/[çğıöşü]/g, (m) => trMap[m] || m);
+    cleaned = cleaned.replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-");
+    setClinicSlug(cleaned);
+  };
+
+  useEffect(() => {
+    if (!clinicSlug || clinicSlug.trim().length < 3) {
+      setSubdomainStatus({ checking: false, available: false, reason: "En az 3 karakter giriniz." });
+      return;
+    }
+
+    setSubdomainStatus((prev) => ({ ...prev, checking: true }));
+    const timer = setTimeout(async () => {
+      try {
+        const savedSlug = localStorage.getItem("rf_tenant_slug") || "byerman";
+        const res = await fetch(`/api/business/subdomain/check?subdomain=${clinicSlug}&currentSlug=${savedSlug}`);
+        const data = await res.json();
+        setSubdomainStatus({
+          checking: false,
+          available: data.available,
+          reason: data.reason,
+          fullUrl: data.fullUrl,
+        });
+      } catch {
+        setSubdomainStatus({ checking: false, available: true, reason: "Alan adı biçimi uygun." });
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [clinicSlug]);
+
+  const copySubdomainUrl = () => {
+    const url = `https://${clinicSlug || "byerman"}.randevuformu.com`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      showToast(`✓ Özel bağlantı kopyalandı: ${url}`);
+    } else {
+      showToast(`Bağlantı: ${url}`);
+    }
+  };
 
   // WhatsApp Hotline (Module 1)
   const [businessId, setBusinessId] = useState("cl_demo_business_123");
@@ -2300,18 +2352,106 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Özel Linkiniz (Subdomain / Slug)</label>
-                <div className="flex items-center">
-                  <span className="px-3.5 py-2.5 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-500 font-mono">
-                    randevuformu.com/
+              {/* ÖZEL SUBDOMAIN & ALAN ADI SEÇİMİ (VIP MODÜL) */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0F172A] via-[#0A192F] to-[#0F2A4A] text-white border border-[#0062FF]/30 shadow-lg space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#0062FF]/30 border border-[#0062FF]/50 flex items-center justify-center text-[#38BDF8]">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        Özel Alt Alan Adı (Subdomain)
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#0062FF]/20 text-[#38BDF8] border border-[#0062FF]/40">
+                          SaaS Özelliği
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-300">
+                        İşletmenizin müşterileriyle paylaşacağı özel internet adresi.
+                      </p>
+                    </div>
+                  </div>
+                  {subdomainStatus.available && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 self-start sm:self-auto">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Yayında &amp; Aktif
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-2">
+                    İstediğiniz Alan Adını Belirleyin
+                  </label>
+                  <div className="flex items-center rounded-xl bg-white/5 border border-white/15 p-1.5 focus-within:border-[#38BDF8] transition-all">
+                    <span className="pl-3 pr-2 text-xs font-mono text-slate-400 select-none">
+                      https://
+                    </span>
+                    <input
+                      type="text"
+                      value={clinicSlug}
+                      onChange={(e) => handleSubdomainChange(e.target.value)}
+                      placeholder="isletmeadi"
+                      className="flex-1 bg-transparent px-2 py-1.5 text-sm font-bold text-white placeholder-slate-500 focus:outline-none font-mono"
+                    />
+                    <span className="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-mono font-bold text-[#38BDF8] select-none border border-white/10">
+                      .randevuformu.com
+                    </span>
+                  </div>
+
+                  {/* Canlı Durum Bildirimi */}
+                  <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs min-h-[24px]">
+                    <div className="flex items-center gap-1.5">
+                      {subdomainStatus.checking ? (
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Müsaitlik kontrol ediliyor...
+                        </span>
+                      ) : subdomainStatus.available === true ? (
+                        <span className="text-emerald-400 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          {subdomainStatus.reason || "Bu alan adı boşta ve kullanıma hazır!"}
+                        </span>
+                      ) : subdomainStatus.available === false ? (
+                        <span className="text-rose-400 font-medium flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                          {subdomainStatus.reason}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">
+                          Yalnızca küçük harf, rakam ve tire (-) içerebilir (En az 3 karakter).
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Hızlı Aksiyon Butonları */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={copySubdomainUrl}
+                        className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-[11px] font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" /> Bağlantıyı Kopyala
+                      </button>
+                      <a
+                        href={`https://${clinicSlug || "byerman"}.randevuformu.com`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 rounded-lg bg-[#0062FF] hover:bg-[#0051d4] text-white text-[11px] font-medium transition-colors flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Ziyaret Et
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* İki Yönlü Erişim Garantisi Açıklaması */}
+                <div className="pt-2.5 border-t border-white/10 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <span>
+                    💡 <strong>Çifte Erişim:</strong> Randevu sayfanıza hem <code className="text-[#38BDF8]">https://{clinicSlug || "isletme"}.randevuformu.com</code> hem de <code className="text-[#38BDF8]">https://randevuformu.com/{clinicSlug || "isletme"}</code> üzerinden erişilebilir.
                   </span>
-                  <input
-                    type="text"
-                    value={clinicSlug}
-                    onChange={(e) => setClinicSlug(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-r-xl bg-slate-50/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
-                  />
+                  <span className="text-emerald-400 font-semibold shrink-0">
+                    SSL Sertifikası Otomatik Aktif 🔒
+                  </span>
                 </div>
               </div>
 

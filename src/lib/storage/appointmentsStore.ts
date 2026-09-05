@@ -16,8 +16,13 @@ export interface StoredAppointment {
   appointment_time: string;
   status: "confirmed" | "seated" | "completed" | "cancelled" | "pending";
   services?: { name: string; price_text?: string };
+  staff_id?: string;
+  staff_name?: string;
   created_at?: string;
 }
+
+// Memory cache per tenant for resilient fallback
+const appointmentsMemoryCache = new Map<string, StoredAppointment[]>();
 
 // 1. GET STORED APPOINTMENTS (STRICT MULTI-TENANT ISOLATION)
 export async function getStoredAppointments(tenant?: string): Promise<StoredAppointment[]> {
@@ -34,23 +39,27 @@ export async function getStoredAppointments(tenant?: string): Promise<StoredAppo
   let edgeApps: StoredAppointment[] = [];
 
   // A. Try Edge Config (Instant Global Read)
-  try {
-    const res = await fetch(`${EDGE_CONFIG_READ_URL}`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const list = data?.items?.[storageKey] || data?.[storageKey];
-      if (Array.isArray(list)) {
-        edgeApps = list.map((item) => ({
-          ...item,
-          tenant: item.tenant || cleanTenant,
-          tenant_id: item.tenant_id || cleanTenant,
-        }));
+  if (EDGE_CONFIG_READ_URL) {
+    try {
+      const res = await fetch(EDGE_CONFIG_READ_URL, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = data?.items?.[storageKey] || data?.[storageKey];
+        if (Array.isArray(list)) {
+          edgeApps = list.map((item) => ({
+            ...item,
+            tenant: item.tenant || cleanTenant,
+            tenant_id: item.tenant_id || cleanTenant,
+            staff_id: item.staff_id || undefined,
+            staff_name: item.staff_name || undefined,
+          }));
+        }
       }
+    } catch (e) {
+      console.warn("[EdgeConfig] Read error:", e);
     }
-  } catch (e) {
-    console.warn("[EdgeConfig] Read error:", e);
   }
 
   // B. Try Supabase (Filtreli Veritabanı Sorgusu)
@@ -82,6 +91,8 @@ export async function getStoredAppointments(tenant?: string): Promise<StoredAppo
         appointment_time: d.appointment_time,
         status: d.status || "confirmed",
         services: d.services || { name: d.customer_note || "Genel Randevu" },
+        staff_id: d.staff_id || undefined,
+        staff_name: d.staff_name || undefined,
         created_at: d.created_at,
       }));
     }
@@ -89,8 +100,12 @@ export async function getStoredAppointments(tenant?: string): Promise<StoredAppo
     // Graceful fallback
   }
 
-  // Merge by id (Edge Config + DB)
+  // Merge by id (Edge Config + DB + Memory Cache)
   const map = new Map<string, StoredAppointment>();
+  const memList = appointmentsMemoryCache.get(cleanTenant) || [];
+  for (const m of memList) {
+    if (m && m.id) map.set(m.id, m);
+  }
   for (const a of edgeApps) {
     if (a && a.id) map.set(a.id, a);
   }
@@ -98,11 +113,14 @@ export async function getStoredAppointments(tenant?: string): Promise<StoredAppo
     if (a && a.id) map.set(a.id, a);
   }
 
-  return Array.from(map.values()).sort((a, b) => {
+  const merged = Array.from(map.values()).sort((a, b) => {
     const dateComp = (b.appointment_date || "").localeCompare(a.appointment_date || "");
     if (dateComp !== 0) return dateComp;
     return (a.appointment_time || "").localeCompare(b.appointment_time || "");
   });
+
+  appointmentsMemoryCache.set(cleanTenant, merged);
+  return merged;
 }
 
 // 2. SAVE NEW APPOINTMENT (ISOLATED BY TENANT)
@@ -112,35 +130,48 @@ export async function saveNewAppointment(app: StoredAppointment): Promise<boolea
 
   // A. Read current for this tenant only
   const current = await getStoredAppointments(tenantKey);
-  const updated = [{ ...app, tenant: tenantKey, tenant_id: tenantKey }, ...current.filter((x) => x.id !== app.id)];
+  const updated = [
+    {
+      ...app,
+      tenant: tenantKey,
+      tenant_id: tenantKey,
+      staff_id: app.staff_id,
+      staff_name: app.staff_name,
+    },
+    ...current.filter((x) => x.id !== app.id),
+  ];
+
+  appointmentsMemoryCache.set(tenantKey, updated);
 
   // B. Write to Edge Config
-  try {
-    const patchRes = await fetch(
-      `https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${VERCEL_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              operation: "upsert",
-              key: storageKey,
-              value: updated,
-            },
-          ],
-        }),
-      }
-    );
+  if (EDGE_CONFIG_ID && VERCEL_TOKEN) {
+    try {
+      const patchRes = await fetch(
+        `https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${VERCEL_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: [
+              {
+                operation: "upsert",
+                key: storageKey,
+                value: updated,
+              },
+            ],
+          }),
+        }
+      );
 
-    if (!patchRes.ok) {
-      console.warn("[EdgeConfig] Write returned non-200:", patchRes.status);
+      if (!patchRes.ok) {
+        console.warn("[EdgeConfig] Write returned non-200:", patchRes.status);
+      }
+    } catch (err) {
+      console.warn("[EdgeConfig] Write exception:", err);
     }
-  } catch (err) {
-    console.warn("[EdgeConfig] Write exception:", err);
   }
 
   // C. Write to Supabase with tenant column
@@ -156,6 +187,8 @@ export async function saveNewAppointment(app: StoredAppointment): Promise<boolea
         appointment_date: app.appointment_date,
         appointment_time: app.appointment_time,
         status: app.status,
+        staff_id: app.staff_id || null,
+        staff_name: app.staff_name || null,
       },
     ]);
   } catch {
@@ -177,29 +210,91 @@ export async function updateAppointmentStatus(
   const current = await getStoredAppointments(tenantKey);
   const updated = current.map((a) => (a.id === id ? { ...a, status: newStatus } : a));
 
-  try {
-    await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${VERCEL_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            operation: "upsert",
-            key: storageKey,
-            value: updated,
-          },
-        ],
-      }),
-    });
-  } catch (e) {
-    console.warn("[EdgeConfig] Update status error:", e);
+  appointmentsMemoryCache.set(tenantKey, updated);
+
+  if (EDGE_CONFIG_ID && VERCEL_TOKEN) {
+    try {
+      await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              operation: "upsert",
+              key: storageKey,
+              value: updated,
+            },
+          ],
+        }),
+      });
+    } catch (e) {
+      console.warn("[EdgeConfig] Update status error:", e);
+    }
   }
 
   try {
     await supabase.from("appointments").update({ status: newStatus }).eq("id", id);
+  } catch {
+    // Ignore
+  }
+
+  return true;
+}
+
+// 3B. UPDATE APPOINTMENT (GENERAL FIELDS)
+export async function updateAppointment(
+  id: string,
+  updates: Partial<StoredAppointment>,
+  tenant?: string
+): Promise<boolean> {
+  const tenantKey = (tenant || "byerman").toLowerCase();
+  const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
+
+  const current = await getStoredAppointments(tenantKey);
+  const updated = current.map((a) => (a.id === id ? { ...a, ...updates } : a));
+
+  appointmentsMemoryCache.set(tenantKey, updated);
+
+  if (EDGE_CONFIG_ID && VERCEL_TOKEN) {
+    try {
+      await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              operation: "upsert",
+              key: storageKey,
+              value: updated,
+            },
+          ],
+        }),
+      });
+    } catch (e) {
+      console.warn("[EdgeConfig] Update appointment error:", e);
+    }
+  }
+
+  try {
+    const dbUpdatePayload: Record<string, any> = {};
+    if (updates.status) dbUpdatePayload.status = updates.status;
+    if (updates.staff_id !== undefined) dbUpdatePayload.staff_id = updates.staff_id;
+    if (updates.staff_name !== undefined) dbUpdatePayload.staff_name = updates.staff_name;
+    if (updates.appointment_date) dbUpdatePayload.appointment_date = updates.appointment_date;
+    if (updates.appointment_time) dbUpdatePayload.appointment_time = updates.appointment_time;
+    if (updates.customer_name) dbUpdatePayload.customer_name = updates.customer_name;
+    if (updates.customer_phone) dbUpdatePayload.customer_phone = updates.customer_phone;
+    if (updates.customer_note !== undefined) dbUpdatePayload.customer_note = updates.customer_note;
+
+    if (Object.keys(dbUpdatePayload).length > 0) {
+      await supabase.from("appointments").update(dbUpdatePayload).eq("id", id);
+    }
   } catch {
     // Ignore
   }
@@ -215,25 +310,29 @@ export async function deleteAppointment(id: string, tenant?: string): Promise<bo
   const current = await getStoredAppointments(tenantKey);
   const updated = current.filter((a) => a.id !== id);
 
-  try {
-    await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${VERCEL_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            operation: "upsert",
-            key: storageKey,
-            value: updated,
-          },
-        ],
-      }),
-    });
-  } catch (e) {
-    console.warn("[EdgeConfig] Delete error:", e);
+  appointmentsMemoryCache.set(tenantKey, updated);
+
+  if (EDGE_CONFIG_ID && VERCEL_TOKEN) {
+    try {
+      await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              operation: "upsert",
+              key: storageKey,
+              value: updated,
+            },
+          ],
+        }),
+      });
+    } catch (e) {
+      console.warn("[EdgeConfig] Delete error:", e);
+    }
   }
 
   try {

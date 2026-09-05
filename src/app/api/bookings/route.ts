@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { slotLockManager } from "@/lib/engine/lockManager";
 import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
 import { sendDualBarberBookingSms } from "@/lib/sms/smsService";
-import { getStoredAppointments, saveNewAppointment } from "@/lib/storage/appointmentsStore";
+import { getStoredAppointments, saveNewAppointment, StoredAppointment } from "@/lib/storage/appointmentsStore";
 import {
   apiSuccess,
   apiBadRequest,
@@ -47,6 +47,9 @@ export async function POST(request: Request) {
       user_email,
       user_phone,
       staff_id,
+      staff_name,
+      staffId,
+      staffName,
       start_time,
       end_time,
       is_online = false,
@@ -57,6 +60,14 @@ export async function POST(request: Request) {
 
     const targetEventId = event_id || service_id;
     const targetTenantId = tenant_id || "default-tenant";
+
+    const resolvedStaffId = staff_id || staffId || null;
+    let resolvedStaffName = staff_name || staffName || null;
+    if (resolvedStaffId && !resolvedStaffName) {
+      if (resolvedStaffId === "erman-usta") resolvedStaffName = "Erman Usta";
+      else if (resolvedStaffId === "ahmet-kalfa") resolvedStaffName = "Ahmet Kalfa";
+      else if (resolvedStaffId === "ANY_STAFF") resolvedStaffName = "Fark Etmez / İlk Müsait Usta";
+    }
 
     const cleanPhone = (user_phone || "").replace(/\D/g, "");
     const effectiveEmail = user_email?.trim() || (cleanPhone ? `${cleanPhone}@musteri.randevuformu.com` : "musteri@randevuformu.com");
@@ -163,7 +174,8 @@ export async function POST(request: Request) {
       user_name,
       user_email: effectiveEmail,
       user_phone: user_phone || null,
-      staff_id: staff_id || null,
+      staff_id: resolvedStaffId,
+      staff_name: resolvedStaffName,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: "confirmed",
@@ -180,7 +192,7 @@ export async function POST(request: Request) {
       {
         tenantId: targetTenantId,
         serviceId: targetEventId,
-        staffId: staff_id || "any",
+        staffId: resolvedStaffId || "any",
         startUtc: startTime.toISOString(),
         sessionId: lockSessionId,
         maxCapacity: capacity,
@@ -188,8 +200,10 @@ export async function POST(request: Request) {
       async () => {
         // 1. Always save to persistent Edge Config Appointments Store
         try {
-          const storedApp = {
+          const storedApp: StoredAppointment = {
             id: bookingUniqueId,
+            tenant: targetTenantId,
+            tenant_id: targetTenantId,
             customer_name: user_name,
             customer_phone: user_phone || "",
             customer_note: notes || eventTitle || "Saç Kesimi & Yıkama",
@@ -197,6 +211,8 @@ export async function POST(request: Request) {
             appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
             status: "confirmed" as const,
             services: { name: notes || eventTitle || "Saç Kesimi & Yıkama" },
+            staff_id: resolvedStaffId || undefined,
+            staff_name: resolvedStaffName || undefined,
             created_at: new Date().toISOString(),
           };
           await saveNewAppointment(storedApp);
@@ -207,12 +223,16 @@ export async function POST(request: Request) {
         // 2. Also attempt Supabase appointments table
         try {
           const appointmentInsertData = {
+            tenant: targetTenantId,
+            tenant_id: targetTenantId,
             customer_name: user_name,
             customer_phone: user_phone || "",
             customer_note: notes || "",
             appointment_date: startTime.toISOString().split("T")[0],
             appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
             status: "confirmed",
+            staff_id: resolvedStaffId || null,
+            staff_name: resolvedStaffName || null,
           };
 
           await supabase.from("appointments").insert([appointmentInsertData]);
