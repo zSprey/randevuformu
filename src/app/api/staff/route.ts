@@ -5,6 +5,9 @@ import {
   saveStaffWorkingHours,
   BYERMAN_STAFF_LIST,
   getDefaultStaffWorkingHours,
+  markStaffDeleted,
+  isStaffDeleted,
+  getAvailableStaff,
 } from "@/lib/storage/staffStore";
 import { StaffWorkingHours } from "@/types/schema";
 import {
@@ -27,6 +30,10 @@ export async function GET(req: NextRequest) {
 
     // 1. If specific staffId requested
     if (staffId) {
+      if (isStaffDeleted(staffId)) {
+        return apiNotFound("Personel bulunamadı veya silinmiş.");
+      }
+
       const { data: singleStaff } = await supabase
         .from("staff")
         .select("id, tenant_id, display_name, email, phone, role, is_active, google_refresh_token, created_at")
@@ -69,11 +76,11 @@ export async function GET(req: NextRequest) {
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: true });
 
-    let finalStaff: any[] = staffList || [];
+    let finalStaff: any[] = (staffList || []).filter((s) => !isStaffDeleted(s.id));
 
-    // If By Erman and DB has no records, fallback to official By Erman specialists
+    // If By Erman and DB has no records, fallback to official By Erman specialists (excluding any deleted ones)
     if (isByErman && (!finalStaff || finalStaff.length === 0)) {
-      finalStaff = BYERMAN_STAFF_LIST.filter((s) => s.id !== "ANY_STAFF").map((s) => ({
+      finalStaff = getAvailableStaff(tenantId).filter((s) => s.id !== "ANY_STAFF").map((s) => ({
         id: s.id,
         tenant_id: "byerman",
         display_name: s.name,
@@ -230,6 +237,9 @@ export async function DELETE(req: NextRequest) {
       return apiBadRequest("id parametresi zorunludur.");
     }
 
+    // Mark as deleted in runtime store so it never reappears in bookings or lists
+    markStaffDeleted(id);
+
     // Also delete working hours
     try {
       await supabase.from("staff_working_hours").delete().eq("staff_id", id);
@@ -237,9 +247,10 @@ export async function DELETE(req: NextRequest) {
       // Ignore
     }
 
-    const { error } = await supabase.from("staff").delete().eq("id", id);
-    if (error) {
-      throw error;
+    try {
+      await supabase.from("staff").delete().eq("id", id);
+    } catch {
+      // Ignore
     }
 
     return apiSuccess({ id }, "Personel başarıyla silindi.");

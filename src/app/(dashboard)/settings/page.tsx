@@ -88,6 +88,8 @@ export default function SettingsPage() {
   const [googleMapsUrl, setGoogleMapsUrl] = useState("https://share.google/VpkvdhoLKLSzWpHA6");
   const [workingHoursSummary, setWorkingHoursSummary] = useState("Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı");
   const [cancelPolicyHours, setCancelPolicyHours] = useState("24");
+  const [amenities, setAmenities] = useState<string[]>(["Çay & Kahve", "POS & Nakit", "Steril Havlu"]);
+  const [newAmenityInput, setNewAmenityInput] = useState("");
   const [isSavingClinic, setIsSavingClinic] = useState(false);
   const [subdomainStatus, setSubdomainStatus] = useState<{
     checking: boolean;
@@ -283,6 +285,9 @@ export default function SettingsPage() {
           if (p.working_hours) setWorkingHoursSummary(p.working_hours);
           if (p.phone) setPhone(p.phone);
           if (p.cancel_policy_hours) setCancelPolicyHours(p.cancel_policy_hours);
+          if (p.amenities && Array.isArray(p.amenities) && p.amenities.length > 0) {
+            setAmenities(p.amenities.filter((a: string) => !a.toLowerCase().includes("wifi") && !a.toLowerCase().includes("wi-fi")));
+          }
 
           // Profil / Uzman Bilgileri
           if (p.owner_full_name) setFullName(p.owner_full_name);
@@ -533,6 +538,8 @@ export default function SettingsPage() {
     );
     localStorage.setItem("rf_tenant_name", clinicName.trim());
     localStorage.setItem("rf_tenant_slug", cleanSlug);
+    localStorage.setItem("rf_business_amenities", JSON.stringify(amenities));
+    localStorage.setItem("rf_amenities_" + cleanSlug, JSON.stringify(amenities));
     window.dispatchEvent(new Event("storage"));
 
     // 2. Direct Cloud Profile API Save
@@ -548,6 +555,7 @@ export default function SettingsPage() {
           google_maps_url: googleMapsUrl.trim(),
           working_hours: workingHoursSummary.trim(),
           phone: phone.trim(),
+          amenities,
         }),
       });
       const resData = await res.json();
@@ -2548,6 +2556,119 @@ export default function SettingsPage() {
                 >
                   Galeriye Git
                 </button>
+              </div>
+
+              {/* SALON OLANAKLARI & İKRAMLAR DÜZENLEME (HER YERDE SENKRONİZE) */}
+              <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#0062FF]/10 text-[#0062FF] flex items-center justify-center">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#0F2A4A]">Salon &amp; İşletme Olanakları</h4>
+                      <p className="text-xs text-slate-500">
+                        Randevu sayfanızın üst bilgi panelinde müşterilerinize gösterilecek ikram ve konfor olanakları.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mevcut Aktif Olanaklar */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                    Aktif Olanaklar ({amenities.length})
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {amenities.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs group hover:border-rose-300 transition-colors"
+                      >
+                        <span>{item}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAmenities(amenities.filter((_, i) => i !== idx))}
+                          className="w-4 h-4 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                          title="Kaldır"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                    {amenities.length === 0 && (
+                      <span className="text-xs text-slate-400 italic">
+                        Henüz bir olanak eklenmedi. Aşağıdan hızlıca ekleyebilirsiniz.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Yeni Olanak Ekleme Formu */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newAmenityInput}
+                    onChange={(e) => setNewAmenityInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const trimmed = newAmenityInput.trim();
+                        if (trimmed && !amenities.includes(trimmed)) {
+                          setAmenities([...amenities, trimmed]);
+                          setNewAmenityInput("");
+                        }
+                      }
+                    }}
+                    placeholder="Örn: Sıcak İçecek, Vale / Otopark, Klimalı Alan..."
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-1 focus:ring-[#0062FF] focus:border-[#0062FF]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = newAmenityInput.trim();
+                      if (trimmed && !amenities.includes(trimmed)) {
+                        setAmenities([...amenities, trimmed]);
+                        setNewAmenityInput("");
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold transition-all shadow-2xs"
+                  >
+                    + Olanak Ekle
+                  </button>
+                </div>
+
+                {/* Popüler Hızlı Seçimler */}
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block mb-1.5">
+                    Hızlı Seçim Önerileri:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      "Çay & Kahve",
+                      "POS & Nakit",
+                      "Steril Havlu",
+                      "Klimalı Alan",
+                      "Otopark / Vale",
+                      "Bebek Bakım Alanı",
+                      "TV & Müzik",
+                      "Randevulu Hizmet",
+                      "Sıcak/Soğuk İçecek",
+                      "Engelli Erişimi",
+                    ]
+                      .filter((sug) => !amenities.includes(sug))
+                      .map((sug, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setAmenities([...amenities, sug])}
+                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-600 transition-colors"
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                  </div>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end">

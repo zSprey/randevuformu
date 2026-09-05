@@ -219,10 +219,18 @@ export default function StaffManagementPage() {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(storageKey, JSON.stringify(updated));
+      try {
+        const existingDeleted: string[] = JSON.parse(localStorage.getItem("rf_deleted_staff") || "[]");
+        if (!existingDeleted.includes(id)) {
+          existingDeleted.push(id);
+          localStorage.setItem("rf_deleted_staff", JSON.stringify(existingDeleted));
+        }
+      } catch {}
+      window.dispatchEvent(new Event("storage"));
     }
 
     try {
-      await fetch(`/api/staff?id=${encodeURIComponent(id)}`, {
+      await fetch(`/api/staff?id=${encodeURIComponent(id)}&tenantId=${encodeURIComponent(tenantId)}`, {
         method: "DELETE",
       });
     } catch (err) {

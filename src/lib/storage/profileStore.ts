@@ -39,6 +39,9 @@ export interface BusinessProfile {
 
   // İptal Politikası
   cancel_policy_hours?: string;
+
+  // Salon Olanakları & İkramlar
+  amenities?: string[];
 }
 
 export const DEFAULT_BYERMAN_PROFILE: BusinessProfile = {
@@ -51,6 +54,7 @@ export const DEFAULT_BYERMAN_PROFILE: BusinessProfile = {
   working_hours: "Pzt - Cuma: 09:30 - 21:30 | Cmt: 09:30 - 23:00 | Paz: Kapalı",
   rating_score: 4.9,
   review_count: 148,
+  amenities: ["Çay & Kahve", "POS & Nakit", "Steril Havlu"],
 
   owner_full_name: "Erman Güler",
   owner_email: "",
@@ -194,6 +198,9 @@ function mapSupabaseRowToProfile(data: any): BusinessProfile {
     outlook_connected: Boolean(data.outlook_connected),
 
     cancel_policy_hours: data.cancel_policy_hours || "24",
+    amenities: Array.isArray(data.amenities)
+      ? data.amenities.filter((a: string) => !a.toLowerCase().includes("wifi") && !a.toLowerCase().includes("wi-fi"))
+      : DEFAULT_BYERMAN_PROFILE.amenities,
   };
 }
 
@@ -209,6 +216,7 @@ function mapProfileToSupabaseRow(p: BusinessProfile): Record<string, any> {
     working_hours: p.working_hours,
     rating_score: p.rating_score,
     review_count: p.review_count,
+    amenities: p.amenities || DEFAULT_BYERMAN_PROFILE.amenities,
 
     owner_full_name: p.owner_full_name || null,
     owner_email: p.owner_email || null,

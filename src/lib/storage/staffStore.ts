@@ -83,10 +83,31 @@ export function getDefaultStaffWorkingHours(staffId: string): StaffWorkingHours[
   });
 }
 
+// Track deleted staff IDs across memory and sessions
+const deletedStaffSet = new Set<string>();
+
+export function markStaffDeleted(id: string): void {
+  deletedStaffSet.add(id);
+}
+
+export function isStaffDeleted(id: string): boolean {
+  return deletedStaffSet.has(id);
+}
+
+export function getAvailableStaff(tenantId: string = "byerman"): BarberStaff[] {
+  const active = BYERMAN_STAFF_LIST.filter((s) => !deletedStaffSet.has(s.id));
+  const actualBarbers = active.filter((s) => s.id !== "ANY_STAFF");
+  if (actualBarbers.length <= 1) {
+    return actualBarbers;
+  }
+  return active;
+}
+
 /**
  * Find staff member by ID from By Erman list
  */
 export function getStaffById(id: string): BarberStaff | undefined {
+  if (deletedStaffSet.has(id)) return undefined;
   return BYERMAN_STAFF_LIST.find((s) => s.id === id);
 }
 
@@ -94,7 +115,7 @@ export function getStaffById(id: string): BarberStaff | undefined {
  * Get all available staff members
  */
 export function getAllStaff(tenantId?: string): BarberStaff[] {
-  return BYERMAN_STAFF_LIST;
+  return getAvailableStaff(tenantId);
 }
 
 /**

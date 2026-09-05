@@ -73,6 +73,9 @@ export async function POST(request: NextRequest) {
     if (working_hours !== undefined) partialUpdate.working_hours = working_hours;
     if (rating_score !== undefined) partialUpdate.rating_score = Number(rating_score);
     if (review_count !== undefined) partialUpdate.review_count = Number(review_count);
+    if (body.amenities !== undefined && Array.isArray(body.amenities)) {
+      partialUpdate.amenities = body.amenities.filter((a: string) => !a.toLowerCase().includes("wifi") && !a.toLowerCase().includes("wi-fi"));
+    }
 
     if (owner_full_name !== undefined) partialUpdate.owner_full_name = owner_full_name;
     if (owner_email !== undefined) partialUpdate.owner_email = owner_email;
