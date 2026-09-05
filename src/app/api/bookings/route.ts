@@ -58,9 +58,12 @@ export async function POST(request: Request) {
     const targetEventId = event_id || service_id;
     const targetTenantId = tenant_id || "default-tenant";
 
-    // 1. Validate mandatory fields
-    if (!targetEventId || !user_name || !user_email || !start_time) {
-      return apiBadRequest("Eksik bilgi: event_id, user_name, user_email ve start_time zorunludur.");
+    const cleanPhone = (user_phone || "").replace(/\D/g, "");
+    const effectiveEmail = user_email?.trim() || (cleanPhone ? `${cleanPhone}@musteri.randevuformu.com` : "musteri@randevuformu.com");
+
+    // 1. Validate mandatory fields (name, service, start_time, and either phone or email)
+    if (!targetEventId || !user_name || (!user_email && !user_phone) || !start_time) {
+      return apiBadRequest("Eksik bilgi: Hizmet, isim, telefon/e-posta ve başlangıç saati zorunludur.");
     }
 
     const startTime = new Date(start_time);
@@ -128,7 +131,7 @@ export async function POST(request: Request) {
       const { data: userOverlaps } = await supabase
         .from("appointments")
         .select("id")
-        .eq("customer_email", user_email)
+        .or(`customer_email.eq.${effectiveEmail}${cleanPhone ? `,customer_phone.eq.${cleanPhone}` : ""}`)
         .neq("status", "CANCELLED")
         .lt("start_utc", endTime.toISOString())
         .gt("end_utc", startTime.toISOString());
@@ -158,7 +161,7 @@ export async function POST(request: Request) {
       tenant_id: targetTenantId,
       event_id: targetEventId,
       user_name,
-      user_email,
+      user_email: effectiveEmail,
       user_phone: user_phone || null,
       staff_id: staff_id || null,
       start_time: startTime.toISOString(),

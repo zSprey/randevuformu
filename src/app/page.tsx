@@ -73,10 +73,10 @@ export default function Home() {
       description: "Seans paketleri ve değişken süreli randevu yönetimi",
     },
     {
-      name: "Danışmanlık & Koçluk",
+      name: "Hukuk & Avukatlık",
       slug: "avukat",
       icon: Briefcase,
-      description: "Ücretli ön görüşme, online toplantı entegrasyonu",
+      description: "Müvekkil randevuları, danışmanlık ücreti tahsili ve toplantılar",
     },
   ];
 
