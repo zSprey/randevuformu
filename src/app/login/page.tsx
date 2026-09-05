@@ -254,6 +254,21 @@ function LoginFormContent() {
       setLoading(false);
       return;
     }
+    if (!city.trim()) {
+      setErrorMsg("Lütfen işletmenizin bulunduğu ili / şehri girin.");
+      setLoading(false);
+      return;
+    }
+    if (!district.trim()) {
+      setErrorMsg("Lütfen işletmenizin bulunduğu ilçeyi girin.");
+      setLoading(false);
+      return;
+    }
+    if (!locationUrl.trim()) {
+      setErrorMsg("Lütfen işletmenizin açık adresini veya harita konum linkini girin.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -631,16 +646,17 @@ function LoginFormContent() {
               </div>
             </div>
 
-            {/* 4. Şehir & İlçe (Opsiyonel) */}
+            {/* 4. Şehir & İlçe (Zorunlu) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
-                  Şehir / İl
+                  Şehir / İl <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
+                    required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Örn: İstanbul"
@@ -651,10 +667,11 @@ function LoginFormContent() {
 
               <div>
                 <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
-                  İlçe / Bölge
+                  İlçe / Bölge <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
+                  required
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
                   placeholder="Örn: Ümraniye, Kadıköy..."
@@ -663,8 +680,25 @@ function LoginFormContent() {
               </div>
             </div>
 
-            {/* 5. Web Sitesi & Google Maps Konumu (Opsiyonel) */}
+            {/* 5. İşletme Konumu (Zorunlu) & Web Sitesi (Opsiyonel) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
+                  Açık Adres / Harita Konumu <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={locationUrl}
+                    onChange={(e) => setLocationUrl(e.target.value)}
+                    placeholder="Örn: Cadde / No veya Google Maps Linki"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
                   Web Sitesi / Instagram (Opsiyonel)
@@ -679,19 +713,6 @@ function LoginFormContent() {
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
-                  Google Harita Linki (Opsiyonel)
-                </label>
-                <input
-                  type="text"
-                  value={locationUrl}
-                  onChange={(e) => setLocationUrl(e.target.value)}
-                  placeholder="https://maps.google.com/..."
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
-                />
               </div>
             </div>
 

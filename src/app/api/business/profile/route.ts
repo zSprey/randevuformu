@@ -100,6 +100,19 @@ export async function POST(request: NextRequest) {
 
     if (cancel_policy_hours !== undefined) partialUpdate.cancel_policy_hours = cancel_policy_hours;
 
+    // WhatsApp & Hotlines
+    if (body.whatsapp_number !== undefined) partialUpdate.whatsapp_number = String(body.whatsapp_number).trim();
+    if (body.whatsapp_default_message !== undefined) partialUpdate.whatsapp_default_message = String(body.whatsapp_default_message).trim();
+    if (body.is_whatsapp_active !== undefined) partialUpdate.is_whatsapp_active = Boolean(body.is_whatsapp_active);
+
+    // Dynamic Discount / Yield Management
+    if (body.is_dynamic_discount_active !== undefined) partialUpdate.is_dynamic_discount_active = Boolean(body.is_dynamic_discount_active);
+    if (body.dynamic_discount_percent !== undefined) partialUpdate.dynamic_discount_percent = Number(body.dynamic_discount_percent);
+    if (body.discount_threshold_hours !== undefined) partialUpdate.discount_threshold_hours = Number(body.discount_threshold_hours);
+
+    // Desktop QR Stand Customization
+    if (body.qr_stand_settings !== undefined) partialUpdate.qr_stand_settings = body.qr_stand_settings;
+
     const updated = await saveBusinessProfile(slug, partialUpdate);
 
     revalidatePath(`/${slug}`);

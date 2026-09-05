@@ -163,28 +163,40 @@ export default function BusinessBookingPage({ params }: PageProps) {
               services: kuafor?.services || [],
             });
           } else {
-            // Check if user has saved custom services in localStorage
-            let customServices = [];
-            if (typeof window !== "undefined") {
-              try {
-                const saved = localStorage.getItem("rf_business_services");
-                if (saved) {
-                  const parsed = JSON.parse(saved);
-                  if (Array.isArray(parsed) && parsed.length > 0) {
-                    customServices = parsed;
-                  }
+            // Fetch cloud services and profile for this business slug
+            let cloudServices: any[] = [];
+            let cloudProfile: any = null;
+            try {
+              const [srvRes, profRes] = await Promise.all([
+                fetch(`/api/business/services?slug=${encodeURIComponent(slug)}`),
+                fetch(`/api/business/profile?slug=${encodeURIComponent(slug)}`),
+              ]);
+              if (srvRes.ok) {
+                const srvData = await srvRes.json();
+                if (srvData.success && Array.isArray(srvData.services) && srvData.services.length > 0) {
+                  cloudServices = srvData.services;
                 }
-              } catch {}
+              }
+              if (profRes.ok) {
+                const profData = await profRes.json();
+                if (profData.success && profData.profile) {
+                  cloudProfile = profData.profile;
+                }
+              }
+            } catch (apiErr) {
+              console.warn("Cloud load fallback for slug:", apiErr);
             }
 
-            // Clean state for brand new business slug
+            // Clean state for registered business slug
             setIsDemo(false);
             setBusiness({
-              id: "user-tenant-id",
-              name: slug.replace(/-/g, " ").toUpperCase(),
+              id: cloudProfile?.business_slug || slug,
+              name: cloudProfile?.name || slug.replace(/-/g, " ").toUpperCase(),
               slug: slug,
               category: "Randevu Hizmeti",
-              services: customServices,
+              phone: cloudProfile?.phone || "",
+              address: cloudProfile?.address || "",
+              services: cloudServices,
             });
           }
         }

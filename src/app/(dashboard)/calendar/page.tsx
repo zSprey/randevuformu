@@ -61,9 +61,19 @@ export default function CalendarPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const getTenantParam = () => {
+    if (typeof window === "undefined") return "byerman";
+    const isByErmanHost = window.location.hostname.includes("byerman");
+    const currentUser = localStorage.getItem("rf_user");
+    const currentTenant = localStorage.getItem("rf_tenant");
+    const isErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
+    return isErman ? "byerman" : (currentTenant || currentUser || "default");
+  };
+
   const fetchRealAppointments = async () => {
     try {
-      const res = await fetch("/api/appointments", { cache: "no-store" });
+      const tenant = getTenantParam();
+      const res = await fetch(`/api/appointments?tenant=${encodeURIComponent(tenant)}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.appointments && data.appointments.length > 0) {
@@ -111,6 +121,8 @@ export default function CalendarPage() {
       return;
     }
 
+    const tenant = getTenantParam();
+
     const newApp: AppointmentItem = {
       id: `app_${Date.now()}`,
       title: newTitle,
@@ -134,6 +146,9 @@ export default function CalendarPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          tenant,
+          tenant_id: tenant,
+          business_id: tenant,
           customer_name: newName.trim(),
           customer_phone: newPhone.trim(),
           customer_note: newTitle,

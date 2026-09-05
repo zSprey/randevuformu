@@ -42,6 +42,19 @@ export interface BusinessProfile {
 
   // Salon Olanakları & İkramlar
   amenities?: string[];
+
+  // WhatsApp İletişim Hattı Ayarları
+  whatsapp_number?: string;
+  whatsapp_default_message?: string;
+  is_whatsapp_active?: boolean;
+
+  // Dinamik İndirim & Yield Management
+  is_dynamic_discount_active?: boolean;
+  dynamic_discount_percent?: number;
+  discount_threshold_hours?: number;
+
+  // Masaüstü QR Stand Ayarları
+  qr_stand_settings?: Record<string, any>;
 }
 
 export const DEFAULT_BYERMAN_PROFILE: BusinessProfile = {
@@ -201,6 +214,16 @@ function mapSupabaseRowToProfile(data: any): BusinessProfile {
     amenities: Array.isArray(data.amenities)
       ? data.amenities.filter((a: string) => !a.toLowerCase().includes("wifi") && !a.toLowerCase().includes("wi-fi"))
       : DEFAULT_BYERMAN_PROFILE.amenities,
+
+    whatsapp_number: data.whatsapp_number || "",
+    whatsapp_default_message: data.whatsapp_default_message || "",
+    is_whatsapp_active: data.is_whatsapp_active != null ? Boolean(data.is_whatsapp_active) : true,
+
+    is_dynamic_discount_active: data.is_dynamic_discount_active != null ? Boolean(data.is_dynamic_discount_active) : false,
+    dynamic_discount_percent: data.dynamic_discount_percent != null ? Number(data.dynamic_discount_percent) : 15,
+    discount_threshold_hours: data.discount_threshold_hours != null ? Number(data.discount_threshold_hours) : 4,
+
+    qr_stand_settings: typeof data.qr_stand_settings === "object" ? data.qr_stand_settings : undefined,
   };
 }
 
@@ -240,6 +263,16 @@ function mapProfileToSupabaseRow(p: BusinessProfile): Record<string, any> {
     outlook_connected: p.outlook_connected ?? false,
 
     cancel_policy_hours: p.cancel_policy_hours || "24",
+
+    whatsapp_number: p.whatsapp_number || null,
+    whatsapp_default_message: p.whatsapp_default_message || null,
+    is_whatsapp_active: p.is_whatsapp_active ?? true,
+
+    is_dynamic_discount_active: p.is_dynamic_discount_active ?? false,
+    dynamic_discount_percent: p.dynamic_discount_percent || 15,
+    discount_threshold_hours: p.discount_threshold_hours || 4,
+
+    qr_stand_settings: p.qr_stand_settings || null,
   };
 }
 

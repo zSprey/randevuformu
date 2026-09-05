@@ -49,6 +49,15 @@ export async function POST(req: NextRequest) {
     if (!category || typeof category !== "string" || !category.trim()) {
       return apiBadRequest("İşletme kategorisi / sektörü seçilmelidir.");
     }
+    if (!city || typeof city !== "string" || !city.trim()) {
+      return apiBadRequest("Şehir / İl bilgisi zorunludur.");
+    }
+    if (!district || typeof district !== "string" || !district.trim()) {
+      return apiBadRequest("İlçe bilgisi zorunludur.");
+    }
+    if (!locationUrl || typeof locationUrl !== "string" || !locationUrl.trim()) {
+      return apiBadRequest("İşletme adresi / harita konumu zorunludur.");
+    }
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanBusinessName = businessName.trim();

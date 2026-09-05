@@ -152,6 +152,7 @@ export default function StaffManagementPage() {
           email: newMember.email,
           phone: newMember.phone,
           role: newMember.role,
+          title: newMember.title,
         }),
       });
       if (!apiRes.ok) {

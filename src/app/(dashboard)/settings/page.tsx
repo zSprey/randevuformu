@@ -313,6 +313,16 @@ export default function SettingsPage() {
           // Entegrasyon Durumları
           if (p.google_calendar_connected !== undefined) setGoogleConnected(Boolean(p.google_calendar_connected));
           if (p.outlook_connected !== undefined) setOutlookConnected(Boolean(p.outlook_connected));
+
+          // WhatsApp & Hotline
+          if (p.whatsapp_number) setWhatsappNumber(p.whatsapp_number);
+          if (p.is_whatsapp_active !== undefined) setIsWhatsappActive(Boolean(p.is_whatsapp_active));
+          if (p.whatsapp_default_message) setWhatsappDefaultMessage(p.whatsapp_default_message);
+
+          // Dinamik İndirim & Yield
+          if (p.is_dynamic_discount_active !== undefined) setIsDynamicDiscountActive(Boolean(p.is_dynamic_discount_active));
+          if (p.dynamic_discount_percent) setDynamicDiscountPercent(p.dynamic_discount_percent);
+          if (p.discount_threshold_hours) setDiscountThresholdHours(p.discount_threshold_hours);
         }
       } catch (err) {
         console.warn("Failed to load cloud profile:", err);
@@ -393,7 +403,7 @@ export default function SettingsPage() {
 
       // 8. Load Cloud Gallery Photos
       try {
-        const targetSlug = isByErman ? "byerman" : "byerman";
+        const targetSlug = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || currentTenant || "byerman");
         const cached = localStorage.getItem(`rf_business_gallery_${targetSlug}`);
         if (cached) {
           try {
@@ -413,7 +423,7 @@ export default function SettingsPage() {
 
       // 9. Load Reputation & Feedback Data
       try {
-        const targetSlug = isByErman ? "byerman" : "byerman";
+        const targetSlug = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || currentTenant || "byerman");
         const repRes = await fetch(`/api/business/reputation?slug=${targetSlug}&include_feedbacks=true`);
         const repData = await repRes.json();
         if (repData.success) {
@@ -610,7 +620,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Save WhatsApp Hotline
+  // Save WhatsApp Hotline (Cloud API + LocalStorage)
   const handleSaveWhatsapp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingWhatsapp(true);
@@ -623,14 +633,18 @@ export default function SettingsPage() {
     localStorage.setItem("rf_settings_whatsapp", JSON.stringify(localData));
 
     try {
-      const fd = new FormData();
-      fd.append("businessId", businessId);
-      fd.append("whatsappNumber", whatsappNumber.trim());
-      fd.append("isWhatsappActive", String(isWhatsappActive));
-      fd.append("whatsappDefaultMessage", whatsappDefaultMessage.trim());
-
-      const res = await updateBusinessWhatsapp(fd);
-      showToast(res.message || "WhatsApp hattı ayarlarınız güncellendi.");
+      const targetSlug = clinicSlug || "byerman";
+      await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          whatsapp_number: whatsappNumber.trim(),
+          is_whatsapp_active: isWhatsappActive,
+          whatsapp_default_message: whatsappDefaultMessage.trim(),
+        }),
+      });
+      showToast("WhatsApp hattı ayarlarınız başarıyla buluta kaydedildi!");
     } catch {
       showToast("WhatsApp hattı yerel olarak kaydedildi.");
     } finally {
@@ -638,7 +652,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Save Dynamic Discount (Yield)
+  // Save Dynamic Discount (Yield) (Cloud API + LocalStorage)
   const handleSaveYield = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingYield(true);
@@ -651,14 +665,18 @@ export default function SettingsPage() {
     localStorage.setItem("rf_settings_yield", JSON.stringify(localData));
 
     try {
-      const fd = new FormData();
-      fd.append("businessId", businessId);
-      fd.append("isDynamicDiscountActive", String(isDynamicDiscountActive));
-      fd.append("dynamicDiscountPercent", String(dynamicDiscountPercent));
-      fd.append("discountThresholdHours", String(discountThresholdHours));
-
-      const res = await updateYieldManagementSettings(fd);
-      showToast(res.message || "Dinamik indirim motoru güncellendi.");
+      const targetSlug = clinicSlug || "byerman";
+      await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: targetSlug,
+          is_dynamic_discount_active: isDynamicDiscountActive,
+          dynamic_discount_percent: dynamicDiscountPercent,
+          discount_threshold_hours: discountThresholdHours,
+        }),
+      });
+      showToast("Dinamik indirim motoru ayarları başarıyla buluta kaydedildi!");
     } catch {
       showToast("İndirim motoru ayarları yerel olarak kaydedildi.");
     } finally {
@@ -854,13 +872,14 @@ export default function SettingsPage() {
   const handleSaveReputation = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingReputation(true);
+    const targetSlug = clinicSlug || "byerman";
     try {
       const res = await fetch("/api/business/reputation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "save_settings",
-          slug: "byerman",
+          slug: targetSlug,
           google_review_url: googleReviewUrl.trim(),
           rating_score: parseFloat(ratingScore) || 4.9,
           review_count: parseInt(reviewCount) || 148,
@@ -875,7 +894,7 @@ export default function SettingsPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              slug: "byerman",
+              slug: targetSlug,
               google_maps_url: googleReviewUrl.trim(),
             }),
           });
@@ -892,13 +911,14 @@ export default function SettingsPage() {
   };
 
   const handleUpdateFeedbackStatus = async (feedbackId: string, nextStatus: "new" | "contacted" | "resolved") => {
+    const targetSlug = clinicSlug || "byerman";
     try {
       const res = await fetch("/api/business/reputation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "update_feedback_status",
-          slug: "byerman",
+          slug: targetSlug,
           feedback_id: feedbackId,
           status: nextStatus,
         }),

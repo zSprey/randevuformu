@@ -59,6 +59,27 @@ export default function QrStandPage() {
         setBusinessSlug(storedSlug);
         setWifiSsid(`${formatted}_Misafir`);
       }
+
+      // Fetch cloud profile for QR stand settings
+      const targetSlug = storedSlug || currentTenant || "byerman";
+      fetch(`/api/business/profile?slug=${targetSlug}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.profile) {
+            if (data.profile.name) setBusinessName(data.profile.name);
+            const qr = data.profile.qr_stand_settings;
+            if (qr) {
+              if (qr.tagline) setTagline(qr.tagline);
+              if (qr.subtext) setSubtext(qr.subtext);
+              if (qr.show_wifi !== undefined) setShowWifi(Boolean(qr.show_wifi));
+              if (qr.wifi_ssid) setWifiSsid(qr.wifi_ssid);
+              if (qr.wifi_pass) setWifiPass(qr.wifi_pass);
+              if (qr.stand_theme) setStandTheme(qr.stand_theme);
+              if (qr.qr_color) setQrColor(qr.qr_color);
+            }
+          }
+        })
+        .catch(() => {});
     } catch {}
   }, []);
 
@@ -82,6 +103,40 @@ export default function QrStandPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveQrStand = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/business/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: businessSlug || "byerman",
+          qr_stand_settings: {
+            tagline,
+            subtext,
+            show_wifi: showWifi,
+            wifi_ssid: wifiSsid,
+            wifi_pass: wifiPass,
+            stand_theme: standTheme,
+            qr_color: qrColor,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Masa standı tasarımınız başarıyla buluta kaydedildi!");
+      } else {
+        showToast(data.error || "Kaydedilirken hata oluştu.");
+      }
+    } catch {
+      showToast("Bağlantı hatası oluştu.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrint = () => {
@@ -390,14 +445,25 @@ export default function QrStandPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="w-full max-w-sm py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors shadow-2xs"
-          >
-            <Printer className="w-4 h-4 text-[#0062FF]" />
-            Standı Doğrudan Yazdır
-          </button>
+          <div className="w-full max-w-sm flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={handleSaveQrStand}
+              className="flex-1 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4 text-cyan-300" />
+              <span>{isSaving ? "Kaydediliyor..." : "Tasarımı Buluta Kaydet"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-[#0062FF]" />
+              <span>Yazdır</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
