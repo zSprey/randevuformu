@@ -12,6 +12,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { SEKTOR_DATA } from "@/lib/sektorler";
+import ChatbotWidget from "@/components/ChatbotWidget";
 
 interface SektorPageProps {
   params: Promise<{ slug: string }>;
@@ -302,6 +303,9 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
           </div>
         </div>
       </footer>
+
+      {/* Sektöre Özel Eğitilmiş Akıllı Asistan */}
+      <ChatbotWidget mode="customer" businessSlug={slug} />
     </div>
   );
 }

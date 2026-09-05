@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SEKTOR_DATA } from '@/lib/sektorler';
 
 interface ChatMessage {
   id: string;
@@ -57,7 +58,9 @@ export default function ChatbotWidget({
       const storedUser = localStorage.getItem('rf_user');
       const storedTenant = localStorage.getItem('rf_tenant');
 
-      if (storedUser === 'byerman' && storedTenant === 'byerman') {
+      if (businessSlug && SEKTOR_DATA[businessSlug]) {
+        setBusinessName(SEKTOR_DATA[businessSlug].exampleName || SEKTOR_DATA[businessSlug].badge);
+      } else if (storedUser === 'byerman' && storedTenant === 'byerman') {
         setBusinessName('By Erman Hair Studio');
       } else if (storedName && !storedName.includes('Ahmet') && storedName !== 'İşletme Yönetim Paneli') {
         setBusinessName(storedName);
@@ -83,12 +86,17 @@ export default function ChatbotWidget({
       let initialGreeting = '';
       let initialActions: string[] = [];
 
+      const matchedSector = businessSlug ? SEKTOR_DATA[businessSlug] : null;
+
       if (mode === 'platform') {
         initialGreeting = 'Merhaba! Ben randevuformu.com platform rehberiyim. 1 dakikada ücretsiz randevu formu açma, WhatsApp onayları veya sistem özellikleri hakkında size nasıl yardımcı olabilirim?';
         initialActions = ['Nasıl form açarım?', 'Ücretli mi?', 'Özellikler neler?'];
       } else if (mode === 'business') {
         initialGreeting = `Merhaba! Ben ${businessName} operasyon asistanıyım. Günlük randevu özetinizi, ciro durumunuzu veya bekleme listenizi inceleyebilirim.`;
         initialActions = ['Bugünkü randevularım', 'Günlük ciro özeti', 'Bekleme listesi'];
+      } else if (matchedSector) {
+        initialGreeting = `Merhaba! Ben ${matchedSector.exampleName} (${matchedSector.badge}) akıllı randevu asistanıyım. Size en uygun seans saatini bulabilir, hizmet ücretlerimizi aktarabilir ve randevu sürecinizi hızlandırabilirim.`;
+        initialActions = ['Bugün boş saat var mı?', 'Hizmet & Fiyat Listesi', 'Randevu Öncesi Hazırlık', 'WhatsApp ile Danış'];
       } else {
         initialGreeting = `Merhaba! Ben ${businessName} randevu asistanıyım. Size en uygun randevu saatini bulabilir, hizmetler ve fiyatlar hakkında bilgi verebilirim.`;
         initialActions = ['Bugün boş yer var mı?', 'Hizmet & Fiyat Listesi', 'Yarın için randevu'];

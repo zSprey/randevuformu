@@ -200,6 +200,23 @@ export async function middleware(request: NextRequest) {
       rewriteUrl.search = url.search
       finalResponse = NextResponse.rewrite(rewriteUrl)
     }
+  } else {
+    // ────────────────────────────────────────────────────────
+    // 3.1 ENFORCE PURE SUBDOMAIN FORMAT: https://[isletmeadi].randevuformu.com
+    // randevuformu.com/isletmeadi erişimlerini otomatik olarak https://isletmeadi.randevuformu.com adresine kalıcı (308) yönlendir.
+    // ────────────────────────────────────────────────────────
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathSegments.length === 1) {
+      const singleSlug = pathSegments[0].toLowerCase();
+      if (!RESERVED_SUBDOMAINS.has(singleSlug) && !singleSlug.includes('.')) {
+        const isLocal = process.env.NODE_ENV === 'development';
+        const rootHost = process.env.NEXT_PUBLIC_ROOT_DOMAIN || (isLocal ? 'localhost:3000' : 'randevuformu.com');
+        const targetHost = isLocal ? `${singleSlug}.${rootHost}` : `${singleSlug}.randevuformu.com`;
+        const protocol = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+        const redirectUrl = new URL(url.search, `${protocol}://${targetHost}/`);
+        return NextResponse.redirect(redirectUrl, 308);
+      }
+    }
   }
 
   // ────────────────────────────────────────────────────────

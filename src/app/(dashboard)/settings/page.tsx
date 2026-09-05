@@ -2444,10 +2444,10 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* İki Yönlü Erişim Garantisi Açıklaması */}
+                {/* Saf Subdomain Mimarisi Açıklaması */}
                 <div className="pt-2.5 border-t border-white/10 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <span>
-                    💡 <strong>Çifte Erişim:</strong> Randevu sayfanıza hem <code className="text-[#38BDF8]">https://{clinicSlug || "isletme"}.randevuformu.com</code> hem de <code className="text-[#38BDF8]">https://randevuformu.com/{clinicSlug || "isletme"}</code> üzerinden erişilebilir.
+                    👑 <strong>Prestijli Alan Adı:</strong> Randevu sayfanız müşterilerinize <code className="text-[#38BDF8]">https://{clinicSlug || "isletme"}.randevuformu.com</code> olarak sunulur. Eski uzantılar otomatik olarak bu adrese yönlendirilir.
                   </span>
                   <span className="text-emerald-400 font-semibold shrink-0">
                     SSL Sertifikası Otomatik Aktif 🔒
