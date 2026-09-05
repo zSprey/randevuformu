@@ -22,6 +22,31 @@ export async function POST(req: NextRequest) {
           { status: 401 }
         );
       }
+    } else {
+      // Non-bypass users must have an approved application
+      const { isBusinessApproved } = await import("@/lib/storage/applicationStore");
+      const check = await isBusinessApproved(identifier);
+      if (!check.allowed) {
+        if (check.status === "PENDING") {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Kayıt başvurunuz henüz yönetici onayından geçmemiştir.",
+            },
+            { status: 403 }
+          );
+        } else if (check.status === "REJECTED") {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Kayıt başvurunuz onaylanmadı.${
+                check.application?.rejection_reason ? ` Gerekçe: ${check.application.rejection_reason}` : ""
+              }`,
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     const host = (req.headers.get("host") || "").toLowerCase().split(":")[0];
