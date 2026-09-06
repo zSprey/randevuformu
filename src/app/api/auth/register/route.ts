@@ -56,7 +56,16 @@ export async function POST(req: NextRequest) {
       return apiBadRequest("İlçe bilgisi zorunludur.");
     }
     if (!locationUrl || typeof locationUrl !== "string" || !locationUrl.trim()) {
-      return apiBadRequest("İşletme adresi / harita konumu zorunludur.");
+      return apiBadRequest("İşletmenin Google Haritalar konum linki zorunludur.");
+    }
+    const cleanLocationUrl = locationUrl.trim();
+    if (
+      !cleanLocationUrl.startsWith("http://") &&
+      !cleanLocationUrl.startsWith("https://") &&
+      !cleanLocationUrl.includes("maps") &&
+      !cleanLocationUrl.includes("goo.gl")
+    ) {
+      return apiBadRequest("Lütfen geçerli bir Google Haritalar bağlantısı (URL) girin.");
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -123,7 +132,7 @@ export async function POST(req: NextRequest) {
       city: (city || "").trim() || undefined,
       district: (district || "").trim() || undefined,
       website: (website || "").trim() || undefined,
-      location_url: (locationUrl || "").trim() || undefined,
+      location_url: cleanLocationUrl,
     });
 
     // 5. Send Admin Notification Email Asynchronously
@@ -137,7 +146,7 @@ export async function POST(req: NextRequest) {
         city: (city || "").trim() || undefined,
         district: (district || "").trim() || undefined,
         website: (website || "").trim() || undefined,
-        location_url: (locationUrl || "").trim() || undefined,
+        location_url: cleanLocationUrl,
       }).catch((err) => console.warn("[Register API] Admin email async err:", err));
     } catch (e) {
       console.warn("[Register API] Email trigger error:", e);

@@ -59,7 +59,7 @@ function LoginFormContent() {
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [registerPhone, setRegisterPhone] = useState("");
   const [category, setCategory] = useState("Berber & Erkek Kuaförü");
-  const [city, setCity] = useState("İstanbul");
+  const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [website, setWebsite] = useState("");
   const [locationUrl, setLocationUrl] = useState("");
@@ -250,7 +250,7 @@ function LoginFormContent() {
       return;
     }
     if (!registerPhone.trim() || registerPhone.trim().length < 10) {
-      setErrorMsg("Lütfen geçerli bir telefon / WhatsApp numarası girin (Örn: 0532 123 45 67).");
+      setErrorMsg("Lütfen geçerli bir telefon / WhatsApp numarası girin.");
       setLoading(false);
       return;
     }
@@ -264,8 +264,19 @@ function LoginFormContent() {
       setLoading(false);
       return;
     }
-    if (!locationUrl.trim()) {
-      setErrorMsg("Lütfen işletmenizin açık adresini veya harita konum linkini girin.");
+    const cleanLoc = locationUrl.trim();
+    if (!cleanLoc) {
+      setErrorMsg("Lütfen işletmenizin Google Haritalar (Maps) konum linkini girin.");
+      setLoading(false);
+      return;
+    }
+    if (
+      !cleanLoc.startsWith("http://") &&
+      !cleanLoc.startsWith("https://") &&
+      !cleanLoc.includes("maps") &&
+      !cleanLoc.includes("goo.gl")
+    ) {
+      setErrorMsg("Lütfen geçerli bir Google Haritalar bağlantısı (URL) girin.");
       setLoading(false);
       return;
     }
@@ -459,7 +470,7 @@ function LoginFormContent() {
                   required
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
-                  placeholder="Kullanıcı adınızı veya e-postanızı girin"
+                  placeholder=""
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] focus:ring-2 focus:ring-[#0062FF]/15 text-xs sm:text-sm transition-all"
                 />
               </div>
@@ -540,7 +551,7 @@ function LoginFormContent() {
                     required
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="Örn: By Erman Hair Studio"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -577,7 +588,7 @@ function LoginFormContent() {
                     required
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
-                    placeholder="Örn: Erman Güler"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -594,7 +605,7 @@ function LoginFormContent() {
                     required
                     value={registerPhone}
                     onChange={(e) => setRegisterPhone(e.target.value)}
-                    placeholder="0538 480 90 01"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -614,7 +625,7 @@ function LoginFormContent() {
                     required
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
-                    placeholder="ornek@isletme.com"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -659,7 +670,7 @@ function LoginFormContent() {
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="Örn: İstanbul"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -674,26 +685,26 @@ function LoginFormContent() {
                   required
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
-                  placeholder="Örn: Ümraniye, Kadıköy..."
+                  placeholder=""
                   className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                 />
               </div>
             </div>
 
-            {/* 5. İşletme Konumu (Zorunlu) & Web Sitesi (Opsiyonel) */}
+            {/* 5. Google Haritalar Konumu (Zorunlu) & Web Sitesi (Opsiyonel) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-[#0F2A4A] mb-1">
-                  Açık Adres / Harita Konumu <span className="text-rose-500">*</span>
+                  Google Haritalar Konum Linki <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="text"
+                    type="url"
                     required
                     value={locationUrl}
                     onChange={(e) => setLocationUrl(e.target.value)}
-                    placeholder="Örn: Cadde / No veya Google Maps Linki"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
@@ -709,7 +720,7 @@ function LoginFormContent() {
                     type="text"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    placeholder="instagram.com/isletmeniz"
+                    placeholder=""
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] text-xs transition-all"
                   />
                 </div>
