@@ -4,6 +4,20 @@ import { slotLockManager } from "@/lib/engine/lockManager";
 import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
 import { apiSuccess, apiBadRequest, handleApiError } from "@/lib/apiResponse";
 
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mode = searchParams.get("hub.mode");
+  const token = searchParams.get("hub.verify_token");
+  const challenge = searchParams.get("hub.challenge");
+
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || "randevuformu_wa_secret";
+
+  if (mode === "subscribe" && token === verifyToken) {
+    return new NextResponse(challenge || "ok", { status: 200 });
+  }
+  return new NextResponse("Unauthorized", { status: 403 });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
