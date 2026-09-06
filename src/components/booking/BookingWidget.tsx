@@ -43,6 +43,7 @@ import {
 } from "date-fns";
 import { tr } from "date-fns/locale";
 import SmartWaitlistWidget from "./SmartWaitlistWidget";
+import { CustomerCalendarButton } from "@/components/booking/CustomerCalendarButton";
 
 export interface ServiceItem {
   id: string;
@@ -994,35 +995,20 @@ export default function BookingWidget({
                     <span>Google Meet Görüşmesine Katıl</span>
                   </a>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <a
-                      href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(businessName + " - " + (selectedService?.name || "Randevu"))}&dates=${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z/${(selectedDate || "20261001").replace(/-/g, "")}T${(selectedSlot || "1400").replace(":", "")}00Z&details=${encodeURIComponent("Online Randevu — randevuformu.com")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
-                      Google Takvim
-                    </a>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${businessName} - ${selectedService?.name}\nDESCRIPTION:Randevu Onayı\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
-                        const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
-                        const link = document.createElement("a");
-                        link.href = URL.createObjectURL(blob);
-                        link.setAttribute("download", `randevu-${selectedDate || "onay"}.ics`);
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5 text-slate-500" />
-                      Apple / iCal (.ics)
-                    </button>
-                  </div>
+                  <CustomerCalendarButton
+                    event={{
+                      id: `booking-${Date.now()}`,
+                      title: `${businessName} - ${selectedService?.name || "Randevu"}`,
+                      description: `${businessName} Randevu Onayı\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nE-posta: ${customerEmail}\nHizmet: ${selectedService?.name || "Randevu"}\nTutar: ₺${selectedService?.price || 0}`,
+                      location: `${businessName}, Türkiye`,
+                      date: selectedDate || new Date().toISOString().split("T")[0],
+                      time: selectedSlot || "14:00",
+                      durationMinutes: selectedService?.duration_minutes || 45,
+                      url: `https://randevuformu.com`,
+                      customerName,
+                      customerPhone,
+                    }}
+                  />
 
                   {/* Digital Wallet Card — Clean In-App Feedback (No alert popup!) */}
                   <button

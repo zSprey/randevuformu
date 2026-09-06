@@ -30,6 +30,7 @@ import {
   Building,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CustomerCalendarButton } from "@/components/booking/CustomerCalendarButton";
 
 import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
 import {
@@ -1053,42 +1054,20 @@ export default function ErmanBarberWidget({
                 <span>WhatsApp ile {assignedStaff.name}&apos;ya Teyit İlet (Tek Tık)</span>
               </a>
 
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                    `Erman Usta - ${selectedService.name}`
-                  )}&dates=${activeDate.replace(/-/g, "")}T${selectedSlot.replace(":", "")}00Z/${activeDate.replace(
-                    /-/g,
-                    ""
-                  )}T${selectedSlot.replace(":", "")}00Z&details=${encodeURIComponent(
-                    "By Erman Erkek Berberi Randevusu — randevuformu.com"
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
-                  Google Takvim
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Erman Usta - ${selectedService.name}\nDESCRIPTION:By Erman Tıraş Randevusu\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR`;
-                    const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `randevu-${activeDate}.ics`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                  className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  Apple / iCal (.ics)
-                </button>
-              </div>
+              <CustomerCalendarButton
+                event={{
+                  id: `byerman-${Date.now()}`,
+                  title: `${assignedStaff.name} - ${selectedService.name}`,
+                  description: `By Erman Hair Studio\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nUsta: ${assignedStaff.name} (${assignedStaff.chair})\nHizmet: ${selectedService.name}${selectedExtraServices.length > 0 ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})` : ""}\nToplam: ₺${totalPrice}`,
+                  location: "By Erman Hair Studio, İstanbul",
+                  date: activeDate,
+                  time: selectedSlot,
+                  durationMinutes: totalDuration || 45,
+                  url: "https://randevuformu.com/byerman",
+                  customerName,
+                  customerPhone,
+                }}
+              />
             </div>
 
             {/* 5-Star Reputation Funnel (Çift Kademeli İtibar Filtresi) */}

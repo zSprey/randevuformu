@@ -24,7 +24,9 @@ import {
   Scissors,
   MessageSquare,
   CalendarPlus,
+  Smartphone,
 } from "lucide-react";
+import { BusinessCalendarSyncModal } from "@/components/calendar/BusinessCalendarSyncModal";
 import {
   AreaChart,
   Area,
@@ -63,6 +65,7 @@ export default function DashboardPage() {
 
   // Modal State
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [newServiceName, setNewServiceName] = useState("Saç Kesimi & Yıkama");
@@ -406,6 +409,14 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => setShowSyncModal(true)}
+                className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer border border-slate-700"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-[#38BDF8]" />
+                <span>Telefona Bağla</span>
+              </button>
+              <button
+                type="button"
                 onClick={fetchDashboardData}
                 disabled={isRefreshing}
                 className="px-3.5 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium flex items-center gap-1.5 border border-slate-200 transition-colors cursor-pointer"
@@ -597,6 +608,13 @@ export default function DashboardPage() {
         </div>
 
         {renderAddModal()}
+
+        <BusinessCalendarSyncModal
+          tenant={getTenantParam()}
+          businessName={isErmanTenant ? "By Erman Hair Studio" : "İşletme Randevuları"}
+          isOpen={showSyncModal}
+          onClose={() => setShowSyncModal(false)}
+        />
       </div>
     );
   }
@@ -642,6 +660,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowSyncModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F2A4A] hover:bg-[#1a385c] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer border border-[#0F2A4A]"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <span>Telefona Bağla</span>
+          </button>
+
           <button
             type="button"
             onClick={fetchDashboardData}
@@ -814,6 +841,13 @@ export default function DashboardPage() {
       </div>
 
       {renderAddModal()}
+
+      <BusinessCalendarSyncModal
+        tenant={getTenantParam()}
+        businessName="İşletme Randevuları"
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+      />
     </div>
   );
 }

@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   X,
   Sparkles,
+  Smartphone,
 } from "lucide-react";
+import { BusinessCalendarSyncModal } from "@/components/calendar/BusinessCalendarSyncModal";
 import {
   format,
   addMonths,
@@ -49,6 +51,7 @@ export default function CalendarPage() {
   // Modals
   const [selectedApp, setSelectedApp] = useState<AppointmentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [newTitle, setNewTitle] = useState("Randevu & Görüşme");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -270,14 +273,25 @@ export default function CalendarPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-[#0051d4] text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Yeni Randevu Planla
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSyncModal(true)}
+            className="inline-flex items-center justify-center gap-2 bg-[#0F2A4A] hover:bg-[#1a385c] text-white px-3.5 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all cursor-pointer border border-[#0F2A4A]"
+          >
+            <Smartphone className="w-4 h-4 text-[#38BDF8]" />
+            <span>Telefona Bağla (Canlı Takvim)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-[#0051d4] text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Randevu Planla</span>
+          </button>
+        </div>
       </div>
 
       {/* Calendar Card */}
@@ -529,6 +543,14 @@ export default function CalendarPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Telefon Takvimine Otomatik Bağlama Modalı */}
+      <BusinessCalendarSyncModal
+        tenant={getTenantParam()}
+        businessName="İşletme Randevuları"
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+      />
     </div>
   );
 }
