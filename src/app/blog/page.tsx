@@ -84,13 +84,13 @@ export default function BlogCatalogPage() {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+            <div className="relative h-9 sm:h-10 w-auto flex items-center shrink-0">
               <Image
                 src="/logo.png"
                 alt="Randevu Formu Logo"
-                width={32}
-                height={32}
-                className="object-contain"
+                width={38}
+                height={38}
+                className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
                 priority
               />
             </div>

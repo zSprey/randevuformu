@@ -14,7 +14,6 @@ import {
   Check,
   MessageCircle,
   Calendar,
-  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -51,8 +50,8 @@ function LiveBookingPreview() {
                 Canlı
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-              <Sparkles className="w-3 h-3 text-[#00BCD4]" />
+            <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0062FF]" />
               İşletmeniz İçin Örnek Şablon
             </p>
           </div>
@@ -160,7 +159,7 @@ function LiveBookingPreview() {
                   <button
                     key={slot}
                     onClick={() => setSelectedSlot(slot)}
-                    className={`py-2 px-1 text-center text-xs font-semibold rounded-lg border transition ${
+                    className={`py-2 px-1 text-center text-xs font-semibold rounded-xl border transition active:scale-[0.98] ${
                       isSelected
                         ? "bg-[#0062FF] text-white border-[#0062FF] shadow-xs"
                         : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
@@ -176,7 +175,7 @@ function LiveBookingPreview() {
           {/* Aksiyon Butonu */}
           <button
             onClick={() => setIsBooked(true)}
-            className="w-full py-3 bg-[#0062FF] hover:bg-[#0052d9] active:scale-[0.99] text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-[#0F2A4A] hover:bg-[#163a66] active:scale-[0.98] text-white text-xs font-medium rounded-xl shadow-xs border border-[#0F2A4A]/10 transition flex items-center justify-center gap-2"
           >
             <CalendarCheck className="w-4 h-4" />
             Randevuyu Onayla &amp; WhatsApp Teyidi Al
@@ -203,7 +202,7 @@ export default function Hero() {
   return (
     <section className="relative bg-[#FAFBFC] overflow-hidden">
       {/* Subtle geometric accent — NOT a neon glow */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-[#00BCD4]/[0.04] to-transparent rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-[#0062FF]/[0.03] to-transparent rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -245,14 +244,14 @@ export default function Hero() {
             >
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center gap-2 bg-[#00BCD4] hover:bg-[#00acc1] text-white text-sm font-medium px-6 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 bg-[#0F2A4A] hover:bg-[#163a66] text-white text-sm font-medium px-6 py-3 rounded-xl shadow-xs border border-[#0F2A4A]/10 transition-all duration-150 active:scale-[0.98]"
               >
                 Ücretsiz Başlayın
                 <ArrowRight className="w-4 h-4" strokeWidth={2} />
               </Link>
               <Link
                 href="/ornek"
-                className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 text-sm font-medium px-6 py-3 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-all duration-150"
+                className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 hover:text-[#0F2A4A] text-sm font-medium px-6 py-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs transition-all duration-150 active:scale-[0.98]"
               >
                 <Play className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
                 Canlı Demoyu İncele
@@ -269,8 +268,8 @@ export default function Hero() {
               <div className="flex -space-x-2">
                 {[
                   "bg-[#0062FF]",
-                  "bg-[#00BCD4]",
                   "bg-[#0F2A4A]",
+                  "bg-slate-600",
                   "bg-slate-400",
                 ].map((bg, i) => (
                   <div

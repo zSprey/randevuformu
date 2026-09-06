@@ -13,6 +13,7 @@ import {
   Calendar,
   CalendarDays,
   Sparkles,
+  Coffee,
   MessageCircle,
   Zap,
   Clock,
@@ -1070,7 +1071,7 @@ export default function SettingsPage() {
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] px-4 py-3 rounded-2xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2.5 border border-[#0062FF]/30"
           >
-            <CheckCircle2 className="w-4 h-4 text-[#00BCD4] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="truncate">{toastMessage}</span>
           </motion.div>
         )}
@@ -1538,7 +1539,7 @@ export default function SettingsPage() {
 
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
                   <h4 className="font-semibold text-xs text-[#0F2A4A] flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#00BCD4]" />
+                    <Coffee className="w-4 h-4 text-[#0062FF]" />
                     Öğle Molası (Slot Bloke)
                   </h4>
                   <div className="grid grid-cols-2 gap-3">

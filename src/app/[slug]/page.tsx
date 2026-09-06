@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { CalendarDays, ArrowLeft, Loader2, Sparkles, Building2, ShieldCheck, ArrowRight } from "lucide-react";
+import { CalendarDays, ArrowLeft, Loader2, Info, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import BookingWidget from "@/components/booking/BookingWidget";
 import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
@@ -247,7 +247,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
       {isDemo && (
         <div className="max-w-5xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-[#0F2A4A] border border-blue-500/30 text-center text-xs text-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
           <div className="flex items-center gap-2 text-left">
-            <Sparkles className="w-4 h-4 text-[#00BCD4] shrink-0" />
+            <Info className="w-4 h-4 text-[#0062FF] shrink-0" />
             <span>💡 <strong>Örnek {business?.category || 'Sektör'} Şablonu:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış canlı bir demodur.</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -305,7 +305,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
 
       <footer className="mt-12 text-center text-xs text-slate-500">
         <div className="flex items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#00BCD4]" />
+          <ShieldCheck className="w-4 h-4 text-[#0062FF]" />
           <span>Güvenli &amp; KVKK Uyumlu Randevu Altyapısı — randevuformu.com</span>
         </div>
       </footer>

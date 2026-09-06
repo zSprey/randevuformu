@@ -60,14 +60,14 @@ export default function ContactPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-[#0F2A4A]">
-            <div className="relative w-6 h-6 rounded-md overflow-hidden flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-[#0F2A4A] group">
+            <div className="relative h-9 w-auto flex items-center shrink-0">
               <Image
                 src="/logo.png"
                 alt="Logo"
-                width={24}
-                height={24}
-                className="object-contain"
+                width={36}
+                height={36}
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
                 priority
               />
             </div>
@@ -238,7 +238,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    className="w-full py-2.5 rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white font-medium text-xs shadow-xs border border-[#0F2A4A]/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                   >
                     {isSubmitting ? (
                       "İletiliyor..."

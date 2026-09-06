@@ -80,7 +80,7 @@ export default function PackagesPage() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-xl bg-[#0F2A4A] text-white text-xs font-semibold shadow-2xl flex items-center gap-2 border border-[#0062FF]/30">
-          <CheckCircle2 className="w-4 h-4 text-[#00BCD4]" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
       )}

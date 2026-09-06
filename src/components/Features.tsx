@@ -35,9 +35,9 @@ function FeatureCard({
       hoverBorder: "hover:border-[#0062FF]/30",
     },
     cyan: {
-      iconBg: "bg-[#00BCD4]/[0.08]",
-      iconColor: "text-[#00BCD4]",
-      hoverBorder: "hover:border-[#00BCD4]/30",
+      iconBg: "bg-[#00C4D4]/[0.10]",
+      iconColor: "text-[#008D9B]",
+      hoverBorder: "hover:border-[#00C4D4]/40",
     },
     navy: {
       iconBg: "bg-[#0F2A4A]/[0.06]",
@@ -150,7 +150,7 @@ export default function Features() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="text-[12px] font-semibold text-[#00BCD4] uppercase tracking-widest">
+            <span className="text-[12px] font-semibold text-[#0062FF] uppercase tracking-widest">
               Platform Altyapısı
             </span>
             <h2 className="text-3xl sm:text-[2.5rem] font-bold text-[#0F2A4A] tracking-[-0.03em] mt-3 mb-4 leading-tight">

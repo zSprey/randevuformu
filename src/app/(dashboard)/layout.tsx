@@ -159,9 +159,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <img
               src="/logo.png"
               alt="randevuformu.com"
-              className="h-7 w-auto transition-transform group-hover:scale-105"
-              width={28}
-              height={28}
+              className="h-9 w-auto object-contain shrink-0 transition-transform group-hover:scale-105"
+              width={36}
+              height={36}
             />
             <span className="text-[#0F2A4A] font-bold text-[15px] tracking-tight">
               randevuformu<span className="text-slate-400 font-normal">.com</span>
@@ -270,12 +270,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               {copiedLink ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-[#00BCD4]" />
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Kopyalandı!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-[#00BCD4]" />
+                  <Copy className="w-3.5 h-3.5 text-blue-200" />
                   <span className="hidden sm:inline">Randevu Linkini Kopyala</span>
                   <span className="sm:hidden">Linki Kopyala</span>
                 </>
@@ -305,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#00BCD4] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#0062FF] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
@@ -402,7 +402,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setShowProfileMenu(!showProfileMenu);
                   setShowNotifications(false);
                 }}
-                className="w-9 h-9 rounded-lg bg-[#0F2A4A] text-[#00BCD4] font-bold text-xs flex items-center justify-center border border-slate-200 hover:bg-[#0062FF] hover:text-white transition-colors uppercase cursor-pointer"
+                className="w-9 h-9 rounded-lg bg-[#0F2A4A] text-white font-semibold text-xs flex items-center justify-center border border-slate-200 hover:bg-[#0062FF] hover:text-white transition-colors uppercase cursor-pointer"
               >
                 {tenantName ? tenantName.slice(0, 2) : "BE"}
               </button>

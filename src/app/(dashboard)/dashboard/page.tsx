@@ -356,7 +356,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-medium rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white shadow-sm"
+                  className="px-5 py-2 text-xs font-medium rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white shadow-xs transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Randevuyu Kaydet
                 </button>
@@ -427,7 +427,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white text-xs font-medium flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white text-xs font-medium flex items-center gap-1.5 shadow-xs border border-[#0F2A4A]/10 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Randevu Ekle</span>
@@ -682,7 +682,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00BCD4] hover:bg-[#00acc1] text-white text-xs font-medium shadow-sm transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white text-xs font-medium shadow-xs border border-[#0F2A4A]/10 transition-all active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Manuel Randevu Ekle

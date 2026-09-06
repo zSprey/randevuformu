@@ -194,7 +194,7 @@ export default function ChatbotWidget({
             className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#0F2A4A] hover:bg-[#0062FF] text-white rounded-full shadow-lg shadow-[#0F2A4A]/25 border border-white/20 flex items-center justify-center transition-all"
             aria-label="Sohbet Asistanı"
           >
-            <MessageCircle className="w-6 h-6 text-[#00BCD4]" strokeWidth={2} />
+            <MessageCircle className="w-6 h-6 text-white" strokeWidth={2} />
           </motion.button>
         )}
       </AnimatePresence>
@@ -213,13 +213,13 @@ export default function ChatbotWidget({
             <div className="bg-[#0F2A4A] px-4 py-3.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 bg-[#0062FF] rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
+                  <MessageCircle className="w-4 h-4 text-white" strokeWidth={2} />
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px]">
                     {businessName}
                   </p>
-                  <p className="text-[11px] text-[#00BCD4]">
+                  <p className="text-[11px] text-blue-200">
                     {mode === 'platform' ? 'Platform Danışmanı' : mode === 'business' ? 'İşletme Asistanı' : 'Randevu Asistanı'}
                   </p>
                 </div>
@@ -335,7 +335,7 @@ export default function ChatbotWidget({
               <button
                 type="submit"
                 disabled={!input.trim() || isTyping}
-                className="w-9 h-9 bg-[#00BCD4] hover:bg-[#00acc1] disabled:opacity-40 rounded-xl flex items-center justify-center text-white transition-colors shrink-0"
+                className="w-9 h-9 bg-[#0062FF] hover:bg-[#0051d4] disabled:opacity-40 rounded-xl flex items-center justify-center text-white transition-colors shrink-0 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>

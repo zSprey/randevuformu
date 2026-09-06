@@ -109,14 +109,14 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
       {/* Header Bar */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-[#0F2A4A]">
-            <div className="relative w-6 h-6 rounded-md overflow-hidden flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-[#0F2A4A] group">
+            <div className="relative h-9 w-auto flex items-center shrink-0">
               <Image
                 src="/logo.png"
                 alt="Logo"
-                width={24}
-                height={24}
-                className="object-contain"
+                width={36}
+                height={36}
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
                 priority
               />
             </div>
@@ -125,15 +125,15 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
           <div className="flex items-center gap-3">
             <Link
               href={`/ornek/${sector.exampleSlug}`}
-              className="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all"
+              className="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl text-xs font-medium bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all active:scale-[0.98]"
             >
               Canlı Örnek Form
             </Link>
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0062FF] hover:bg-[#0051d4] text-white shadow-xs transition-all"
+              className="px-4 py-2 rounded-xl text-xs font-medium bg-[#0F2A4A] hover:bg-[#163a66] text-white shadow-xs border border-[#0F2A4A]/10 transition-all active:scale-[0.98]"
             >
-              Ücretsiz Başla
+              Hemen Başla
             </Link>
           </div>
         </div>

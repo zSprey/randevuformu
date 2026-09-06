@@ -15,7 +15,7 @@ import {
   Phone,
   Globe,
   MapPin,
-  Sparkles,
+  UserPlus,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -323,8 +323,8 @@ function LoginFormContent() {
   return (
     <div className="min-h-screen bg-[#FAFBFC] flex flex-col justify-center items-center px-4 py-10 relative text-[#0F172A] font-sans antialiased">
       {/* Subtle brand geometry background accent */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#00BCD4]/[0.03] to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-[#0062FF]/[0.03] to-transparent rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#0062FF]/[0.02] to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-[#0062FF]/[0.02] to-transparent rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -341,9 +341,9 @@ function LoginFormContent() {
             <img
               src="/logo.png"
               alt="randevuformu.com"
-              className="h-10 w-auto transition-transform group-hover:scale-105"
-              width={40}
-              height={40}
+              className="h-11 sm:h-12 w-auto object-contain shrink-0 transition-transform group-hover:scale-105"
+              width={48}
+              height={48}
             />
             <span className="text-xl font-bold tracking-tight text-[#0F2A4A]">
               randevuformu<span className="text-slate-400 font-normal">.com</span>
@@ -389,7 +389,7 @@ function LoginFormContent() {
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#00BCD4]" />
+              <UserPlus className="w-3.5 h-3.5 text-[#0062FF]" />
               <span>İşletme Kaydı Aç</span>
             </button>
           </div>
@@ -509,7 +509,7 @@ function LoginFormContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-medium text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
+              className="w-full mt-2 py-2.5 rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white font-medium text-xs sm:text-sm shadow-xs border border-[#0F2A4A]/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
             >
               {loading ? (
                 "Kontrol ediliyor..."
@@ -738,13 +738,13 @@ function LoginFormContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-semibold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99] cursor-pointer"
+              className="w-full mt-2 py-2.5 rounded-xl bg-[#0F2A4A] hover:bg-[#163a66] text-white font-medium text-xs sm:text-sm shadow-xs border border-[#0F2A4A]/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
             >
               {loading ? (
                 "Başvurunuz Alınıyor..."
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4" />
                   <span>Kayıt Başvurusunu Tamamla</span>
                   <ArrowRight className="w-4 h-4" />
                 </>

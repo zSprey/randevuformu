@@ -172,7 +172,7 @@ export default function Home() {
             <h2 className="text-3xl sm:text-[2.5rem] font-bold text-[#0F2A4A] tracking-[-0.03em] mt-3 mb-4 leading-tight">
               Her sektöre özel
               <br />
-              <span className="text-[#00BCD4]">randevu çözümleri.</span>
+              <span className="text-[#0062FF]">randevu çözümleri.</span>
             </h2>
             <p className="text-base text-slate-500 leading-relaxed">
               Diş kliniğinden kuaföre, diyetisyenden avukata kadar 30&apos;dan fazla sektör
@@ -211,7 +211,7 @@ export default function Home() {
       <section className="bg-[#FAFBFC] py-20 sm:py-28 border-t border-slate-100">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <div className="text-center mb-12">
-            <span className="text-[12px] font-semibold text-[#00BCD4] uppercase tracking-widest">
+            <span className="text-[12px] font-semibold text-[#0062FF] uppercase tracking-widest">
               SSS
             </span>
             <h2 className="text-3xl sm:text-[2.5rem] font-bold text-[#0F2A4A] tracking-[-0.03em] mt-3 leading-tight">
@@ -277,14 +277,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-[#0051d4] text-white text-sm font-semibold px-7 py-3.5 rounded-xl shadow-md transition-all duration-150 active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 bg-[#0F2A4A] hover:bg-[#163a66] text-white text-sm font-medium px-7 py-3.5 rounded-xl shadow-xs border border-[#0F2A4A]/10 transition-all duration-150 active:scale-[0.98]"
             >
               Ücretsiz Başlayın
               <ArrowRight className="w-4 h-4" strokeWidth={2} />
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center text-sm font-semibold text-slate-700 hover:text-[#0F2A4A] px-7 py-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-xs transition-all duration-150"
+              className="inline-flex items-center justify-center text-sm font-medium text-slate-700 hover:text-[#0F2A4A] px-7 py-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-xs transition-all duration-150 active:scale-[0.98]"
             >
               Kurumsal İletişim
             </Link>

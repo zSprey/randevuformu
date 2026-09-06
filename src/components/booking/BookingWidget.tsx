@@ -336,7 +336,7 @@ export default function BookingWidget({
       {/* Top Header Bar — Calendly Corporate Aesthetic */}
       <div className="bg-[#0F2A4A] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-[#00BCD4] text-sm">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-white text-sm">
             {businessName.charAt(0)}
           </div>
           <div>
@@ -360,7 +360,7 @@ export default function BookingWidget({
               key={s.num}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-colors ${
                 step === s.num
-                  ? "bg-[#00BCD4] text-[#0F2A4A] font-bold shadow-xs"
+                  ? "bg-white text-[#0F2A4A] font-bold shadow-xs"
                   : step > s.num
                   ? "bg-emerald-500/20 text-emerald-300 font-medium"
                   : "text-slate-400 bg-white/5"
@@ -991,7 +991,7 @@ export default function BookingWidget({
                     rel="noreferrer"
                     className="w-full py-2.5 px-4 rounded-xl bg-[#0F2A4A] hover:bg-[#1a385c] text-white font-semibold text-xs shadow-sm flex items-center justify-center gap-2 transition-colors"
                   >
-                    <Video className="w-4 h-4 text-[#00BCD4]" />
+                    <Video className="w-4 h-4 text-[#0062FF]" />
                     <span>Google Meet Görüşmesine Katıl</span>
                   </a>
 

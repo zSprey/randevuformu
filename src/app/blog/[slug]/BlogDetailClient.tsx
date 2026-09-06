@@ -100,14 +100,14 @@ export default function BlogDetailClient({ post, relatedPosts }: BlogDetailClien
             <ArrowLeft className="w-4 h-4" />
             <span>Tüm Makaleler</span>
           </Link>
-          <Link href="/" className="font-extrabold text-base text-[#0F2A4A] flex items-center gap-2">
-            <div className="relative w-6 h-6 rounded-md overflow-hidden flex items-center justify-center">
+          <Link href="/" className="font-extrabold text-base text-[#0F2A4A] flex items-center gap-2 group">
+            <div className="relative h-9 w-auto flex items-center shrink-0">
               <Image
                 src="/logo.png"
                 alt="Logo"
-                width={24}
-                height={24}
-                className="object-contain"
+                width={36}
+                height={36}
+                className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
                 priority
               />
             </div>
@@ -115,7 +115,7 @@ export default function BlogDetailClient({ post, relatedPosts }: BlogDetailClien
           </Link>
           <Link
             href="/login"
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0062FF] hover:bg-[#0051d4] text-white shadow-xs transition-all"
+            className="px-4 py-2 rounded-xl text-xs font-medium bg-[#0F2A4A] hover:bg-[#163a66] text-white shadow-xs border border-[#0F2A4A]/10 transition-all active:scale-[0.98]"
           >
             Giriş Yap
           </Link>

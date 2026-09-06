@@ -99,9 +99,9 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
           <button
             onClick={() => setIsOpen(true)}
             className="w-14 h-14 bg-[#0F2A4A] hover:bg-[#0062FF] text-white rounded-full shadow-lg shadow-[#0F2A4A]/25 border border-white/20 flex items-center justify-center transition-all cursor-pointer"
-            aria-label="AI Randevu Asistanı"
+            aria-label="Randevu Asistanı"
           >
-            <MessageCircle className="w-6 h-6 text-[#00BCD4]" strokeWidth={2} />
+            <MessageCircle className="w-6 h-6 text-white" strokeWidth={2} />
           </button>
         )}
       </div>
@@ -113,11 +113,11 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
           <div className="flex items-center justify-between bg-[#0F2A4A] px-4 py-3.5 text-white">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0062FF] text-white">
-                <Sparkles className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" />
               </div>
               <div>
                 <h4 className="text-xs font-bold leading-tight text-white">{businessName}</h4>
-                <span className="text-[10px] text-[#00BCD4] font-medium">● Randevu Asistanı</span>
+                <span className="text-[10px] text-blue-200 font-medium">● Randevu Asistanı</span>
               </div>
             </div>
             <button

@@ -26,9 +26,9 @@ export default function Navbar() {
             <img
               src="/logo.png"
               alt="randevuformu.com"
-              className="h-8 w-auto"
-              width={32}
-              height={32}
+              className="h-9 sm:h-10 w-auto object-contain shrink-0"
+              width={38}
+              height={38}
             />
             <span className="text-[15px] font-semibold tracking-tight text-[#0F2A4A]">
               randevuformu
@@ -59,7 +59,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 bg-[#00BCD4] hover:bg-[#00acc1] text-white text-[13px] font-medium px-4 py-2 rounded-lg shadow-sm transition-all duration-150 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 bg-[#0F2A4A] hover:bg-[#163a66] text-white text-[13px] font-medium px-4 py-2 rounded-xl shadow-xs border border-[#0F2A4A]/10 transition-all duration-150 active:scale-[0.98]"
             >
               Ücretsiz Başlayın
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
@@ -109,7 +109,7 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="block text-center px-4 py-2.5 text-sm font-medium text-white bg-[#00BCD4] hover:bg-[#00acc1] rounded-lg shadow-sm transition-all"
+                  className="block text-center px-4 py-2.5 text-sm font-medium text-white bg-[#0F2A4A] hover:bg-[#163a66] rounded-xl shadow-xs border border-[#0F2A4A]/10 transition-all active:scale-[0.98]"
                 >
                   Ücretsiz Başlayın
                 </Link>
