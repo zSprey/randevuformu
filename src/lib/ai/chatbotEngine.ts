@@ -1,6 +1,9 @@
 import prisma from '@/lib/prisma';
 import { format, addDays } from 'date-fns';
 import { SEKTOR_DATA, SektorConfig, SektorServiceItem } from '@/lib/sektorler';
+import { getBusinessProfile, DEFAULT_BYERMAN_PROFILE } from '@/lib/storage/profileStore';
+import { getStoredServices, DEFAULT_BYERMAN_SERVICES } from '@/lib/storage/servicesStore';
+import { getStoredStaff, BYERMAN_DEFAULT_STAFF } from '@/lib/storage/staffStore';
 
 export interface CustomerChatResponse {
   reply: string;
@@ -412,6 +415,78 @@ KURALLAR:
 // ────────────────────────────────────────────────────────
 // 4. MÜŞTERİ CHATBOTU (14 Sektöre & Randevuya Özel Eğitilmiş)
 // ────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────
+// 4. MÜŞTERİ CHATBOTU (Öğretmen Seviyesinde Eğitilmiş & Gerçek İşletme Verileriyle Bütünleşik)
+// ────────────────────────────────────────────────────────
+
+/**
+ * Groq ve Gemini LLM modellerini sırayla deneyerek öğretmen düzeyinde pedagojik yanıt üretir.
+ */
+async function callMasterLLM(systemPrompt: string, userMessage: string): Promise<string | null> {
+  // 1. Groq (Ultra-Hızlı Llama 3.1)
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey && !groqKey.includes('test') && !groqKey.includes('placeholder')) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage },
+          ],
+          max_tokens: 380,
+          temperature: 0.2, // Yüksek doğruluk ve sıfır halüsinasyon için düşük sıcaklık
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content?.trim();
+        if (text) return text;
+      }
+    } catch (err) {
+      console.warn('Groq LLM call failed, trying secondary engine:', err);
+    }
+  }
+
+  // 2. Google Gemini API (İkincil Güvenilir LLM Motoru)
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey && !geminiKey.includes('test') && !geminiKey.includes('placeholder')) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+          generationConfig: {
+            maxOutputTokens: 380,
+            temperature: 0.2,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) return text;
+      }
+    } catch (err) {
+      console.warn('Gemini LLM call failed:', err);
+    }
+  }
+
+  return null;
+}
+
 export async function processCustomerMessage(
   message: string,
   businessSlugOrId: string
@@ -423,52 +498,94 @@ export async function processCustomerMessage(
     return processPlatformMessage(message);
   }
 
-  // 1. Sektör tespiti
-  const sector = detectSector(message, businessSlugOrId);
+  const isByErman =
+    !businessSlugOrId ||
+    businessSlugOrId === 'byerman' ||
+    businessSlugOrId === 'ermankuafor' ||
+    businessSlugOrId === 'byerman-id' ||
+    businessSlugOrId === 'default';
+
+  const cleanSlug = isByErman ? 'byerman' : businessSlugOrId;
+
+  // 1. Sektör Tespiti
+  const sector = detectSector(message, cleanSlug);
   const sectorProfile = sector ? SECTOR_EXPERT_PROFILES[sector.slug] : null;
 
-  // İşletme bilgilerini veritabanından çek (varsa)
-  let business: any = null;
+  // 2. Gerçek Bulut & Veritabanı Verilerini Eşzamanlı Yükle (Edge Config + Supabase)
+  let cloudProfile: any = null;
+  let cloudServices: any[] = [];
+  let cloudStaff: any[] = [];
+
   try {
-    business = await prisma.business.findFirst({
-      where: {
-        OR: [{ slug: businessSlugOrId }, { id: businessSlugOrId }],
-      },
-      include: {
-        services: true,
-      },
-    });
+    const [p, s, st] = await Promise.all([
+      getBusinessProfile(cleanSlug).catch(() => null),
+      getStoredServices(cleanSlug).catch(() => []),
+      getStoredStaff(cleanSlug).catch(() => []),
+    ]);
+    cloudProfile = p;
+    cloudServices = s;
+    cloudStaff = st;
   } catch (err) {
-    console.warn('Customer Chat business lookup warning:', err);
+    console.warn('Cloud store lookup fallback warning:', err);
   }
 
-  const isByErman = businessSlugOrId === 'byerman' || businessSlugOrId === 'ermankuafor';
+  // 3. İşletmenin Gerçek Kimlik Bilgilerini Belirle
   const businessName = isByErman
-    ? 'By Erman Hair Studio'
-    : business?.name || (sector ? sector.exampleName : 'İşletmemiz');
-  const businessCategory = isByErman
-    ? 'Erkek Kuaförü & Saç Tasarım'
-    : business?.category || (sector ? sector.category : 'Hizmet & Randevu');
+    ? (cloudProfile?.name || DEFAULT_BYERMAN_PROFILE.name)
+    : (cloudProfile?.name || (sector ? sector.exampleName : 'İşletmemiz'));
 
-  // 2. KESİN KURAL: Konu dışı filtre kontrolü (Siyaset, Kodlama, Genel İstismar)
+  const businessCategory = isByErman
+    ? 'Erkek Berberi'
+    : (cloudProfile?.category || (sector ? sector.category : 'Randevu Hizmeti'));
+
+  const address = isByErman
+    ? (cloudProfile?.address || DEFAULT_BYERMAN_PROFILE.address)
+    : (cloudProfile?.address || 'İstanbul');
+
+  const phone = isByErman
+    ? (cloudProfile?.phone || DEFAULT_BYERMAN_PROFILE.phone)
+    : (cloudProfile?.phone || '+90 538 480 90 01');
+
+  const mapsUrl = isByErman
+    ? (cloudProfile?.google_maps_url || DEFAULT_BYERMAN_PROFILE.google_maps_url)
+    : (cloudProfile?.google_maps_url || '');
+
+  const workingHours = isByErman
+    ? (cloudProfile?.working_hours || DEFAULT_BYERMAN_PROFILE.working_hours)
+    : (cloudProfile?.working_hours || 'Pazartesi - Cuma: 09:30 - 21:30 | Cumartesi: 09:30 - 23:00 | Pazar: Kapalı');
+
+  // Gerçek Personel Listesi
+  const rawStaff = cloudStaff && cloudStaff.length > 0 ? cloudStaff : (isByErman ? BYERMAN_DEFAULT_STAFF : []);
+  const activeStaff = rawStaff.filter((s: any) => s.is_active !== false);
+
+  // 4. KESİN KURAL: Konu dışı filtre kontrolü (Siyaset, Kodlama, Genel İstismar)
   if (isForbiddenTopic(lower)) {
     return {
       reply: getForbiddenReply(businessName),
-      quickActions: sectorProfile ? sectorProfile.quickActions.slice(0, 3) : ['Uygun Saatleri Gör', 'Hizmet ve Fiyatlar', 'WhatsApp Hattı'],
+      quickActions: ['Uygun Saatleri Gör', 'Hizmet ve Fiyatlar', 'WhatsApp Hattı'],
       isBlockedTopic: true,
       detectedSector: sector?.slug,
     };
   }
 
-  // 3. Hizmet listesini derle (Önce işletmenin kendi veritabanı, yoksa eğitilmiş sektör hizmetleri)
-  let servicesList: Array<{ name: string; price: number; durationMin: number; description?: string }> = [];
+  // 5. Gerçek Hizmet & Fiyat Listesini Derle
+  let servicesList: Array<{ name: string; price: number; durationMin: number; description?: string; is_extra?: boolean }> = [];
 
-  if (business?.services && business.services.length > 0) {
-    servicesList = business.services.map((s: any) => ({
+  if (cloudServices && cloudServices.length > 0) {
+    servicesList = cloudServices.map((s: any) => ({
       name: s.name,
-      price: s.price || 400,
-      durationMin: s.durationMin || s.duration_minutes || 30,
+      price: s.price || 0,
+      durationMin: s.duration_minutes || s.durationMin || 30,
       description: s.description || '',
+      is_extra: Boolean(s.is_extra),
+    }));
+  } else if (isByErman) {
+    servicesList = DEFAULT_BYERMAN_SERVICES.map((s) => ({
+      name: s.name,
+      price: s.price || 350,
+      durationMin: s.duration_minutes || 30,
+      description: s.description || '',
+      is_extra: Boolean(s.is_extra),
     }));
   } else if (sector && sector.services && sector.services.length > 0) {
     servicesList = sector.services.map((s: SektorServiceItem) => ({
@@ -476,137 +593,153 @@ export async function processCustomerMessage(
       price: s.price || 500,
       durationMin: s.duration_minutes || 30,
       description: s.description || '',
+      is_extra: false,
     }));
-  } else if (isByErman) {
-    servicesList = [
-      { name: 'Saç Kesimi & Yıkama', price: 350, durationMin: 30, description: 'Yüz hatlarına uygun saç kesimi ve yıkama.' },
-      { name: 'Sakal Tıraşı & Sıcak Havlu', price: 200, durationMin: 25, description: 'Geleneksel ustura tıraşı ve sıcak havlu.' },
-      { name: 'Saç + Sakal Komple Bakım', price: 500, durationMin: 60, description: 'Komple saç kesimi, sakal tıraşı ve bakım.' },
-    ];
   } else {
     servicesList = [
-      { name: 'Standart Muayene & Seans', price: 600, durationMin: 30, description: 'İlk görüşme ve durum tespiti.' },
-      { name: 'Detaylı Seans & Danışmanlık', price: 1000, durationMin: 60, description: 'Kapsamlı seans ve uygulama.' },
+      { name: 'Standart Seans & Hizmet', price: 400, durationMin: 30, description: 'Birebir uzman hizmeti ve uygulama.' },
+      { name: 'Kapsamlı Seans & Bakım', price: 700, durationMin: 60, description: 'Detaylı analiz ve tam kapsamlı hizmet.' },
     ];
   }
 
-  const prepTip = sectorProfile?.prepTip || 'Randevu saatinden 5-10 dakika önce gelmeniz seansınızın zamanında başlamasını sağlar.';
+  const prepTip = isByErman
+    ? 'Tüm hizmetlerimizde tek kullanımlık steril havlu ve ustura kullanılmaktadır. Seans saatinde koltuğunuzun hazır olması için randevu saatinden 5 dakika önce gelmeniz yeterlidir.'
+    : (sectorProfile?.prepTip || 'Randevu saatinden 5-10 dakika önce gelmeniz seansınızın zamanında başlamasını sağlar.');
 
-  // 4. Groq / Gemini LLM ile Derin Sektörel Cevap Üretimi
-  const groqKey = process.env.GROQ_API_KEY;
-  if (groqKey && !groqKey.includes('test')) {
-    try {
-      const servicesContext = servicesList
-        .map((s) => `• ${s.name}: ₺${s.price} (${s.durationMin} dk) - ${s.description || ''}`)
-        .join('\n');
+  // 6. Tarih ve Zaman Hesaplamaları (Türkiye Saati & Pazar Bilinci)
+  const now = new Date();
+  const currentDayOfWeek = now.getDay(); // 0 = Pazar, 1 = Pazartesi ... 6 = Cumartesi
 
-      const faqsContext = sector
-        ? sector.faqs.map((f) => `S: ${f.question}\nC: ${f.answer}`).join('\n')
-        : '';
-
-      const systemPrompt = `Sen "${businessName}" (${businessCategory}) bünyesinde hizmet veren, alanında uzmanlaşmış Türkçe yapay zeka randevu ve hasta/danışan kabul asistanısın.
-Uzmanlık Kimliği: ${sectorProfile ? sectorProfile.expertTitle : 'Müşteri Hizmetleri'} (${businessCategory}).
-
-İŞLETME HİZMET VE FİYAT LİSTESİ:
-${servicesContext}
-
-SEKTÖREL SIK SORULAN SORULAR VE CEVAPLAR:
-${faqsContext}
-
-ÖN HAZIRLIK VE DİKKAT EDİLMESİ GEREKENLER:
-${prepTip}
-
-KESİN VE TAVİZSİZ KURALLAR:
-1. SADECE bu işletmenin hizmetleri, seans süreleri, ücretleri, uygun randevu saatleri ve seans öncesi hazırlık hakkında konuş.
-2. ASLA siyaset, partiler, seçimler veya politika konularına girme.
-3. ASLA yazılım, kodlama veya platform dışı teknik konulara girme.
-4. Sektörün diline uygun (örneğin Diş Hekimi ise medikal güven ve sterilizasyon vurgusu; Veteriner ise şefkatli pet sağlığı dili; Kuaför ise stil ve bakım dili; Avukat ise saygın ve kurumsal ton) yanıt ver. Kesin tıbbi teşhis veya kesin hukuki hüküm verme, uzmana randevuya davet et.
-5. Samimi, kurumsal ve kısa yanıtlar ver. Mesajın sonunda müşteriyi randevu almaya veya uygun bir saat seçmeye davet et.`;
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message },
-          ],
-          max_tokens: 280,
-          temperature: 0.3,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const aiReply = data.choices?.[0]?.message?.content?.trim();
-        if (aiReply) {
-          return {
-            reply: aiReply,
-            quickActions: sectorProfile?.quickActions || ['Hemen Randevu Seç', 'Fiyat Listesi', 'WhatsApp İletişim'],
-            detectedSector: sector?.slug,
-          };
-        }
-      }
-    } catch {
-      // LLM hatasında yerel zeka motoruna sorunsuz geçilir
-    }
-  }
-
-  // 5. YÜKSEK ZEKALI YEREL TÜRKÇE EĞİTİLMİŞ MOTOR (FALLBACK ENGINE)
-  let targetDate = new Date();
-  let dateLabel = 'Bugün';
-
-  if (lower.includes('yarın') || lower.includes('yarin')) {
-    targetDate = addDays(new Date(), 1);
-    dateLabel = 'Yarın';
-  } else if (lower.includes('hafta sonu') || lower.includes('cumartesi') || lower.includes('pazar')) {
-    targetDate = addDays(new Date(), 2);
-    dateLabel = 'Hafta Sonu';
-  }
-
-  const dateStr = format(targetDate, 'yyyy-MM-dd');
-
-  // A. Müsaitlik & Randevu Soruları
-  if (
+  let isAskingTomorrow = lower.includes('yarın') || lower.includes('yarin');
+  let isAskingToday = lower.includes('bugün') || lower.includes('bugun');
+  let isAskingAvailability =
     lower.includes('boş') ||
     lower.includes('bos') ||
-    lower.includes('randevu') ||
     lower.includes('müsait') ||
     lower.includes('musait') ||
     lower.includes('saat') ||
     lower.includes('yer var') ||
-    lower.includes('seans')
-  ) {
-    const isAfternoon = lower.includes('öğle') || lower.includes('ogle') || lower.includes('akşam') || lower.includes('aksam');
-    const isMorning = lower.includes('sabah') || lower.includes('erken');
+    lower.includes('seans');
 
-    const primaryServiceName = servicesList[0]?.name || 'Standart Seans';
-    const secondaryServiceName = servicesList[1]?.name || primaryServiceName;
+  const tomorrowDayOfWeek = (currentDayOfWeek + 1) % 7;
+  const tomorrowIsSunday = tomorrowDayOfWeek === 0;
 
-    let slots = [
-      { id: 's1', time: '10:15', date: dateStr, serviceName: primaryServiceName, isDiscounted: false },
-      { id: 's2', time: '11:30', date: dateStr, serviceName: secondaryServiceName, isDiscounted: false },
-      { id: 's3', time: '14:00', date: dateStr, serviceName: primaryServiceName, isDiscounted: true },
-      { id: 's4', time: '15:45', date: dateStr, serviceName: secondaryServiceName, isDiscounted: true },
-      { id: 's5', time: '17:30', date: dateStr, serviceName: primaryServiceName, isDiscounted: false },
-    ];
+  // 7. LLM ile Derin Öğretmen Düzeyinde Yanıt Üretimi
+  const staffContext = activeStaff
+    .map((sm: any) => `• ${sm.name || sm.display_name} (${sm.role || sm.title || 'Uzman Usta'})`)
+    .join('\n');
 
-    if (isAfternoon) slots = slots.filter((s) => s.time >= '12:00');
-    else if (isMorning) slots = slots.filter((s) => s.time < '12:00');
+  const servicesContext = servicesList
+    .map((s) => `• ${s.name}: ₺${s.price} (${s.durationMin} dakika)${s.description ? ` — ${s.description}` : ''}`)
+    .join('\n');
 
+  const teacherSystemPrompt = `SEN KİMSİN?
+Sen "${businessName}" (${businessCategory}) işletmesinin resmi, pedagojik eğitim almış, son derece bilgili, saygılı ve yardımsever Türkçe Randevu Asistanısın.
+Bir öğretmen gibi; müşterilere tane tane, saygılı, net, güven veren ve %100 DOĞRU bilgilerle yol gösterirsin.
+
+İŞLETME RESMİ BİLGİLERİ (ASLA BUNLARIN DIŞINA ÇIKMA, ASLA BAŞKA SEKTÖRDEN BİLGİ KARIŞTIRMA!):
+- İşletme Adı: ${businessName}
+- Faaliyet Alanı: ${businessCategory}
+- Açık Adres: ${address}
+${mapsUrl ? `- Google Haritalar Linki: ${mapsUrl}` : ''}
+- Telefon / WhatsApp: ${phone}
+- Çalışma Saatleri: ${workingHours}
+- PAZAR GÜNÜ DURUMU: ${isByErman ? 'Pazar günleri tamamen KAPALIDIR. Pazar gününe ASLA randevu verme!' : 'Pazar günleri kapalıdır.'}
+- Hizmet Veren Uzman Ustalarımız:
+${staffContext}
+
+GÜNCEL HİZMET VE FİYAT LİSTESİ:
+${servicesContext}
+
+ÖNEMLİ POLİTİKALAR & KURALLAR:
+1. Randevu İptali / Saati Erteleme: Müşteriler randevularını https://randevuformu.com/randevu/yonet adresinden veya onay SMS/WhatsApp bildirimindeki bağlantıdan tek tıkla cezasız erteleyebilir veya iptal edebilirler.
+2. Ödeme Yöntemleri: Nakit, Kredi Kartı & Banka Kartı (temassız dahil tüm bankalar) ve Havale/EFT kabul edilmektedir. Randevu alırken kart bilgisi girilmesi gerekmez, ödeme seans sonrası yapılır.
+3. Çocuk Tıraşı: 12 yaş altı çocuklar için Çocuk Saç Kesimi (₺250 / 30 dk) mevcuttur.
+4. Hijyen: Her müşteride tek kullanımlık steril havlu ve jilet kullanılır.
+
+ÖĞRETMEN GİBİ CEVAPLAMA TALİMATLARI:
+1. GERÇEKÇİLİK: Sadece bu işletmenin yukarıda yazılı gerçek hizmetleri ve fiyatları hakkında konuş. Asla olmayan bir hizmeti uydurma.
+2. PAZAR GÜNÜ KURALI: Eğer kullanıcı yarın için sorarsa ve yarın Pazar ise; "Salonumuz Pazar günleri kapalıdır. Ancak sizi Pazartesi günü için memnuniyetle ağırlayabiliriz" diyerek Pazartesi gününe davet et.
+3. KISA VE ÖZ: Net, maddeli, Türkçe imla kurallarına uygun ve samimi cevap ver.
+4. YÖNLENDİRME: Cevabının sonunda müşteriyi sayfadaki randevu alma formundan saat seçmeye davet et.`;
+
+  const llmReply = await callMasterLLM(teacherSystemPrompt, message);
+
+  // Müsaitlik veya boş saat sorulduğunda önerilecek akıllı slotlar
+  let suggestedSlots: any[] | undefined = undefined;
+  if (isAskingTomorrow || isAskingToday || isAskingAvailability) {
+    if (isAskingTomorrow && tomorrowIsSunday && isByErman) {
+      // Yarın Pazar ise Pazartesi gününün slotlarını öner
+      const mondayDate = addDays(now, 2);
+      const mondayStr = format(mondayDate, 'yyyy-MM-dd');
+      const srvName = servicesList[0]?.name || 'Saç Kesimi & Yıkama';
+      suggestedSlots = [
+        { id: 'm1', time: '10:00', date: mondayStr, serviceName: srvName, isDiscounted: false },
+        { id: 'm2', time: '11:30', date: mondayStr, serviceName: srvName, isDiscounted: false },
+        { id: 'm3', time: '14:00', date: mondayStr, serviceName: srvName, isDiscounted: true },
+        { id: 'm4', time: '16:30', date: mondayStr, serviceName: srvName, isDiscounted: false },
+        { id: 'm5', time: '18:00', date: mondayStr, serviceName: srvName, isDiscounted: false },
+        { id: 'm6', time: '20:00', date: mondayStr, serviceName: srvName, isDiscounted: false },
+      ];
+    } else {
+      const target = isAskingTomorrow ? addDays(now, 1) : now;
+      const targetStr = format(target, 'yyyy-MM-dd');
+      const srvName = servicesList[0]?.name || 'Saç Kesimi & Yıkama';
+      suggestedSlots = [
+        { id: 's1', time: '10:15', date: targetStr, serviceName: srvName, isDiscounted: false },
+        { id: 's2', time: '11:45', date: targetStr, serviceName: srvName, isDiscounted: false },
+        { id: 's3', time: '14:00', date: targetStr, serviceName: srvName, isDiscounted: true },
+        { id: 's4', time: '16:15', date: targetStr, serviceName: srvName, isDiscounted: false },
+        { id: 's5', time: '18:30', date: targetStr, serviceName: srvName, isDiscounted: false },
+        { id: 's6', time: '20:00', date: targetStr, serviceName: srvName, isDiscounted: false },
+      ];
+    }
+  }
+
+  // Eğer LLM başarılı bir pedagojik yanıt ürettiyse onu kullan
+  if (llmReply) {
     return {
-      reply: `${dateLabel} günü için **${businessName}** (${businessCategory}) bünyesinde uygun bulunan saatler aşağıdadır. Size en uygun saati seçerek randevunuzu anında teyit edebilirsiniz:`,
-      suggestedSlots: slots,
-      quickActions: sectorProfile?.quickActions || ['Fiyatları Gör', 'WhatsApp ile Danış', 'Farklı Bir Gün Seç'],
+      reply: llmReply,
+      suggestedSlots,
+      quickActions: ['Hemen Randevu Al', 'Fiyat Listesi', 'Ustalarımız', 'WhatsApp İletişim'],
       detectedSector: sector?.slug,
     };
   }
 
-  // B. Fiyat & Ücret Soruları
+  // ────────────────────────────────────────────────────────
+  // 8. YÜKSEK ZEKALI YEREL EĞİTİLMİŞ MOTOR (FALLBACK TEACHER ENGINE)
+  // ────────────────────────────────────────────────────────
+
+  // A. Yarın Boş Yer / Müsaitlik Soruları
+  if (isAskingTomorrow) {
+    if (tomorrowIsSunday && isByErman) {
+      return {
+        reply: `Salonumuz **Pazar günleri kapalıdır**.\n\nAncak haftanın ilk günü olan **Pazartesi** günü saat 09:30'dan itibaren koltuğumuz sizin için hazır! Sizin için uygun Pazartesi randevu saatlerimiz aşağıdadır. Dilediğiniz saati seçerek anında randevunuzu oluşturabilirsiniz:`,
+        suggestedSlots,
+        quickActions: ['Pazartesi 10:00 Randevusu', 'Fiyat Listesi', 'WhatsApp Destek'],
+        detectedSector: sector?.slug,
+      };
+    }
+
+    return {
+      reply: `Yarın için **${businessName}** salonumuzda uygun randevu saatlerimiz mevcuttur. Size en uygun saati seçerek randevunuzu saniyeler içinde onaylayabilirsiniz:`,
+      suggestedSlots,
+      quickActions: ['Yarın 10:15 Randevusu', 'Fiyat Listesi', 'WhatsApp ile Danış'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // B. Bugün Boş Yer / Genel Müsaitlik
+  if (isAskingToday || isAskingAvailability) {
+    return {
+      reply: `Bugün için **${businessName}** salonumuzda uygun bulunan saatler aşağıda listelenmiştir. Dilediğiniz saati seçerek yerinizi hemen ayırtabilirsiniz:`,
+      suggestedSlots,
+      quickActions: ['Fiyatları Gör', 'WhatsApp ile Danış', 'Farklı Bir Gün Seç'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // C. Hizmet & Fiyat Soruları
   if (
     lower.includes('fiyat') ||
     lower.includes('ücret') ||
@@ -614,53 +747,65 @@ KESİN VE TAVİZSİZ KURALLAR:
     lower.includes('kaç tl') ||
     lower.includes('kac para') ||
     lower.includes('maliyet') ||
-    lower.includes('ne kadar')
+    lower.includes('ne kadar') ||
+    lower.includes('tarife')
   ) {
+    // Özel olarak bir hizmet sorulmuş mu?
+    if (lower.includes('sakal')) {
+      return {
+        reply: `**Sakal Tıraşı & Sıcak Havlu:** ₺200 (25 dakika)\n\nGeleneksel ustura tıraşı, sakal hattı şekillendirme ve buharlı sıcak havlu kompresi içermektedir.\n\nDilerseniz saç kesimiyle birlikte **Saç + Sakal Komple Tıraş & Bakım (₺500)** paketimizi de tercih edebilirsiniz.`,
+        quickActions: ['Sakal Tıraşı Randevusu Al', 'Tüm Fiyat Listesi', 'Yarın Boş Yerler'],
+        detectedSector: sector?.slug,
+      };
+    }
+
+    if (lower.includes('çocuk') || lower.includes('cocuk')) {
+      return {
+        reply: `**Çocuk Saç Kesimi (12 yaş altı):** ₺250 (30 dakika)\n\nÇocuklarımız için sabırlı, eğlenceli ve özenli saç kesimi hizmeti sunuyoruz.`,
+        quickActions: ['Çocuk Saç Kesimi Seç', 'Tüm Fiyatlar', 'Yarın Boş Saatler'],
+        detectedSector: sector?.slug,
+      };
+    }
+
+    if (lower.includes('saç') && !lower.includes('sakal')) {
+      return {
+        reply: `**Saç Kesimi & Yıkama & Fön:** ₺350 (35 dakika)\n\nKişinin yüz tipine uygun modern saç kesimi, saç yıkama ve stil fön uygulamasını içerir.`,
+        quickActions: ['Saç Kesimi Randevusu Al', 'Tüm Fiyat Listesi', 'Yarın Boş Saatler'],
+        detectedSector: sector?.slug,
+      };
+    }
+
     const prices = servicesList
       .map((s) => `• **${s.name}**: ₺${s.price} (${s.durationMin} dk)${s.description ? ` — _${s.description}_` : ''}`)
       .join('\n');
 
     return {
-      reply: `**${businessName}** güncel hizmet ve seans ücret tarifemiz:\n\n${prices}\n\n💡 _${prepTip}_\n\nDilediğiniz hizmet için uygun bir saat seçerek anında online randevu oluşturabilirsiniz.`,
-      quickActions: ['Bugün Boş Yer Var mı?', 'Yarın için Randevu Al', 'WhatsApp ile Danış'],
+      reply: `**${businessName}** güncel hizmet ve seans ücret tarifemiz:\n\n${prices}\n\n💡 _${prepTip}_\n\nRandevu almak için herhangi bir ön ödeme gerekmez; ödemenizi işlem sonrasında nakit veya kredi kartıyla yapabilirsiniz.`,
+      quickActions: ['Yarın Boş Yer Var mı?', 'Hemen Randevu Al', 'WhatsApp ile Danış'],
       detectedSector: sector?.slug,
     };
   }
 
-  // C. Sektör Özelinde Soru Eşleşmeleri (FAQ & Domain Knowledge)
-  if (sector && sector.faqs && sector.faqs.length > 0) {
-    for (const faq of sector.faqs) {
-      const qKeywords = faq.question.toLowerCase().split(' ').filter(w => w.length > 3);
-      const matchCount = qKeywords.filter(k => lower.includes(k)).length;
-      if (matchCount >= 2) {
-        return {
-          reply: `**${faq.question}**\n\n${faq.answer}\n\n💡 _${prepTip}_`,
-          quickActions: sectorProfile?.quickActions || ['Hemen Randevu Al', 'Hizmet ve Fiyatlar', 'WhatsApp Destek'],
-          detectedSector: sector.slug,
-        };
-      }
-    }
-  }
-
-  // Sektöre Özel Ön Hazırlık / Nasıl Gelinmeli Soruları
+  // D. Ustalar & Personel Ekibi Soruları
   if (
-    lower.includes('hazırlık') ||
-    lower.includes('hazirlik') ||
-    lower.includes('aç mı') ||
-    lower.includes('ac mi') ||
-    lower.includes('ne getirmeliyim') ||
-    lower.includes('nasıl gelmeliyim') ||
-    lower.includes('öncesi') ||
-    lower.includes('oncesi')
+    lower.includes('usta') ||
+    lower.includes('berber') ||
+    lower.includes('kimler') ||
+    lower.includes('erman') ||
+    lower.includes('ahmet') ||
+    lower.includes('personel') ||
+    lower.includes('çalışan') ||
+    lower.includes('calisan') ||
+    lower.includes('ekip')
   ) {
     return {
-      reply: `**${businessName} (${businessCategory}) Randevu Öncesi Bilgilendirme:**\n\n${prepTip}\n\nSeans saatinde uzmanımızın sizi hazır beklemesi için randevu formunu doldurarak yerinizi hemen ayırtabilirsiniz.`,
-      quickActions: ['Bugün Boş Saatler', 'Fiyat Listesi', 'WhatsApp İletişim'],
+      reply: `**${businessName} Bünyesinde Hizmet Veren Uzman Ekibimiz:**\n\n• **Erman Usta (Master Barber / Kurucu):** Klasik Türk berberi, sıcak havlu, ustura sakal tıraşı ve saç tasarım uzmanı.\n• **Ahmet Kalfa (Saç & Sakal Uzmanı):** Modern fade kesim, genç saç modelleri ve sakal şekillendirme uzmanı.\n\nRandevu alırken tercih ettiğiniz ustayı seçebilir veya en erken randevu için **"İlk Müsait Usta"** seçeneğini kullanabilirsiniz.`,
+      quickActions: ['Erman Usta ile Randevu', 'Ahmet Kalfa ile Randevu', 'Yarın Boş Yerler'],
       detectedSector: sector?.slug,
     };
   }
 
-  // D. Adres, Ulaşım & İletişim Soruları
+  // E. Adres, Ulaşım & Konum Soruları
   if (
     lower.includes('nerede') ||
     lower.includes('adres') ||
@@ -668,19 +813,81 @@ KESİN VE TAVİZSİZ KURALLAR:
     lower.includes('telefon') ||
     lower.includes('ulaşım') ||
     lower.includes('ulasim') ||
-    lower.includes('harita')
+    lower.includes('harita') ||
+    lower.includes('yol tarifi')
   ) {
     return {
-      reply: `**${businessName}** olarak hizmet vermekteyiz. Randevunuzu onayladığınız anda kliniğimizin/salonumuzun açık adresi ve tek tıkla navigasyon linki otomatik olarak WhatsApp ve SMS ile iletilmektedir.`,
-      quickActions: ['Randevu Al', 'WhatsApp ile Konum İste', 'Çalışma Saatleri'],
+      reply: `📍 **${businessName} Salon Adresimiz:**\n${address}\n\n🗺️ **Harita & Yol Tarifi:**\n${mapsUrl ? `[Google Haritalar'da Aç](${mapsUrl})\n\n` : ''}📞 **Telefon / WhatsApp:** ${phone}\n\nRandevunuzu tamamladığınızda açık adresimiz ve navigasyon linkimiz SMS ve WhatsApp ile cebinize otomatik iletilmektedir.`,
+      quickActions: ['Yol Tarifi Al', 'Yarın Boş Saatler', 'WhatsApp İletişim'],
       detectedSector: sector?.slug,
     };
   }
 
-  // E. Varsayılan Sektörel Karşılama
+  // F. Çalışma Saatleri Soruları
+  if (
+    lower.includes('saat kaç') ||
+    lower.includes('çalışma saat') ||
+    lower.includes('calisma saat') ||
+    lower.includes('kaça kadar') ||
+    lower.includes('kaçta aç') ||
+    lower.includes('açık mı') ||
+    lower.includes('acik mi') ||
+    lower.includes('pazar')
+  ) {
+    return {
+      reply: `**${businessName} Çalışma Saatlerimiz:**\n\n• **Pazartesi - Cuma:** 09:30 - 21:30\n• **Cumartesi:** 09:30 - 23:00\n• **Pazar:** Kapalı\n\nDilediğiniz gün ve saat için web sitemiz üzerinden 7/24 online randevu oluşturabilirsiniz.`,
+      quickActions: ['Yarın Boş Yerler', 'Fiyat Listesi', 'WhatsApp Destek'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // G. Randevu İptali, Değişikliği & Erteleme
+  if (
+    lower.includes('iptal') ||
+    lower.includes('ertele') ||
+    lower.includes('değiştir') ||
+    lower.includes('degistir') ||
+    lower.includes('gelemeyeceğim') ||
+    lower.includes('saatimi')
+  ) {
+    return {
+      reply: `Randevunuzu dilediğiniz an self-servis olarak yönetebilirsiniz:\n\n1. **Online Randevu Masası:** Doğrudan [randevuformu.com/randevu/yonet](https://randevuformu.com/randevu/yonet) adresine giderek telefon numaranızla giriş yapabilir,\n2. **Onay Mesajı:** Size gelen SMS veya WhatsApp onay mesajındaki **"Randevumu Yönet"** bağlantısına tıklayabilirsiniz.\n\nHerhangi bir ceza veya kesinti olmadan saniyeler içinde yeni bir saate erteleyebilir veya iptal edebilirsiniz.`,
+      quickActions: ['Randevu Yönetim Masası', 'WhatsApp ile Bildir', 'Yeni Randevu Al'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // H. Ödeme Yöntemleri
+  if (
+    lower.includes('ödeme') ||
+    lower.includes('odeme') ||
+    lower.includes('kredi kart') ||
+    lower.includes('kart geçerli') ||
+    lower.includes('kart geçiyor') ||
+    lower.includes('nakit') ||
+    lower.includes('havale') ||
+    lower.includes('eft')
+  ) {
+    return {
+      reply: `Salonumuzda **Nakit**, **Kredi Kartı & Banka Kartı** (tüm bankalar, temassız dahil) ve **Havale / EFT** ile ödeme kabul edilmektedir.\n\nRandevu alırken kart bilgisi girmeniz gerekmez; ödemenizi işlem sonrasında kasada yapabilirsiniz.`,
+      quickActions: ['Hemen Randevu Al', 'Fiyat Listesi', 'Yarın Boş Saatler'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // I. Çocuk Saç Kesimi Soruları
+  if (lower.includes('çocuk') || lower.includes('bebek') || lower.includes('oğlum') || lower.includes('oglum')) {
+    return {
+      reply: `Evet! 12 yaş altı çocuklarımız için özel, sabırlı ve eğlenceli **Çocuk Saç Kesimi (₺250 / 30 dk)** hizmetimiz mevcuttur. Çocuğunuzun saçını özenle ve sakin bir ortamda tıraş ediyoruz.`,
+      quickActions: ['Çocuk Saç Kesimi Randevusu', 'Fiyat Listesi', 'Yarın Boş Saatler'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // J. Varsayılan Eğitilmiş Karşılama
   return {
-    reply: `Merhaba! Ben **${businessName}** (${sectorProfile ? sectorProfile.expertTitle : businessCategory}) akıllı randevu asistanıyım. Size en uygun randevu saatini bulabilir, seans ücretlerimizi aktarabilir ve ön hazırlık detaylarını paylaşabilirim. Size nasıl yardımcı olabilirim?`,
-    quickActions: sectorProfile?.quickActions || ['Bugün boş yer var mı?', 'Yarın için randevu bak', 'Hizmet & Fiyat Listesi', 'WhatsApp Destek'],
+    reply: `Merhaba! Ben **${businessName}** akıllı randevu asistanıyım. Size randevu saatleri, hizmet ve ücretlerimiz, adresimiz ve uzman ustalarımız hakkında memnuniyetle yardımcı olabilirim. Nasıl yardımcı olabilirim?`,
+    quickActions: ['Yarın boş yer var mı?', 'Fiyat listesi nedir?', 'Neredesiniz? (Konum)', 'Hangi ustalar var?'],
     detectedSector: sector?.slug,
   };
 }

@@ -93,62 +93,72 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
 
   return (
     <>
-      {/* Floating Button — Ana sayfadakiyle birebir aynı sembol ve marka paleti */}
+      {/* Floating Button — Signature Brand Gradient & Pulse Status */}
       <div className="fixed right-6 bottom-6 z-50">
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
-            className="w-14 h-14 bg-[#0F2A4A] hover:bg-[#0062FF] text-white rounded-full shadow-lg shadow-[#0F2A4A]/25 border border-white/20 flex items-center justify-center transition-all cursor-pointer"
+            className="group relative w-14 h-14 bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] hover:scale-105 active:scale-95 text-white rounded-2xl shadow-xl shadow-[#0062FF]/20 border border-white/30 flex items-center justify-center transition-all cursor-pointer"
             aria-label="Randevu Asistanı"
           >
-            <MessageCircle className="w-6 h-6 text-white" strokeWidth={2} />
+            <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" strokeWidth={2.2} />
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
+            </span>
           </button>
         )}
       </div>
 
-      {/* Chatbox Window */}
+      {/* Chatbox Window — Apple & Linear Light Luxury Aesthetic */}
       {isOpen && (
-        <div className="fixed right-6 bottom-6 z-50 w-[92vw] max-w-sm rounded-2xl border border-slate-200/90 bg-white shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 max-h-[520px]">
-          {/* Header — Kurumsal Deep Navy */}
-          <div className="flex items-center justify-between bg-[#0F2A4A] px-4 py-3.5 text-white">
+        <div className="fixed right-4 sm:right-6 bottom-4 sm:bottom-6 z-50 w-[94vw] max-w-sm rounded-2xl border border-slate-200/90 bg-white shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 max-h-[540px]">
+          {/* Header — Crisp White with Subtle Divider */}
+          <div className="flex items-center justify-between bg-white px-4 py-3.5 border-b border-slate-100 shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0062FF] text-white">
-                <MessageCircle className="h-4 w-4" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] text-white shadow-xs">
+                <Sparkles className="h-4 w-4 text-white" />
               </div>
               <div>
-                <h4 className="text-xs font-bold leading-tight text-white">{businessName}</h4>
-                <span className="text-[10px] text-blue-200 font-medium">● Randevu Asistanı</span>
+                <h4 className="text-xs sm:text-sm font-bold leading-tight text-[#0F2A4A]">{businessName}</h4>
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Yapay Zeka Asistanı
+                </span>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="rounded-lg p-1.5 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              className="rounded-lg p-1.5 text-slate-400 hover:text-[#0F2A4A] hover:bg-slate-100 transition-colors"
+              aria-label="Kapat"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-50/50 text-xs">
+          {/* Messages Area — Soft #FAFBFC Canvas */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAFBFC] text-xs">
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl px-4 py-3 leading-relaxed shadow-2xs ${
                     m.sender === 'user'
-                      ? 'bg-zinc-900 text-white rounded-br-none'
-                      : 'bg-white text-zinc-800 border border-zinc-200/80 rounded-bl-none shadow-sm'
+                      ? 'bg-[#0062FF] text-white rounded-br-xs shadow-blue-500/10'
+                      : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'
                   }`}
                 >
-                  <p className="whitespace-pre-line">{m.text}</p>
+                  <p className={`whitespace-pre-line text-xs ${m.sender === 'user' ? 'text-white font-medium' : 'text-slate-800'}`}>
+                    {m.text}
+                  </p>
                 </div>
 
                 {/* Önerilen Slotlar */}
                 {m.suggestedSlots && m.suggestedSlots.length > 0 && (
                   <div className="mt-2.5 w-full space-y-1.5">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                       Önerilen Randevu Saatleri:
                     </span>
                     <div className="grid grid-cols-2 gap-2">
@@ -156,14 +166,16 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
                         <button
                           key={slot.id}
                           onClick={() => handleSend(`${slot.date} ${slot.time} randevusunu seçiyorum`)}
-                          className="flex items-center justify-between p-2 rounded-lg border border-zinc-200 bg-white hover:border-zinc-900 transition-colors text-left"
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white hover:border-[#0062FF] hover:bg-blue-50/40 transition-all text-left group shadow-2xs"
                         >
                           <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-zinc-500" />
-                            <span className="font-mono font-bold tabular-nums text-zinc-900 text-xs">{slot.time}</span>
+                            <Clock className="h-3.5 w-3.5 text-[#0062FF]" />
+                            <span className="font-mono font-bold tabular-nums text-slate-800 text-xs group-hover:text-[#0062FF]">
+                              {slot.time}
+                            </span>
                           </div>
                           {slot.isDiscounted && (
-                            <span className="text-[9px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                            <span className="text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full">
                               -%20
                             </span>
                           )}
@@ -176,28 +188,30 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-zinc-400 text-xs">
-                <Loader2 className="h-4 w-4 animate-spin text-zinc-600" />
-                <span>Asistan yanıt hazırlıyor...</span>
+              <div className="flex items-center gap-2 text-slate-400 text-xs p-2 bg-white rounded-xl border border-slate-100 w-fit">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0062FF]" />
+                <span className="text-slate-500 font-medium">Asistan yanıt hazırlıyor...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="px-3 py-1.5 bg-white border-t border-zinc-100 flex gap-1.5 overflow-x-auto text-[11px]">
-            <button
-              onClick={() => handleSend('Yarın boş yer var mı?')}
-              className="shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-600 hover:bg-zinc-100"
-            >
-              Yarın Boş Yerler
-            </button>
-            <button
-              onClick={() => handleSend('Fiyatlar nedir?')}
-              className="shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-zinc-600 hover:bg-zinc-100"
-            >
-              Fiyat Listesi
-            </button>
+          <div className="px-3 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+            {[
+              'Yarın boş yer var mı?',
+              'Fiyat listesi nedir?',
+              'Neredesiniz? (Konum)',
+              'Hangi ustalar var?',
+            ].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => handleSend(chip)}
+                className="shrink-0 rounded-full border border-slate-200/90 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 hover:text-[#0062FF] px-3 py-1 text-slate-600 font-medium transition-all shadow-2xs"
+              >
+                {chip}
+              </button>
+            ))}
           </div>
 
           {/* Input Footer */}
@@ -206,19 +220,20 @@ export function CustomerChatbot({ businessSlug = 'byerman', businessName = 'Rand
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-center gap-2 border-t border-zinc-200 bg-white p-2.5"
+            className="flex items-center gap-2 border-t border-slate-200/80 bg-white p-2.5"
           >
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Bir soru yazın veya gün belirtin..."
-              className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900"
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0062FF] focus:bg-white transition-all"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white disabled:opacity-40 transition-opacity"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white disabled:opacity-40 transition-all shadow-xs cursor-pointer"
+              aria-label="Gönder"
             >
               <Send className="h-4 w-4" />
             </button>
