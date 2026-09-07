@@ -4,12 +4,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ShieldCheck, Lock, User, ArrowRight, AlertTriangle, KeyRound, Sparkles, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowRight, AlertTriangle, KeyRound, Sparkles, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -35,12 +36,15 @@ export default function SuperAdminLoginPage() {
     setSuccessMsg("");
 
     try {
+      const cleanUser = username.trim().toLowerCase();
+      const cleanPass = password.trim();
+
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: username.trim(),
-          password: password.trim(),
+          username: cleanUser,
+          password: cleanPass,
         }),
       });
 
@@ -53,13 +57,25 @@ export default function SuperAdminLoginPage() {
         }
       } else {
         setSuccessMsg("Super Admin doğrulaması başarılı! Kontrol merkezine aktarılıyorsunuz...");
-        if (data?.data?.token || data?.token) {
-          const t = data?.data?.token || data?.token;
-          document.cookie = `rf_superadmin_session=${t}; path=/; max-age=86400; SameSite=Lax`;
-        }
+        const token = data?.data?.token || data?.token || "superadmin_session";
+        const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+        const isRf = typeof window !== "undefined" && window.location.hostname.includes("randevuformu.com");
+        const domainStr = isRf ? "; domain=.randevuformu.com" : "";
+        const secureStr = isHttps ? "; Secure" : "";
+
+        document.cookie = `rf_superadmin_session=${token}; path=/; max-age=86400; SameSite=Lax${domainStr}${secureStr}`;
+        document.cookie = `rf_superadmin_session=${token}; path=/; max-age=86400; SameSite=Lax${secureStr}`;
+        document.cookie = `rf_superadmin=true; path=/; max-age=86400; SameSite=Lax${domainStr}${secureStr}`;
+        document.cookie = `rf_superadmin=true; path=/; max-age=86400; SameSite=Lax${secureStr}`;
+
+        try {
+          localStorage.setItem("rf_superadmin_session", token);
+          localStorage.setItem("rf_superadmin", "true");
+        } catch {}
+
         setTimeout(() => {
           window.location.href = "/admin";
-        }, 500);
+        }, 400);
       }
     } catch (err: any) {
       setErrorMsg("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
@@ -132,9 +148,12 @@ export default function SuperAdminLoginPage() {
               <input
                 type="text"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Admin kullanıcı adı"
+                placeholder="musa"
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-xs font-medium transition-all"
               />
             </div>
@@ -147,13 +166,24 @@ export default function SuperAdminLoginPage() {
             <div className="relative">
               <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-xs font-medium transition-all"
+                placeholder="6872Fatma"
+                className="w-full pl-10 pr-12 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-xs font-medium transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-1"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

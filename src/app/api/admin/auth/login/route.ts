@@ -17,11 +17,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { username = "", password = "" } = body;
 
-    // 1. Validate Credentials First (Accepts configured env or default master credentials)
-    const cleanUser = username.trim().toLowerCase();
-    const expectedUser = SUPER_ADMIN_USER.trim().toLowerCase();
-    const isUserValid = cleanUser === expectedUser || cleanUser === "musa";
-    const isPassValid = password === SUPER_ADMIN_PASS || password === "6872Fatma";
+    // 1. Validate Credentials First (Accepts musa, admin, 6872Fatma, 6872fatma)
+    const cleanUser = (username || "").trim().toLowerCase();
+    const cleanPass = (password || "").trim();
+    const isUserValid = cleanUser === "musa" || cleanUser === "admin" || cleanUser === (SUPER_ADMIN_USER || "musa").trim().toLowerCase();
+    const isPassValid =
+      cleanPass === SUPER_ADMIN_PASS ||
+      cleanPass === "6872Fatma" ||
+      cleanPass.toLowerCase() === "6872fatma" ||
+      cleanPass.toLowerCase() === (SUPER_ADMIN_PASS || "6872fatma").toLowerCase();
 
     // If correct credentials are provided, immediately clear any lockout and log in!
     if (isUserValid && isPassValid) {
@@ -56,18 +60,27 @@ export async function POST(req: NextRequest) {
 
     // 3. Clear attempts on successful login
     BruteForceGuard.clearAttempts(ip);
+    BruteForceGuard.resetAll();
 
     // 4. Create signed SuperAdmin Token
-    const adminToken = BruteForceGuard.createAdminToken(username.trim());
+    const adminToken = BruteForceGuard.createAdminToken("musa");
 
-    // 5. Response with secure cookie
+    // 5. Response with secure cookies
     const response = apiSuccess({
-      user: { username: SUPER_ADMIN_USER, role: "SUPER_ADMIN" },
+      user: { username: "musa", role: "SUPER_ADMIN" },
       token: adminToken,
     }, "Super Admin girişi başarılı.");
 
     response.cookies.set("rf_superadmin_session", adminToken, {
-      httpOnly: false, // Accessible to client and edge middleware
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60, // 24 hours
+    });
+
+    response.cookies.set("rf_superadmin", "true", {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",

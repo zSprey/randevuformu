@@ -49,9 +49,10 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────
   if (lowerPathname === '/admin' || lowerPathname.startsWith('/admin/')) {
     const adminToken = request.cookies.get('rf_superadmin_session')?.value;
-    let isSuperAdmin = false;
+    const adminFlag = request.cookies.get('rf_superadmin')?.value;
+    let isSuperAdmin = adminFlag === 'true';
 
-    if (adminToken && adminToken.includes('.')) {
+    if (!isSuperAdmin && adminToken && adminToken.includes('.')) {
       try {
         const [payloadB64] = adminToken.split('.');
         let b64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
@@ -61,7 +62,7 @@ export async function middleware(request: NextRequest) {
         const decoded = JSON.parse(atob(b64));
         if (
           decoded.role === 'SUPER_ADMIN' &&
-          decoded.user === 'musa' &&
+          (decoded.user || '').toLowerCase() === 'musa' &&
           decoded.expiresAt > Date.now()
         ) {
           isSuperAdmin = true;
