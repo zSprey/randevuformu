@@ -572,13 +572,22 @@ export async function processCustomerMessage(
   let servicesList: Array<{ name: string; price: number; durationMin: number; description?: string; is_extra?: boolean }> = [];
 
   if (cloudServices && cloudServices.length > 0) {
-    servicesList = cloudServices.map((s: any) => ({
-      name: s.name,
-      price: s.price || 0,
-      durationMin: s.duration_minutes || s.durationMin || 30,
-      description: s.description || '',
-      is_extra: Boolean(s.is_extra),
-    }));
+    servicesList = cloudServices.map((s: any) => {
+      let price = Number(s.price) || 0;
+      if (price <= 0 && isByErman) {
+        const match = DEFAULT_BYERMAN_SERVICES.find((def) => def.id === s.id || def.name === s.name);
+        if (match && match.price) {
+          price = match.price;
+        }
+      }
+      return {
+        name: s.name,
+        price: price || 350,
+        durationMin: s.duration_minutes || s.durationMin || 30,
+        description: s.description || '',
+        is_extra: Boolean(s.is_extra),
+      };
+    });
   } else if (isByErman) {
     servicesList = DEFAULT_BYERMAN_SERVICES.map((s) => ({
       name: s.name,
@@ -798,9 +807,17 @@ ${servicesContext}
     lower.includes('calisan') ||
     lower.includes('ekip')
   ) {
+    const staffListDisplay = activeStaff && activeStaff.length > 0
+      ? activeStaff.map((s: any) => `• **${s.name || s.display_name}** (${s.role || s.title || 'Usta'}): ${s.badge || s.chair || 'Uzman Usta'}`).join('\n')
+      : '• **Erman Usta (Master Barber / Kurucu):** Klasik Türk berberi, sıcak havlu ve saç tasarım uzmanı.';
+
+    const staffActions = activeStaff && activeStaff.length > 0
+      ? activeStaff.map((s: any) => `${s.name || s.display_name} ile Randevu`).concat(['Yarın Boş Yerler'])
+      : ['Erman Usta ile Randevu', 'Yarın Boş Yerler'];
+
     return {
-      reply: `**${businessName} Bünyesinde Hizmet Veren Uzman Ekibimiz:**\n\n• **Erman Usta (Master Barber / Kurucu):** Klasik Türk berberi, sıcak havlu, ustura sakal tıraşı ve saç tasarım uzmanı.\n• **Ahmet Kalfa (Saç & Sakal Uzmanı):** Modern fade kesim, genç saç modelleri ve sakal şekillendirme uzmanı.\n\nRandevu alırken tercih ettiğiniz ustayı seçebilir veya en erken randevu için **"İlk Müsait Usta"** seçeneğini kullanabilirsiniz.`,
-      quickActions: ['Erman Usta ile Randevu', 'Ahmet Kalfa ile Randevu', 'Yarın Boş Yerler'],
+      reply: `**${businessName} Bünyesinde Hizmet Veren Uzman Ekibimiz:**\n\n${staffListDisplay}\n\nRandevu alırken tercih ettiğiniz ustayı seçebilir veya en erken randevu için **"İlk Müsait Usta"** seçeneğini kullanabilirsiniz.`,
+      quickActions: staffActions,
       detectedSector: sector?.slug,
     };
   }

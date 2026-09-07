@@ -65,6 +65,8 @@ export const DEFAULT_BYERMAN_SERVICES: StoredBusinessService[] = [
     id: "srv-bakim",
     name: "VIP Saç Bakımı & Cilt Maskesi",
     duration_minutes: 35,
+    price: 300,
+    price_text: "₺300",
     description: "Özel tonik bakımı, baş masajı ve canlandırıcı maske.",
     is_extra: false,
     category: "Ana Hizmet",
