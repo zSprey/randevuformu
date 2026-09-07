@@ -231,7 +231,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
 
       {/* Top Demo Banner if this is an example showcase — 100% Brand Palette */}
       {isDemo && (
-        <div className="max-w-5xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-[#0F2A4A] border border-blue-500/30 text-center text-xs text-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+        <div className="max-w-5xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-center text-xs text-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-2 text-left">
             <Info className="w-4 h-4 text-[#0062FF] shrink-0" />
             <span>💡 <strong>Örnek {business?.category || 'Sektör'} Şablonu:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış canlı bir demodur.</span>
@@ -239,13 +239,13 @@ export default function BusinessBookingPage({ params }: PageProps) {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/settings"
-              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white font-medium text-xs transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#0F2A4A] border border-slate-200 font-semibold text-xs transition-colors shadow-2xs"
             >
               Hizmetleri Düzenle
             </Link>
             <Link
               href="/login"
-              className="px-3.5 py-1.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-xs flex items-center gap-1 transition-all shadow-sm active:scale-95"
+              className="px-3.5 py-1.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-xs flex items-center gap-1 transition-all shadow-xs active:scale-95"
             >
               Kendi Sayfanı Oluştur <ArrowRight className="w-3.5 h-3.5" />
             </Link>

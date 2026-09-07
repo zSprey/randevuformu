@@ -468,14 +468,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         Ekip Yönetimi
                       </Link>
                       <Link
-                        href="/admin/login"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-slate-400" />
-                        Super Admin Girişi
-                      </Link>
-                      <Link
                         href={`/${tenantSlug}`}
                         target="_blank"
                         className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-50 rounded-lg transition-colors"

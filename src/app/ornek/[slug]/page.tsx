@@ -113,16 +113,16 @@ export default async function OrnekDetailPage({ params }: OrnekPageProps) {
       ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#FAFBFC] text-slate-800 flex flex-col justify-between selection:bg-[#0062FF] selection:text-white">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-indigo-900 text-white px-4 py-2.5 text-center text-xs font-bold flex items-center justify-center gap-2 border-b border-indigo-500/30">
-        <Sparkles className="w-4 h-4 text-indigo-300 shrink-0" />
+      <div className="bg-blue-50/90 text-slate-700 px-4 py-2.5 text-center text-xs font-medium flex items-center justify-center gap-2 border-b border-blue-200/80">
+        <Sparkles className="w-4 h-4 text-[#0062FF] shrink-0" />
         <span>
           💡 <strong>CANLI ÖRNEK SAYFA:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış bir demodur.
         </span>
         <Link
           href="/login"
-          className="ml-2 underline underline-offset-4 hover:text-indigo-200 transition-colors inline-flex items-center gap-1"
+          className="ml-2 font-bold text-[#0062FF] hover:underline transition-colors inline-flex items-center gap-1"
         >
           Kendi Sayfanızı 1 Dakikada Oluşturun <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -142,9 +142,9 @@ export default async function OrnekDetailPage({ params }: OrnekPageProps) {
         )}
       </main>
 
-      <footer className="py-6 text-center text-xs text-slate-500 border-t border-white/5">
+      <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-200">
         <div className="max-w-md mx-auto flex items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+          <ShieldCheck className="w-4 h-4 text-[#0062FF]" />
           <span>Güvenli & KVKK Uyumlu Randevu Altyapısı — Powered by randevuformu.com</span>
         </div>
       </footer>

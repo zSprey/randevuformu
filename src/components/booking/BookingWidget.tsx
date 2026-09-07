@@ -397,23 +397,28 @@ export default function BookingWidget({
 
   return (
     <div className="w-full max-w-5xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden text-slate-800 transition-all">
-      {/* Top Header Bar — Calendly Corporate Aesthetic */}
-      <div className="bg-[#0F2A4A] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-white text-sm">
-            {businessName.charAt(0)}
+      {/* Top Header Bar — High-End Clean Light Luxury */}
+      <div className="bg-white px-6 py-4 sm:py-5 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+            {(businessName || "R").charAt(0).toUpperCase()}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-sm sm:text-base text-white">{businessName}</h2>
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-bold text-sm sm:text-base text-[#0F2A4A] tracking-tight truncate">
+                {businessName}
+              </h2>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Randevuya Açık
+              </span>
             </div>
-            <p className="text-xs text-slate-300">{category}</p>
+            <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{category}</p>
           </div>
         </div>
 
         {/* Step Indicator Pills */}
-        <div className="flex items-center gap-1.5 text-xs font-medium">
+        <div className="flex items-center gap-1.5 text-xs font-medium overflow-x-auto no-scrollbar pb-1 sm:pb-0 shrink-0">
           {[
             { num: 1, label: "Hizmet" },
             { num: 2, label: "Tarih & Saat" },
@@ -422,15 +427,19 @@ export default function BookingWidget({
           ].map((s) => (
             <div
               key={s.num}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all whitespace-nowrap ${
                 step === s.num
-                  ? "bg-white text-[#0F2A4A] font-bold shadow-xs"
+                  ? "bg-[#0062FF] text-white font-bold shadow-sm shadow-blue-500/20"
                   : step > s.num
-                  ? "bg-emerald-500/20 text-emerald-300 font-medium"
-                  : "text-slate-400 bg-white/5"
+                  ? "bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/80"
+                  : "bg-slate-100 text-slate-500 hover:text-slate-700 font-medium"
               }`}
             >
-              <span>{s.num}.</span>
+              {step > s.num ? (
+                <Check className="w-3 h-3 text-emerald-600" />
+              ) : (
+                <span>{s.num}.</span>
+              )}
               <span>{s.label}</span>
             </div>
           ))}
