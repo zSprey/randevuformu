@@ -153,7 +153,7 @@ export default function SuperAdminLoginPage() {
                 spellCheck={false}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="musa"
+                placeholder="Kullanıcı adı"
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-xs font-medium transition-all"
               />
             </div>
@@ -173,7 +173,7 @@ export default function SuperAdminLoginPage() {
                 spellCheck={false}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="6872Fatma"
+                placeholder="••••••••"
                 className="w-full pl-10 pr-12 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-red-500 text-xs font-medium transition-all"
               />
               <button
