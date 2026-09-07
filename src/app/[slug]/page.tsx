@@ -5,13 +5,13 @@ import Link from "next/link";
 import { CalendarDays, ArrowLeft, Loader2, Info, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import BookingWidget from "@/components/booking/BookingWidget";
-import ErmanBarberWidget from "@/components/booking/ErmanBarberWidget";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { SEKTOR_DATA } from "@/lib/sektorler";
+import { redirect } from "next/navigation";
 import { CustomerChatbot } from "@/components/ai/CustomerChatbot";
 
 const ERMAN_USTA_DATA = {
-  id: "byerman-id",
+  id: "byerman",
   name: "By Erman - Erkek Berberi",
   slug: "byerman",
   phone: "+90 538 480 90 01",
@@ -57,10 +57,16 @@ interface PageProps {
 
 export default function BusinessBookingPage({ params }: PageProps) {
   const resolvedParams = "then" in params ? use(params as Promise<{ slug: string }>) : params;
-  const slug = resolvedParams?.slug || "dr-ahmet";
+  const slug = resolvedParams?.slug || "byerman";
+
+  // Purge fake dr-ahmet permanently
+  if (slug === "dr-ahmet") {
+    redirect("/byerman");
+  }
+
   const isErman = slug === "byerman" || slug === "ermankuafor";
 
-  const [loading, setLoading] = useState(!isErman);
+  const [loading, setLoading] = useState(false);
   const [business, setBusiness] = useState<any>(isErman ? ERMAN_USTA_DATA : null);
   const [isDemo, setIsDemo] = useState(false);
 
@@ -141,26 +147,6 @@ export default function BusinessBookingPage({ params }: PageProps) {
               slug: slug,
               category: matchedSector.category,
               services: matchedSector.services || [],
-            });
-          } else if (slug === "dr-ahmet") {
-            const dental = SEKTOR_DATA["dis-hekimi"];
-            setIsDemo(true);
-            setBusiness({
-              id: "demo-dr-ahmet",
-              name: dental?.exampleName || "Dr. Ahmet Yılmaz Diş Kliniği",
-              slug: slug,
-              category: dental?.category || "Diş Sağlığı & Poliklinik",
-              services: dental?.services || [],
-            });
-          } else if (slug === "studio-nova") {
-            const kuafor = SEKTOR_DATA["kuafor"];
-            setIsDemo(true);
-            setBusiness({
-              id: "demo-studio-nova",
-              name: kuafor?.exampleName || "Studio Nova Kuaför & Saç Tasarım",
-              slug: slug,
-              category: kuafor?.category || "Kuaför & Saç Bakımı",
-              services: kuafor?.services || [],
             });
           } else {
             // Fetch cloud services and profile for this business slug
@@ -269,12 +255,7 @@ export default function BusinessBookingPage({ params }: PageProps) {
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto w-full">
-        {slug === "byerman" || slug === "ermankuafor" ? (
-          <ErmanBarberWidget
-            businessSlug={slug}
-            tenantId={business?.id || "byerman-id"}
-          />
-        ) : business?.services && business.services.length > 0 ? (
+        {business?.services && business.services.length > 0 ? (
           <BookingWidget
             businessName={business.name}
             businessSlug={business.slug}

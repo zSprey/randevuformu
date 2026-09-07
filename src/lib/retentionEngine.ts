@@ -57,7 +57,7 @@ export const INITIAL_PENDING_RECALLS: PendingRecall[] = [
     daysPassed: 182,
     ruleName: "6 Aylık Rutin Diş Kontrolü & Temizlik",
     suggestedService: "Diş Taşı Temizliği & Florür",
-    bookingUrl: "https://randevuformu.com/dr-ahmet?ref=recall_180d",
+    bookingUrl: "https://randevuformu.com/byerman?ref=recall_180d",
     status: "PENDING",
   },
   {

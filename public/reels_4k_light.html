@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>randevuformu.com - 4K Ultra Smooth Light Theme Reels</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FAFBFC;
+      width: 2160px;
+      height: 3840px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .reels-stage {
+      width: 2160px;
+      height: 3840px;
+      background: #FAFBFC;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 160px 140px 140px 140px;
+    }
+
+    /* Hardware Accelerated Crisp Background Glows */
+    .glow-cyan {
+      position: absolute;
+      top: -300px;
+      right: -300px;
+      width: 1600px;
+      height: 1600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 188, 212, 0.16) 0%, rgba(0, 98, 255, 0.05) 50%, transparent 70%);
+      pointer-events-none;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      animation: floatGlow 10s ease-in-out infinite alternate;
+    }
+
+    .glow-blue {
+      position: absolute;
+      bottom: -300px;
+      left: -300px;
+      width: 1500px;
+      height: 1500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 98, 255, 0.12) 0%, transparent 70%);
+      pointer-events-none;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      animation: floatGlow 12s ease-in-out infinite alternate-reverse;
+    }
+
+    /* Top Brand Bar */
+    .top-bar {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid rgba(226, 232, 240, 0.9);
+      border-radius: 999px;
+      padding: 28px 56px;
+      box-shadow: 0 10px 30px rgba(15, 42, 74, 0.04);
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .brand-logo {
+      height: 110px;
+      object-fit: contain;
+    }
+    .brand-title {
+      font-size: 56px;
+      font-weight: 800;
+      color: #0F2A4A;
+      letter-spacing: -1.5px;
+    }
+    .brand-title span {
+      color: #0062FF;
+    }
+    .badge-pill {
+      background: rgba(0, 98, 255, 0.08);
+      border: 2px solid rgba(0, 98, 255, 0.2);
+      color: #0062FF;
+      font-size: 32px;
+      font-weight: 800;
+      padding: 16px 36px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Scene Viewport */
+    .scene-viewport {
+      position: relative;
+      z-index: 40;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 80px 0;
+    }
+
+    /* Hardware Accelerated CSS Keyframe Animations */
+    .scene-container {
+      position: absolute;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+      opacity: 0;
+      transform: translate3d(0, 60px, 0);
+      pointer-events: none;
+      will-change: opacity, transform;
+    }
+
+    /* Pure CSS Keyframe Sequence for 60FPS Silky Smooth Execution */
+    /* Total duration = 12s */
+    /* Scene 1: 0% to 32% (0s - 3.8s) */
+    /* Scene 2: 35% to 68% (4.2s - 8.2s) */
+    /* Scene 3: 71% to 100% (8.5s - 12s) */
+
+    #scene-1 {
+      animation: scene1Seq 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    #scene-2 {
+      animation: scene2Seq 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    #scene-3 {
+      animation: scene3Seq 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    @keyframes scene1Seq {
+      0% { opacity: 0; transform: translate3d(0, 50px, 0) scale(0.98); }
+      4% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      28% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      33% { opacity: 0; transform: translate3d(0, -40px, 0) scale(0.98); }
+      100% { opacity: 0; }
+    }
+
+    @keyframes scene2Seq {
+      0%, 32% { opacity: 0; transform: translate3d(0, 50px, 0) scale(0.98); }
+      36% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      64% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      69% { opacity: 0; transform: translate3d(0, -40px, 0) scale(0.98); }
+      100% { opacity: 0; }
+    }
+
+    @keyframes scene3Seq {
+      0%, 68% { opacity: 0; transform: translate3d(0, 50px, 0) scale(0.98); }
+      72% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      96% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      100% { opacity: 0; transform: translate3d(0, -30px, 0) scale(0.98); }
+    }
+
+    /* Scene Content Styling (Light Theme) */
+    .chip-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 34px;
+      font-weight: 800;
+      padding: 16px 36px;
+      border-radius: 999px;
+      width: fit-content;
+    }
+    .chip-red {
+      background: #FEE2E2;
+      border: 2px solid #FCA5A5;
+      color: #DC2626;
+    }
+    .chip-blue {
+      background: rgba(0, 98, 255, 0.08);
+      border: 2px solid rgba(0, 98, 255, 0.2);
+      color: #0062FF;
+    }
+    .chip-green {
+      background: #ECFDF5;
+      border: 2px solid #A7F3D0;
+      color: #059669;
+    }
+
+    .main-heading {
+      font-size: 110px;
+      font-weight: 900;
+      color: #0F2A4A;
+      line-height: 1.14;
+      letter-spacing: -3.5px;
+    }
+    .highlight-blue {
+      color: #0062FF;
+    }
+    .highlight-cyan {
+      color: #00BCD4;
+    }
+    .highlight-red {
+      color: #DC2626;
+    }
+
+    .sub-text {
+      font-size: 42px;
+      font-weight: 500;
+      color: #64748B;
+      line-height: 1.4;
+    }
+
+    .cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin-top: 20px;
+    }
+    .white-card {
+      background: #FFFFFF;
+      border: 2px solid #E2E8F0;
+      border-radius: 44px;
+      padding: 44px 50px;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      box-shadow: 0 15px 45px rgba(15, 42, 74, 0.05);
+      transform: translate3d(0, 0, 0);
+    }
+    .card-icon {
+      width: 104px;
+      height: 104px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      flex-shrink: 0;
+    }
+    .icon-green { background: #ECFDF5; }
+    .icon-blue { background: #EFF6FF; }
+    .icon-cyan { background: #E0F7FA; }
+    .card-title {
+      font-size: 46px;
+      font-weight: 800;
+      color: #0F2A4A;
+      letter-spacing: -0.8px;
+    }
+    .card-desc {
+      font-size: 34px;
+      font-weight: 500;
+      color: #64748B;
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    /* Real Dashboard Mockup Frame */
+    .device-mockup-frame {
+      background: #FFFFFF;
+      border-radius: 56px;
+      padding: 30px;
+      box-shadow: 0 40px 100px -20px rgba(15, 42, 74, 0.14), 0 0 0 2px rgba(226, 232, 240, 0.95);
+      position: relative;
+      transform: translate3d(0, 0, 0);
+    }
+    .device-img {
+      width: 100%;
+      height: auto;
+      max-height: 1250px;
+      object-fit: contain;
+      border-radius: 36px;
+      display: block;
+    }
+    .live-badge {
+      position: absolute;
+      top: 56px;
+      right: 56px;
+      background: #10B981;
+      color: #FFFFFF;
+      font-size: 30px;
+      font-weight: 800;
+      padding: 16px 36px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+    }
+    .live-dot {
+      width: 16px;
+      height: 16px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite alternate;
+    }
+
+    /* Bottom Action Bar */
+    .bottom-bar {
+      position: relative;
+      z-index: 50;
+      background: #0F2A4A;
+      border-radius: 56px;
+      padding: 48px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 30px 70px rgba(15, 42, 74, 0.25);
+    }
+    .dock-title {
+      font-size: 48px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -1px;
+    }
+    .dock-sub {
+      font-size: 34px;
+      color: #94A3B8;
+      margin-top: 6px;
+    }
+    .dock-button {
+      background: #00BCD4;
+      color: #FFFFFF;
+      font-size: 40px;
+      font-weight: 800;
+      padding: 32px 64px;
+      border-radius: 36px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 12px 35px rgba(0, 188, 212, 0.4);
+      letter-spacing: -0.5px;
+    }
+
+    /* Top Progress Fill */
+    .progress-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      z-index: 100;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0062FF, #00BCD4);
+      animation: progressAnim 12s linear infinite;
+    }
+
+    @keyframes progressAnim {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    @keyframes floatGlow {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(40px, 40px, 0); }
+    }
+    @keyframes pulse {
+      0% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="reels-stage">
+    <div class="glow-cyan"></div>
+    <div class="glow-blue"></div>
+
+    <!-- Progress Line -->
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+
+    <!-- Top Brand Header -->
+    <div class="top-bar">
+      <div class="brand-wrap">
+        <img src="logo.png" alt="Logo" class="brand-logo">
+        <div class="brand-title">randevuformu<span>.com</span></div>
+      </div>
+      <div class="badge-pill">7/24 Randevu &amp; Takvim</div>
+    </div>
+
+    <!-- Scene Viewport -->
+    <div class="scene-viewport">
+
+      <!-- SCENE 1: Hook / Problem -->
+      <div id="scene-1" class="scene-container">
+        <div class="chip-tag chip-red">
+          <span>⚠️</span>
+          <span>Telefon &amp; Ajanda Çilesine Son</span>
+        </div>
+
+        <h1 class="main-heading">
+          Randevu alırken <br>
+          <span class="highlight-red">saatlerinizi</span> kaybetmeyin.
+        </h1>
+
+        <p class="sub-text">
+          İşletmenizin zamanını ve kazancını çalan rutin soruları otomatikleştirin.
+        </p>
+
+        <div class="cards-stack">
+          <div class="white-card">
+            <div class="card-icon icon-blue">📵</div>
+            <div>
+              <div class="card-title">Sürekli "Hangi saatler boş?" mesajları</div>
+              <div class="card-desc">WhatsApp ve telefonda saatlerce müsaitlik aramaya son.</div>
+            </div>
+          </div>
+
+          <div class="white-card">
+            <div class="card-icon icon-cyan">🤦‍♂️</div>
+            <div>
+              <div class="card-title">Son dakika unutulan &amp; gelinmeyen randevular</div>
+              <div class="card-desc">Boş kalan koltuklar ve seanslar doğrudan gelir kaybı demektir.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 2: Canlı Sistem ve Çözüm -->
+      <div id="scene-2" class="scene-container">
+        <div class="chip-tag chip-blue">
+          <span>✨</span>
+          <span>Canlı Arayüz &amp; %100 Otomasyon</span>
+        </div>
+
+        <h2 class="main-heading">
+          Randevularınızı <br>
+          <span class="highlight-blue">otomatikleştirin,</span> <span class="highlight-cyan">büyüyün.</span>
+        </h2>
+
+        <div class="device-mockup-frame">
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            CANLI SİSTEM
+          </div>
+          <img src="live_dashboard_mockup.png" alt="Canlı Sistem Ekranı" class="device-img">
+        </div>
+      </div>
+
+      <!-- SCENE 3: Özellikler ve Harekete Geçiş -->
+      <div id="scene-3" class="scene-container">
+        <div class="chip-tag chip-green">
+          <span>🚀</span>
+          <span>1 Dakikada Ücretsiz Hazır</span>
+        </div>
+
+        <h2 class="main-heading">
+          İşletmenize özel <br>
+          <span class="highlight-cyan">akıllı randevu altyapısı.</span>
+        </h2>
+
+        <div class="cards-stack">
+          <div class="white-card">
+            <div class="card-icon icon-green">💬</div>
+            <div>
+              <div class="card-title">Otomatik WhatsApp Teyidi</div>
+              <div class="card-desc">Danışana otomatik hatırlatma gider, unutulan randevular sıfırlanır.</div>
+            </div>
+          </div>
+
+          <div class="white-card">
+            <div class="card-icon icon-blue">🗓️</div>
+            <div>
+              <div class="card-title">Google &amp; Outlook Senkronizasyonu</div>
+              <div class="card-desc">Takviminizdeki boş saatler anlık eşleşir, çifte rezervasyon riski biter.</div>
+            </div>
+          </div>
+
+          <div class="white-card">
+            <div class="card-icon icon-cyan">⚡</div>
+            <div>
+              <div class="card-title">Kredi Kartı Gerekmez</div>
+              <div class="card-desc">1 dakikada kurun, linki Instagram biyografinize hemen ekleyin.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Dock Bar -->
+    <div class="bottom-bar">
+      <div>
+        <div class="dock-title">Hemen Ücretsiz Başlayın</div>
+        <div class="dock-sub">randevuformu.com • Profildeki Linke Tıklayın</div>
+      </div>
+      <div class="dock-button">
+        <span>Ücretsiz Dene</span>
+        <span>&rarr;</span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

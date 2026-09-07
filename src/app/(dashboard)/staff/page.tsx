@@ -44,8 +44,12 @@ export default function StaffManagementPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const getTenantId = () => {
-    if (typeof window === "undefined") return "default";
-    return localStorage.getItem("rf_tenant") || "default";
+    if (typeof window === "undefined") return "byerman";
+    const raw = localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant") || "byerman";
+    if (raw === "default" || raw === "byerman-id" || raw === "ermankuafor" || !raw) {
+      return "byerman";
+    }
+    return raw;
   };
 
   const showToast = (msg: string) => {
@@ -82,7 +86,9 @@ export default function StaffManagementPage() {
     }
 
     try {
-      const res = await fetch(`/api/staff?tenantId=${encodeURIComponent(tenantId)}`);
+      const res = await fetch(`/api/staff?tenantId=${encodeURIComponent(tenantId)}&t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (res.ok) {
         const json = await res.json();
         const apiStaff = json?.data?.staff || json?.staff || [];
@@ -94,19 +100,18 @@ export default function StaffManagementPage() {
             !s.display_name?.includes("Emre Can")
         );
 
-        // Sunucuda gerçek veri varsa localStorage'ı güncelle; boş ise yerel veriyi koru
-        if (cleaned.length > 0) {
-          setStaffList(cleaned);
-          if (typeof window !== "undefined") {
-            localStorage.setItem(storageKey, JSON.stringify(cleaned));
+        setStaffList(cleaned);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(storageKey, JSON.stringify(cleaned));
+          if (tenantId === "byerman") {
+            localStorage.setItem("rf_staff_byerman-id", JSON.stringify(cleaned));
           }
         }
       } else {
         console.warn("Staff API returned non-OK status:", res.status);
       }
     } catch (err) {
-      console.warn("Staff API fetch error (offline mode - using local cache):", err);
-      // API fallback: yerel veriyi koru
+      console.warn("Staff API fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -125,53 +130,49 @@ export default function StaffManagementPage() {
     const tenantId = getTenantId();
     const storageKey = `rf_staff_${tenantId}`;
 
-    const newMember: StaffMember = {
-      id: `staff_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      display_name: newStaffName.trim(),
-      email: newStaffEmail.trim() || undefined,
-      phone: newStaffPhone.trim() || undefined,
-      role: newStaffRole,
-      is_active: true,
-      title: newStaffTitle.trim() || (newStaffRole === "OWNER" ? "İşletme Sahibi" : "Uzman / Personel"),
-    };
-
-    const updated = [newMember, ...staffList];
-    setStaffList(updated);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
-
     try {
       const apiRes = await fetch("/api/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tenantId,
-          displayName: newMember.display_name,
-          email: newMember.email,
-          phone: newMember.phone,
-          role: newMember.role,
-          title: newMember.title,
+          displayName: newStaffName.trim(),
+          email: newStaffEmail.trim() || undefined,
+          phone: newStaffPhone.trim() || undefined,
+          role: newStaffRole,
+          title: newStaffTitle.trim() || (newStaffRole === "OWNER" ? "İşletme Sahibi" : "Uzman / Personel"),
         }),
       });
-      if (!apiRes.ok) {
-        console.warn("Staff save API warning: non-OK status", apiRes.status);
-        showToast(`${newMember.display_name} yerel olarak eklendi, sunucuya kaydedilemedi.`);
+
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const created: StaffMember = json?.data?.staff || json?.staff;
+        const updated = [created, ...staffList.filter((s) => s.id !== created.id)];
+        setStaffList(updated);
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+          if (tenantId === "byerman") {
+            localStorage.setItem("rf_staff_byerman-id", JSON.stringify(updated));
+          }
+          window.dispatchEvent(new CustomEvent("rf_staff_updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
+        showToast(`${created.display_name} ekibinize başarıyla eklendi ve buluta kaydedildi!`);
       } else {
-        showToast(`${newMember.display_name} ekibinize başarıyla eklendi ve buluta kaydedildi!`);
+        showToast("Personel kaydedilemedi. Lütfen tekrar deneyin.");
       }
     } catch (err) {
       console.warn("Staff save API error:", err);
-      showToast(`${newMember.display_name} yerel olarak eklendi, sunucuya kaydedilemedi.`);
+      showToast("Personel kaydedilemedi.");
+    } finally {
+      setIsSaving(false);
+      setIsModalOpen(false);
+      setNewStaffName("");
+      setNewStaffEmail("");
+      setNewStaffPhone("");
+      setNewStaffTitle("");
     }
-
-    setIsSaving(false);
-    setIsModalOpen(false);
-    setNewStaffName("");
-    setNewStaffEmail("");
-    setNewStaffPhone("");
-    setNewStaffTitle("");
   };
 
   // Personel Durumunu Aktif/Pasif Yap
@@ -186,6 +187,11 @@ export default function StaffManagementPage() {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(storageKey, JSON.stringify(updated));
+      if (tenantId === "byerman") {
+        localStorage.setItem("rf_staff_byerman-id", JSON.stringify(updated));
+      }
+      window.dispatchEvent(new CustomEvent("rf_staff_updated"));
+      window.dispatchEvent(new Event("storage"));
     }
 
     const current = staffList.find((s) => s.id === id);
@@ -197,6 +203,7 @@ export default function StaffManagementPage() {
           body: JSON.stringify({
             id,
             isActive: !current.is_active,
+            tenantId,
           }),
         });
       } catch (err) {
@@ -220,6 +227,9 @@ export default function StaffManagementPage() {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(storageKey, JSON.stringify(updated));
+      if (tenantId === "byerman") {
+        localStorage.setItem("rf_staff_byerman-id", JSON.stringify(updated));
+      }
       try {
         const existingDeleted: string[] = JSON.parse(localStorage.getItem("rf_deleted_staff") || "[]");
         if (!existingDeleted.includes(id)) {
@@ -227,6 +237,7 @@ export default function StaffManagementPage() {
           localStorage.setItem("rf_deleted_staff", JSON.stringify(existingDeleted));
         }
       } catch {}
+      window.dispatchEvent(new CustomEvent("rf_staff_updated"));
       window.dispatchEvent(new Event("storage"));
     }
 

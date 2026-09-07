@@ -3,11 +3,14 @@ import { supabase } from "@/lib/supabase";
 import {
   getStaffWorkingHours,
   saveStaffWorkingHours,
-  BYERMAN_STAFF_LIST,
   getDefaultStaffWorkingHours,
   markStaffDeleted,
   isStaffDeleted,
-  getAvailableStaff,
+  getStoredStaff,
+  addStoredStaff,
+  updateStoredStaff,
+  deleteStoredStaff,
+  normalizeTenant,
 } from "@/lib/storage/staffStore";
 import { StaffWorkingHours } from "@/types/schema";
 import {
@@ -23,87 +26,59 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const tenantId = searchParams.get("tenantId") || searchParams.get("tenant") || "byerman";
+    const rawTenant = searchParams.get("tenantId") || searchParams.get("tenant") || searchParams.get("slug") || "byerman";
+    const tenantId = normalizeTenant(rawTenant);
     const staffId = searchParams.get("staffId") || searchParams.get("id");
-
-    const isByErman = tenantId === "byerman" || tenantId === "byerman-id";
 
     // 1. If specific staffId requested
     if (staffId) {
-      if (isStaffDeleted(staffId)) {
+      if (isStaffDeleted(staffId, tenantId)) {
         return apiNotFound("Personel bulunamadı veya silinmiş.");
       }
 
-      const { data: singleStaff } = await supabase
-        .from("staff")
-        .select("id, tenant_id, display_name, email, phone, role, is_active, google_refresh_token, created_at")
-        .eq("id", staffId)
-        .maybeSingle();
+      const allStaff = await getStoredStaff(tenantId, true);
+      const found = allStaff.find((s) => s.id === staffId);
+
+      if (!found) {
+        return apiNotFound("Personel bulunamadı.");
+      }
 
       const hours = await getStaffWorkingHours(staffId, tenantId);
+      const result = {
+        ...found,
+        display_name: found.display_name || found.name,
+        workingHours: hours,
+      };
 
-      if (singleStaff) {
-        return apiSuccess({
-          staff: {
-            ...singleStaff,
-            workingHours: hours,
-          },
-        });
-      }
-
-      // Check By Erman static staff
-      const staticBarber = BYERMAN_STAFF_LIST.find((s) => s.id === staffId);
-      if (staticBarber) {
-        return apiSuccess({
-          staff: {
-            id: staticBarber.id,
-            tenant_id: tenantId,
-            display_name: staticBarber.name,
-            role: staticBarber.role,
-            is_active: true,
-            workingHours: hours,
-          },
-        });
-      }
-
-      return apiNotFound("Personel bulunamadı.");
+      return NextResponse.json({
+        success: true,
+        data: { staff: result },
+        staff: result,
+      });
     }
 
-    // 2. Fetch all staff for tenant
-    const { data: staffList, error } = await supabase
-      .from("staff")
-      .select("id, tenant_id, display_name, email, phone, role, is_active, google_refresh_token, created_at")
-      .eq("tenant_id", tenantId)
-      .order("created_at", { ascending: true });
-
-    let finalStaff: any[] = (staffList || []).filter((s) => !isStaffDeleted(s.id));
-
-    // If By Erman and DB has no records, fallback to official By Erman specialists (excluding any deleted ones)
-    if (isByErman && (!finalStaff || finalStaff.length === 0)) {
-      finalStaff = getAvailableStaff(tenantId).filter((s) => s.id !== "ANY_STAFF").map((s) => ({
-        id: s.id,
-        tenant_id: "byerman",
-        display_name: s.name,
-        email: `${s.id}@byerman.com`,
-        phone: "+905384809001",
-        role: s.role,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      }));
-    }
+    // 2. Fetch all active staff for tenant from persistent store
+    const storedStaff = await getStoredStaff(tenantId, true);
 
     // Attach working hours & breaks to each specialist
     const enriched = await Promise.all(
-      finalStaff.map(async (s) => {
+      storedStaff.map(async (s) => {
         const hours = await getStaffWorkingHours(s.id, tenantId);
         return {
           ...s,
+          display_name: s.display_name || s.name,
+          role: s.role || "STAFF",
+          title: s.title || s.role || "Uzman",
           workingHours: hours,
         };
       })
     );
 
-    return apiSuccess({ staff: enriched });
+    return NextResponse.json({
+      success: true,
+      data: { staff: enriched },
+      staff: enriched,
+    });
   } catch (error: any) {
     return handleApiError(error, "Personel listesi alınamadı.");
   }
@@ -114,50 +89,67 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      tenantId = "byerman",
+      tenantId: rawTenant = "byerman",
       displayName,
+      name,
       email,
       phone,
       role = "STAFF",
+      title,
       workingHours,
       working_hours,
     } = body;
 
-    if (!displayName) {
+    const tenantId = normalizeTenant(rawTenant);
+    const finalName = displayName || name;
+
+    if (!finalName) {
       return apiBadRequest("Personel ismi zorunludur.");
     }
 
-    const { data: newStaff, error } = await supabase
-      .from("staff")
-      .insert({
-        tenant_id: tenantId,
-        display_name: displayName,
-        email: email || null,
-        phone: phone || null,
-        role,
-        is_active: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
+    // Save to persistent storage
+    const newStaff = await addStoredStaff(tenantId, {
+      name: finalName.trim(),
+      display_name: finalName.trim(),
+      email: email?.trim() || undefined,
+      phone: phone?.trim() || undefined,
+      role,
+      title: title?.trim() || (role === "OWNER" ? "İşletme Sahibi" : "Uzman / Personel"),
+    });
 
     const effectiveHours: StaffWorkingHours[] =
       workingHours || working_hours || getDefaultStaffWorkingHours(newStaff.id);
 
     await saveStaffWorkingHours(newStaff.id, effectiveHours, tenantId);
 
-    return apiSuccess(
+    // Optional Supabase write
+    try {
+      await supabase.from("staff").insert({
+        id: newStaff.id,
+        tenant_id: tenantId,
+        display_name: newStaff.display_name,
+        email: newStaff.email || null,
+        phone: newStaff.phone || null,
+        role: newStaff.role,
+        is_active: true,
+      });
+    } catch {
+      // Non-blocking
+    }
+
+    const payload = {
+      ...newStaff,
+      workingHours: effectiveHours,
+    };
+
+    return NextResponse.json(
       {
-        staff: {
-          ...newStaff,
-          workingHours: effectiveHours,
-        },
+        success: true,
+        data: { staff: payload },
+        staff: payload,
+        message: "Yeni personel başarıyla eklendi.",
       },
-      "Yeni personel başarıyla eklendi.",
-      201
+      { status: 201 }
     );
   } catch (error: any) {
     return handleApiError(error, "Personel eklenemedi.");
@@ -171,40 +163,35 @@ export async function PUT(req: NextRequest) {
     const {
       id,
       displayName,
+      name,
       email,
       phone,
       role,
+      title,
       isActive,
       workingHours,
       working_hours,
-      tenantId = "byerman",
+      tenantId: rawTenant = "byerman",
     } = body;
 
     if (!id) {
       return apiBadRequest("Personel ID zorunludur.");
     }
 
+    const tenantId = normalizeTenant(rawTenant);
+
     const updatePayload: Record<string, any> = {};
-    if (displayName !== undefined) updatePayload.display_name = displayName;
+    if (displayName !== undefined || name !== undefined) {
+      updatePayload.display_name = displayName || name;
+      updatePayload.name = displayName || name;
+    }
     if (email !== undefined) updatePayload.email = email;
     if (phone !== undefined) updatePayload.phone = phone;
     if (role !== undefined) updatePayload.role = role;
+    if (title !== undefined) updatePayload.title = title;
     if (isActive !== undefined) updatePayload.is_active = isActive;
 
-    let updatedStaff = null;
-    if (Object.keys(updatePayload).length > 0) {
-      const { data, error } = await supabase
-        .from("staff")
-        .update(updatePayload)
-        .eq("id", id)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.warn("[StaffRoute PUT] Supabase staff update error:", error);
-      }
-      updatedStaff = data;
-    }
+    const updated = await updateStoredStaff(tenantId, id, updatePayload);
 
     const hoursToSave: StaffWorkingHours[] | undefined = workingHours || working_hours;
     if (hoursToSave && Array.isArray(hoursToSave)) {
@@ -213,15 +200,17 @@ export async function PUT(req: NextRequest) {
 
     const currentHours = await getStaffWorkingHours(id, tenantId);
 
-    return apiSuccess(
-      {
-        staff: {
-          ...(updatedStaff || { id, display_name: displayName, is_active: isActive }),
-          workingHours: currentHours,
-        },
-      },
-      "Personel bilgileri ve çalışma saatleri başarıyla güncellendi."
-    );
+    const result = {
+      ...(updated || { id, display_name: displayName || name, is_active: isActive }),
+      workingHours: currentHours,
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: { staff: result },
+      staff: result,
+      message: "Personel bilgileri ve çalışma saatleri başarıyla güncellendi.",
+    });
   } catch (error: any) {
     return handleApiError(error, "Personel güncellenemedi.");
   }
@@ -232,29 +221,32 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const rawTenant = searchParams.get("tenantId") || searchParams.get("tenant") || "byerman";
+    const tenantId = normalizeTenant(rawTenant);
 
     if (!id) {
       return apiBadRequest("id parametresi zorunludur.");
     }
 
-    // Mark as deleted in runtime store so it never reappears in bookings or lists
-    markStaffDeleted(id);
+    // Permanently remove and record in deleted_staff_ids
+    await deleteStoredStaff(tenantId, id);
 
-    // Also delete working hours
+    // Also delete from Supabase if table exists
     try {
       await supabase.from("staff_working_hours").delete().eq("staff_id", id);
-    } catch {
-      // Ignore
-    }
-
-    try {
       await supabase.from("staff").delete().eq("id", id);
     } catch {
-      // Ignore
+      // Non-blocking
     }
 
-    return apiSuccess({ id }, "Personel başarıyla silindi.");
+    return NextResponse.json({
+      success: true,
+      data: { id },
+      id,
+      message: "Personel başarıyla silindi.",
+    });
   } catch (error: any) {
     return handleApiError(error, "Personel silinemedi.");
   }
 }
+

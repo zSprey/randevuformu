@@ -28,9 +28,11 @@ import {
   HeartPulse,
   Copy,
   Check,
+  Smartphone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { SocialBioWizardModal } from "@/components/panel/SocialBioWizardModal";
 
 interface NotificationItem {
   id: string;
@@ -41,7 +43,16 @@ interface NotificationItem {
   unread: boolean;
 }
 
-const initialNotifications: NotificationItem[] = [];
+const initialNotifications: NotificationItem[] = [
+  {
+    id: "1",
+    title: "Sistem Hazır",
+    message: "randevuformu.com yönetim paneliniz aktif ve kullanıma hazır.",
+    time: "Şimdi",
+    type: "system",
+    unread: true,
+  },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -53,6 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [tenantName, setTenantName] = useState("İşletme Yönetim Paneli");
   const [tenantSlug, setTenantSlug] = useState("dashboard");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isBioWizardOpen, setIsBioWizardOpen] = useState(false);
 
   const handleCopyLink = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://randevuformu.com";
@@ -204,10 +216,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 space-y-2">
+          <div className="pt-4 border-t border-slate-100 space-y-2.5">
             <p className="px-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Hızlı Canlı Önizleme
+              Büyüme &amp; Paylaşım
             </p>
+            <button
+              type="button"
+              onClick={() => setIsBioWizardOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#0F2A4A] to-[#0062FF] hover:from-[#16365c] hover:to-[#0051d4] transition-all shadow-xs"
+            >
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-blue-200" />
+                <span>Sosyal Medya Biyo</span>
+              </div>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-md font-bold">Yeni</span>
+            </button>
+
             <Link
               href={`/${tenantSlug}`}
               target="_blank"
@@ -486,6 +510,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
+
+      {/* Sosyal Medya Biyo Sihirbazı Modalı */}
+      <SocialBioWizardModal
+        isOpen={isBioWizardOpen}
+        onClose={() => setIsBioWizardOpen(false)}
+        tenantSlug={tenantSlug}
+        businessName={tenantName}
+      />
 
       {/* AI Chatbot Asistanı - İşletme Modu */}
       <ChatbotWidget mode="business" />

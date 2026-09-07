@@ -664,8 +664,8 @@ export const SEKTOR_DATA: Record<string, SektorConfig> = {
     faqs: [
       { question: "Hastalar röntgen dosyası yükleyebilir mi?", answer: "Evet, formdaki dosya yükleme özelliği ile hastalar röntgenlerini iletebilir." }
     ],
-    exampleSlug: "dr-ahmet",
-    exampleName: "Dr. Ahmet Yılmaz Diş Kliniği",
+    exampleSlug: "dis-hekimi",
+    exampleName: "Örnek Diş Polikliniği",
     category: "Diş Sağlığı & Poliklinik",
     services: [
       {

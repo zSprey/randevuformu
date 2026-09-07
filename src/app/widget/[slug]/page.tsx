@@ -9,7 +9,7 @@ interface WidgetProps {
 
 export default function EmbedWidgetPage({ params }: WidgetProps) {
   const resolvedParams = "then" in params ? use(params as Promise<{ slug: string }>) : params;
-  const slug = resolvedParams?.slug || "dr-ahmet";
+  const slug = resolvedParams?.slug || "byerman";
 
   const defaultServices = [
     {

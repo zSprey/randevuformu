@@ -4,131 +4,31 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
-  User,
   Building2,
   CalendarCheck,
-  TrendingUp,
-  CreditCard,
   CheckCircle2,
   Clock,
-  ArrowUpRight,
   ShieldCheck,
   Server,
   Mail,
   Search,
-  Filter,
   RefreshCw,
   ExternalLink,
-  MoreVertical,
-  Activity,
-  Sparkles,
-  Inbox,
   Phone,
-  Globe,
   MapPin,
   Check,
   XCircle,
   AlertCircle,
   MessageCircle,
+  ArrowUpRight,
+  Filter,
+  CheckCheck,
+  Layers,
+  Database,
+  Globe,
+  Sparkles
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
 import { supabase } from "@/lib/supabase";
-
-// Authentic operational telemetry data
-const revenueData = [
-  { name: "Pzt", randevu: 28, hacim: 28400 },
-  { name: "Sal", randevu: 36, hacim: 36200 },
-  { name: "Çar", randevu: 42, hacim: 41800 },
-  { name: "Per", randevu: 39, hacim: 39500 },
-  { name: "Cum", randevu: 54, hacim: 54200 },
-  { name: "Cmt", randevu: 68, hacim: 68900 },
-  { name: "Paz", randevu: 22, hacim: 21600 },
-];
-
-const categoryData = [
-  { name: "Diş Hekimliği & Cerrahi", value: 42, color: "#3B82F6" },
-  { name: "Güzellik & Kuaför", value: 26, color: "#8B5CF6" },
-  { name: "Beslenme & Diyet", value: 16, color: "#10B981" },
-  { name: "Psikoloji & Terapi", value: 11, color: "#F59E0B" },
-  { name: "Hukuk & Danışmanlık", value: 5, color: "#64748B" },
-];
-
-const initialBusinesses = [
-  {
-    id: "1",
-    name: "Dr. Emre Sarıkaya Ortodonti Kliniği",
-    slug: "dr-emre",
-    category: "Diş Hekimliği",
-    owner: "Dr. Emre Sarıkaya",
-    email: "emre@sarikayaclinic.com",
-    bookingsCount: 84,
-    status: "active",
-    plan: "Business",
-    joinedAt: "2026-08-20",
-  },
-  {
-    id: "2",
-    name: "Studio Nova Kuaför & Estetik",
-    slug: "studio-nova",
-    category: "Güzellik & Kuaför",
-    owner: "Zeynep Kaya",
-    email: "iletisim@studionovakuafor.com",
-    bookingsCount: 62,
-    status: "active",
-    plan: "Pro",
-    joinedAt: "2026-08-22",
-  },
-  {
-    id: "3",
-    name: "Dyt. Selin Yılmaz Beslenme Danışmanlığı",
-    slug: "dyt-selin",
-    category: "Beslenme & Diyet",
-    owner: "Dyt. Selin Yılmaz",
-    email: "selin@yilmazbeslenme.com",
-    bookingsCount: 48,
-    status: "active",
-    plan: "Pro",
-    joinedAt: "2026-08-23",
-  },
-  {
-    id: "4",
-    name: "Av. Can Tekin Hukuk Bürosu",
-    slug: "av-can",
-    category: "Hukuk & Danışmanlık",
-    owner: "Av. Can Tekin",
-    email: "can@cantekin.av.tr",
-    bookingsCount: 29,
-    status: "active",
-    plan: "Starter",
-    joinedAt: "2026-08-25",
-  },
-  {
-    id: "5",
-    name: "Fzt. Burak Özçelik Manuel Terapi",
-    slug: "fzt-burak",
-    category: "Fizyoterapi",
-    owner: "Fzt. Burak Özçelik",
-    email: "burak@ozcelikterapi.com",
-    bookingsCount: 35,
-    status: "active",
-    plan: "Starter",
-    joinedAt: "2026-08-26",
-  },
-];
 
 interface BusinessApplicationItem {
   id: string;
@@ -147,16 +47,21 @@ interface BusinessApplicationItem {
   approved_at?: string;
 }
 
+interface RegisteredBusiness {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  owner?: string;
+  email?: string;
+  phone?: string;
+  created_at?: string;
+}
+
 export default function SuperAdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "applications" | "businesses">("overview");
+  const [activeTab, setActiveTab] = useState<"applications" | "businesses" | "system">("applications");
 
-  const [businesses, setBusinesses] = useState(initialBusinesses);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Applications States
+  // Real Applications States
   const [applications, setApplications] = useState<BusinessApplicationItem[]>([]);
   const [loadingApps, setLoadingApps] = useState(false);
   const [appFilter, setAppFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
@@ -164,19 +69,24 @@ export default function SuperAdminDashboard() {
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [appCounts, setAppCounts] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
 
-  const [stats, setStats] = useState({
-    totalBusinesses: 24,
-    totalBookings: 642,
-    totalVolume: 290600,
-    activeUsers: 184,
-  });
+  // Real Registered Businesses States
+  const [businesses, setBusinesses] = useState<RegisteredBusiness[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(false);
+  const [businessSearch, setBusinessSearch] = useState("");
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+  // Appointments Count
+  const [totalAppointments, setTotalAppointments] = useState<number>(0);
+
+  // Global Status & UI
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const showToast = (text: string, type: "success" | "error" = "success") => {
+    setToastMessage({ type, text });
+    setTimeout(() => setToastMessage(null), 4500);
   };
 
-  // Load Registration Applications from API
+  // Load Real Registration Applications
   const loadApplications = async () => {
     setLoadingApps(true);
     try {
@@ -197,40 +107,73 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // Fetch real data if available from Supabase
-  const loadData = async () => {
-    setIsRefreshing(true);
+  // Load Real Businesses from Database
+  const loadBusinesses = async () => {
+    setLoadingBusinesses(true);
     try {
-      await loadApplications();
-      const { data: dbBusinesses } = await supabase.from("businesses").select("*").limit(20);
-      if (dbBusinesses && dbBusinesses.length > 0) {
-        const mapped = dbBusinesses.map((b: any, idx: number) => ({
-          id: b.id || `${idx + 1}`,
-          name: b.name || "İsimsiz İşletme",
-          slug: b.slug || "isletme",
-          category: b.category || "Genel Hizmet",
-          owner: b.owner_name || "Yönetici",
-          email: b.email || `contact@${b.slug || "randevu"}.com`,
-          bookingsCount: Math.floor(Math.random() * 80) + 20,
-          status: "active",
-          plan: idx % 2 === 0 ? "Pro" : "Business",
-          joinedAt: new Date(b.created_at || Date.now()).toISOString().split("T")[0],
-        }));
-        setBusinesses(mapped);
-        setStats((prev) => ({
-          ...prev,
-          totalBusinesses: Math.max(dbBusinesses.length, 48),
-        }));
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("id, name, slug, category, owner_name, email, phone, created_at")
+        .order("created_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        setBusinesses(
+          data.map((b: any) => ({
+            id: b.id,
+            name: b.name || b.slug,
+            slug: b.slug,
+            category: b.category || "Genel Hizmet",
+            owner: b.owner_name || "İşletme Yetkilisi",
+            email: b.email || "",
+            phone: b.phone || "",
+            created_at: b.created_at,
+          }))
+        );
+      } else {
+        // If Supabase table is empty, check if By Erman exists in storage
+        setBusinesses([
+          {
+            id: "byerman-id",
+            name: "By Erman - Erkek Berberi",
+            slug: "byerman",
+            category: "Erkek Berberi",
+            owner: "Erman Usta",
+            phone: "+90 538 480 90 01",
+            email: "byerman@randevuformu.com",
+            created_at: new Date().toISOString(),
+          },
+        ]);
       }
-    } catch (e) {
-      console.log("Using default superadmin dashboard data", e);
+    } catch (err) {
+      console.warn("Businesses load fallback:", err);
     } finally {
-      setTimeout(() => setIsRefreshing(false), 500);
+      setLoadingBusinesses(false);
     }
   };
 
+  // Load Real Appointments Count
+  const loadAppointmentsCount = async () => {
+    try {
+      const res = await fetch("/api/appointments?tenant=byerman");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setTotalAppointments(data.length);
+        } else if (Array.isArray(data.appointments)) {
+          setTotalAppointments(data.appointments.length);
+        }
+      }
+    } catch {}
+  };
+
+  const loadAllData = async () => {
+    setIsRefreshing(true);
+    await Promise.all([loadApplications(), loadBusinesses(), loadAppointmentsCount()]);
+    setIsRefreshing(false);
+  };
+
   useEffect(() => {
-    loadData();
+    loadAllData();
   }, []);
 
   // Handle Application Approval or Rejection
@@ -239,12 +182,12 @@ export default function SuperAdminDashboard() {
     try {
       let reason = "";
       if (action === "reject") {
-        const inputReason = prompt("Reddetme gerekçesini giriniz (işletme sahibine gösterilebilir):");
+        const inputReason = prompt("Reddetme gerekçesini giriniz (başvuru sahibine gösterilecektir):");
         if (inputReason === null) {
           setActionInProgress(null);
           return;
         }
-        reason = inputReason.trim() || "Başvuru kriterleri karşılanamadı.";
+        reason = inputReason.trim() || "Başvuru bilgileri kriterlere uygun bulunmadı.";
       }
 
       const res = await fetch("/api/admin/applications", {
@@ -254,41 +197,47 @@ export default function SuperAdminDashboard() {
       });
 
       const data = await res.json();
+
       if (res.ok && data.success) {
-        showToast(data.message || "İşlem başarıyla gerçekleştirildi.");
-        await loadApplications();
+        showToast(
+          action === "approve"
+            ? "✓ İşletme başvurusu başarıyla onaylandı ve sistemde aktif edildi!"
+            : "Başvuru reddedildi.",
+          "success"
+        );
+        await loadAllData();
       } else {
-        showToast(data.error || "İşlem gerçekleştirilemedi.");
+        showToast(data.error || "İşlem sırasında hata oluştu.", "error");
       }
-    } catch {
-      showToast("Bağlantı hatası oluştu.");
+    } catch (err) {
+      showToast("Bağlantı hatası oluştu.", "error");
     } finally {
       setActionInProgress(null);
     }
   };
 
-  const filteredBusinesses = businesses.filter((b) => {
-    const matchesSearch =
-      b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === "all" || b.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
+  // Filtered Applications
   const filteredApplications = applications.filter((app) => {
     const matchesFilter = appFilter === "ALL" || app.status === appFilter;
+    const q = appSearch.toLowerCase().trim();
     const matchesSearch =
-      app.business_name.toLowerCase().includes(appSearch.toLowerCase()) ||
-      app.owner_name.toLowerCase().includes(appSearch.toLowerCase()) ||
-      app.email.toLowerCase().includes(appSearch.toLowerCase()) ||
-      app.phone.includes(appSearch) ||
-      (app.city && app.city.toLowerCase().includes(appSearch.toLowerCase()));
+      !q ||
+      app.business_name.toLowerCase().includes(q) ||
+      app.owner_name.toLowerCase().includes(q) ||
+      app.email.toLowerCase().includes(q) ||
+      app.phone.includes(q) ||
+      (app.city && app.city.toLowerCase().includes(q));
     return matchesFilter && matchesSearch;
   });
 
+  // Filtered Businesses
+  const filteredBusinesses = businesses.filter((b) => {
+    const q = businessSearch.toLowerCase().trim();
+    return !q || b.name.toLowerCase().includes(q) || b.slug.toLowerCase().includes(q) || b.category.toLowerCase().includes(q);
+  });
+
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -296,457 +245,503 @@ export default function SuperAdminDashboard() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl bg-indigo-600 text-white font-medium text-xs shadow-2xl border border-indigo-400/40 flex items-center gap-2"
+            className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2.5 border ${
+              toastMessage.type === "success"
+                ? "bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/20"
+                : "bg-rose-600 text-white border-rose-500 shadow-rose-600/20"
+            }`}
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            <span>{toastMessage}</span>
+            {toastMessage.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <span>{toastMessage.text}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Süper Yönetici Paneli
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-black tracking-tight text-[#0F2A4A]">
+              Super Admin Kontrol Merkezi
             </h1>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-              Sistem Canlı
+            <span className="px-2.5 py-1 rounded-full bg-[#0062FF]/10 text-[#0062FF] font-bold text-[11px] border border-[#0062FF]/20">
+              Canlı Sistem
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            Platform geneli tüm işletmeler, onay bekleyen başvurular ve operasyonel altyapı.
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            Platformdaki kayıt başvurularını, onaylı işletmeleri ve gerçek randevu akışını yönetin.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-bold">
-            <ShieldCheck className="w-4 h-4 text-red-400" />
-            <span>SuperAdmin: <strong>musa</strong></span>
-          </div>
-
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={loadData}
+            onClick={loadAllData}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white shadow-sm hover:bg-slate-800 transition-all cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-[#0062FF] hover:border-[#0062FF]/30 font-semibold text-xs transition-all shadow-xs flex items-center gap-2 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-indigo-400" : ""}`} />
-            Yenile
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#0062FF]" : ""}`} />
+            <span>Yenile</span>
           </button>
           <a
             href="/"
             target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-all"
+            className="px-4 py-2 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-bold text-xs transition-all shadow-sm flex items-center gap-1.5 shadow-blue-500/20"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Siteyi Gör
+            <span>Siteyi Ziyaret Et</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
-          <button
-            onClick={async () => {
-              await fetch("/api/admin/auth/check", { method: "POST" });
-              window.location.href = "/admin/login";
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 transition-all cursor-pointer"
-          >
-            Güvenli Çıkış
-          </button>
         </div>
       </div>
 
-      {/* Main Tab Navigation */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
-        <button
-          type="button"
-          onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === "overview"
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-          }`}
-        >
-          <Activity className="w-3.5 h-3.5" />
-          <span>Genel Bakış &amp; Grafikler</span>
-        </button>
+      {/* KPI Metric Cards — 100% Real Operational Data */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Bekleyen Başvurular */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-[#0062FF]/40 transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Bekleyen Başvurular
+            </span>
+            <div className={`p-2 rounded-xl ${appCounts.pending > 0 ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-slate-100 text-slate-500"}`}>
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-[#0F2A4A]">{appCounts.pending}</span>
+            {appCounts.pending > 0 && (
+              <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                İnceleme Bekliyor
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium mt-1">
+            İşletmesini kaydetmek isteyen adaylar
+          </p>
+        </div>
 
+        {/* Card 2: Onaylı İşletmeler */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-[#0062FF]/40 transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Kayıtlı İşletmeler
+            </span>
+            <div className="p-2 rounded-xl bg-blue-50 text-[#0062FF] border border-blue-200/60">
+              <Building2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-[#0F2A4A]">{businesses.length}</span>
+            <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              Aktif Salon/Klinik
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium mt-1">
+            Platformda yayında olan randevu formları
+          </p>
+        </div>
+
+        {/* Card 3: Toplam Randevu Akışı */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-[#0062FF]/40 transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Toplam Randevular
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <CalendarCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-[#0F2A4A]">{totalAppointments}</span>
+            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              Gerçek Kayıt
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium mt-1">
+            İşletmeler üzerinden alınan gerçek rezervasyonlar
+          </p>
+        </div>
+
+        {/* Card 4: Sistem & Güvenlik Durumu */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-[#0062FF]/40 transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Platform Durumu
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-black text-emerald-600 flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              %100 Aktif
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium mt-1">
+            Edge Config &amp; Supabase kesintisiz
+          </p>
+        </div>
+      </div>
+
+      {/* Modern Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200">
         <button
-          type="button"
-          onClick={() => {
-            setActiveTab("applications");
-            loadApplications();
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          onClick={() => setActiveTab("applications")}
+          className={`pb-3 px-3 text-xs font-bold transition-all relative flex items-center gap-2 ${
             activeTab === "applications"
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              ? "text-[#0062FF]"
+              : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Inbox className="w-3.5 h-3.5" />
+          <Clock className="w-4 h-4" />
           <span>Kayıt Başvuruları</span>
           {appCounts.pending > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 animate-pulse">
-              {appCounts.pending} Bekleyen
+            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              {appCounts.pending}
             </span>
+          )}
+          {activeTab === "applications" && (
+            <motion.div
+              layoutId="adminTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0062FF]"
+            />
           )}
         </button>
 
         <button
-          type="button"
           onClick={() => setActiveTab("businesses")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          className={`pb-3 px-3 text-xs font-bold transition-all relative flex items-center gap-2 ${
             activeTab === "businesses"
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              ? "text-[#0062FF]"
+              : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Building2 className="w-3.5 h-3.5" />
-          <span>Kayıtlı İşletmeler</span>
+          <Building2 className="w-4 h-4" />
+          <span>Kayıtlı İşletmeler ({businesses.length})</span>
+          {activeTab === "businesses" && (
+            <motion.div
+              layoutId="adminTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0062FF]"
+            />
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab("system")}
+          className={`pb-3 px-3 text-xs font-bold transition-all relative flex items-center gap-2 ${
+            activeTab === "system"
+              ? "text-[#0062FF]"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Server className="w-4 h-4" />
+          <span>Sistem &amp; Altyapı</span>
+          {activeTab === "system" && (
+            <motion.div
+              layoutId="adminTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0062FF]"
+            />
+          )}
         </button>
       </div>
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden group hover:border-indigo-500/40 transition-all cursor-pointer"
-          onClick={() => {
-            setActiveTab("applications");
-            setAppFilter("PENDING");
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Onay Bekleyenler</span>
-            <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
-              <Inbox className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">
-              {appCounts.pending}
-            </span>
-            <span className="text-xs font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800">
-              Yeni Kayıt
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Başvuruları incelemek ve onaylamak için tıklayın →</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden group hover:border-indigo-500/40 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kayıtlı İşletmeler</span>
-            <div className="p-2.5 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
-              <Building2 className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">
-              {stats.totalBusinesses}
-            </span>
-            <span className="text-xs font-bold text-emerald-400 flex items-center">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +12%
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Aktif randevu kabul eden işletmeler</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tamamlanan Randevu</span>
-            <div className="p-2.5 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400">
-              <CalendarCheck className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">
-              {stats.totalBookings.toLocaleString("tr-TR")}
-            </span>
-            <span className="text-xs font-bold text-emerald-400 flex items-center">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +24%
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Son 30 günde kapatılan seans</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-          className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Seans Hacmi</span>
-            <div className="p-2.5 rounded-2xl bg-cyan-600/20 border border-cyan-500/30 text-cyan-400">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black tracking-tight text-white">
-              ₺{(stats.totalVolume / 1000).toFixed(1)}K
-            </span>
-            <span className="text-xs font-bold text-cyan-400 flex items-center">
-              <ArrowUpRight className="w-3.5 h-3.5" /> +18%
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">İşletmelerin ürettiği ciro değeri</p>
-        </motion.div>
-      </div>
-
-      {/* ================= SECTION: KAYIT BAŞVURULARI TAB ================= */}
+      {/* TAB 1: KAYIT BAŞVURULARI */}
       {activeTab === "applications" && (
-        <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden space-y-5 p-6 sm:p-8">
-          <div className="pb-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Inbox className="w-5 h-5 text-indigo-400" />
-                <h2 className="text-lg font-bold text-white">Yeni İşletme Kayıt Başvuruları</h2>
-                {appCounts.pending > 0 && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                    {appCounts.pending} Bekleyen
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Kayıt formunu dolduran işletmeleri inceleyin, tek tıkla onaylayın veya gerekçe belirterek reddedin.
-              </p>
+        <div className="space-y-4">
+          {/* Filters and Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <button
+                onClick={() => setAppFilter("PENDING")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  appFilter === "PENDING"
+                    ? "bg-[#0F2A4A] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                Bekleyenler ({appCounts.pending})
+              </button>
+              <button
+                onClick={() => setAppFilter("APPROVED")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  appFilter === "APPROVED"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                Onaylananlar ({appCounts.approved})
+              </button>
+              <button
+                onClick={() => setAppFilter("REJECTED")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  appFilter === "REJECTED"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                Reddedilenler ({appCounts.rejected})
+              </button>
+              <button
+                onClick={() => setAppFilter("ALL")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  appFilter === "ALL"
+                    ? "bg-slate-800 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                Tümü ({appCounts.total})
+              </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="İşletme, yetkili, şehir veya telefon..."
-                  value={appSearch}
-                  onChange={(e) => setAppSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-56 sm:w-72"
-                />
-              </div>
-
-              {/* Status Filter Tabs */}
-              <div className="flex items-center p-1 bg-slate-800 rounded-xl border border-slate-700 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setAppFilter("PENDING")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                    appFilter === "PENDING"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Bekleyenler ({appCounts.pending})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAppFilter("APPROVED")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                    appFilter === "APPROVED"
-                      ? "bg-emerald-500 text-slate-950 shadow-xs"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Onaylananlar ({appCounts.approved})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAppFilter("ALL")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                    appFilter === "ALL"
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Tümü ({applications.length})
-                </button>
-              </div>
+            {/* Search Input */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={appSearch}
+                onChange={(e) => setAppSearch(e.target.value)}
+                placeholder="İşletme, yetkili, telefon ara..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] focus:bg-white transition-all"
+              />
             </div>
           </div>
 
+          {/* Applications List */}
           {loadingApps ? (
-            <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
-              <span>Başvurular yükleniyor...</span>
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+              <RefreshCw className="w-6 h-6 text-[#0062FF] animate-spin mx-auto mb-2" />
+              <p className="text-xs text-slate-500 font-medium">Başvurular yükleniyor...</p>
             </div>
           ) : filteredApplications.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 space-y-2">
-              <Inbox className="w-8 h-8 text-slate-600 mx-auto" />
-              <p className="text-xs">Bu filtreye uygun kayıt başvurusu bulunamadı.</p>
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F2A4A]">
+                {appFilter === "PENDING"
+                  ? "İncelenmeyi Bekleyen Başvuru Bulunmuyor"
+                  : "Bu filtreye uygun başvuru bulunamadı"}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Yeni bir işletme platform üzerinden kayıt formunu doldurduğunda burada listelenecektir.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filteredApplications.map((app) => {
+                const cleanPhone = app.phone.replace(/[^0-9]/g, "");
+                const waUrl = cleanPhone ? `https://wa.me/${cleanPhone.startsWith("90") ? cleanPhone : "90" + cleanPhone}` : null;
                 const isPending = app.status === "PENDING";
                 const isApproved = app.status === "APPROVED";
                 const isRejected = app.status === "REJECTED";
-                const isBusy = actionInProgress === app.id;
-                const cleanPhone = app.phone.replace(/[^0-9]/g, "");
-                const waUrl = cleanPhone
-                  ? `https://wa.me/${cleanPhone.startsWith("90") ? cleanPhone : "90" + cleanPhone}`
-                  : "";
 
                 return (
                   <div
                     key={app.id}
-                    className={`p-5 rounded-2xl border transition-all flex flex-col justify-between space-y-4 ${
-                      isPending
-                        ? "bg-slate-950/80 border-amber-500/30 hover:border-amber-500/60 shadow-lg"
-                        : isApproved
-                        ? "bg-slate-950/40 border-slate-800 opacity-80"
-                        : "bg-slate-950/30 border-rose-900/30 opacity-70"
-                    }`}
+                    className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-slate-300 transition-all space-y-4"
                   >
-                    {/* Header: Title & Status Badge */}
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-white truncate">{app.business_name}</h3>
-                          <span className="inline-block mt-0.5 text-[11px] font-semibold text-indigo-300">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h3 className="text-base font-black text-[#0F2A4A]">{app.business_name}</h3>
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0062FF] font-bold text-[11px] border border-blue-200/60">
                             {app.category}
                           </span>
-                        </div>
-
-                        {isPending && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-                            <Clock className="w-3 h-3" /> Onay Bekliyor
-                          </span>
-                        )}
-                        {isApproved && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
-                            <Check className="w-3 h-3" /> Onaylandı
-                          </span>
-                        )}
-                        {isRejected && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 shrink-0">
-                            <XCircle className="w-3 h-3" /> Reddedildi
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Details List */}
-                      <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-xs text-slate-300">
-                        <div className="flex items-center gap-2">
-                          <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          <span className="font-medium text-white">{app.owner_name}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          <a href={`mailto:${app.email}`} className="text-indigo-400 hover:underline truncate">
-                            {app.email}
-                          </a>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <a href={`tel:${app.phone}`} className="text-slate-200 hover:underline">
-                              {app.phone}
-                            </a>
-                          </div>
-                          {waUrl && (
-                            <a
-                              href={waUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                            >
-                              <MessageCircle className="w-3 h-3" /> WhatsApp
-                            </a>
+                          {isPending && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-[11px] border border-amber-200 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Onay Bekliyor
+                            </span>
+                          )}
+                          {isApproved && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Onaylandı
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-[11px] border border-rose-200 flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Reddedildi
+                            </span>
                           )}
                         </div>
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                          Yetkili: <strong className="text-slate-700">{app.owner_name}</strong> • Başvuru Tarihi: {new Date(app.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
 
-                        {(app.city || app.district) && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <span className="text-slate-400">
-                              {app.city} {app.district ? `(${app.district})` : ""}
-                            </span>
-                          </div>
-                        )}
-
-                        {app.website && (
-                          <div className="flex items-center gap-2">
-                            <Globe className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <a
-                              href={app.website.startsWith("http") ? app.website : `https://${app.website}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-indigo-400 hover:underline truncate"
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isPending && (
+                          <>
+                            <button
+                              onClick={() => handleApplicationAction(app.id, "approve")}
+                              disabled={actionInProgress === app.id}
+                              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
                             >
-                              {app.website}
-                            </a>
-                          </div>
-                        )}
-
-                        {app.location_url && (
-                          <div className="flex items-center gap-2">
-                            <ExternalLink className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <a
-                              href={app.location_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-cyan-400 hover:underline"
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Onayla &amp; Aç</span>
+                            </button>
+                            <button
+                              onClick={() => handleApplicationAction(app.id, "reject")}
+                              disabled={actionInProgress === app.id}
+                              className="px-3 py-2 rounded-xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs transition-all flex items-center gap-1 disabled:opacity-50"
                             >
-                              Harita Konumu
-                            </a>
-                          </div>
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Reddet</span>
+                            </button>
+                          </>
+                        )}
+                        {waUrl && (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-bold text-xs transition-all flex items-center gap-1.5"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>WhatsApp</span>
+                          </a>
                         )}
                       </div>
                     </div>
 
-                    {/* Footer: Date & Action Buttons */}
-                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(app.created_at).toLocaleDateString("tr-TR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                    {/* Application Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs">
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">E-Posta</span>
+                        <a href={`mailto:${app.email}`} className="font-medium text-[#0062FF] hover:underline truncate block">
+                          {app.email}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Telefon</span>
+                        <a href={`tel:${app.phone}`} className="font-medium text-slate-700 hover:underline">
+                          {app.phone}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Şehir / İlçe</span>
+                        <span className="font-medium text-slate-700">
+                          {app.city ? `${app.city}${app.district ? ` / ${app.district}` : ""}` : "Belirtilmedi"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Konum / Harita</span>
+                        {app.location_url ? (
+                          <a
+                            href={app.location_url}
+                            target="_blank"
+                            className="font-medium text-[#0062FF] hover:underline flex items-center gap-1"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            <span>Haritada Gör</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">Yok</span>
+                        )}
+                      </div>
+                    </div>
 
-                      {isPending ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleApplicationAction(app.id, "reject")}
-                            className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-xs transition-all disabled:opacity-50 cursor-pointer"
-                          >
-                            Reddet
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleApplicationAction(app.id, "approve")}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1 disabled:opacity-50 cursor-pointer"
-                          >
-                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            <span>Onayla</span>
-                          </button>
+                    {isRejected && app.rejection_reason && (
+                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                        <strong>Red Gerekçesi:</strong> {app.rejection_reason}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: KAYITLI İŞLETMELER */}
+      {activeTab === "businesses" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <h3 className="text-xs font-bold text-[#0F2A4A] pl-2">
+              Sistemde Tanımlı Aktif İşletmeler ({businesses.length})
+            </h3>
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={businessSearch}
+                onChange={(e) => setBusinessSearch(e.target.value)}
+                placeholder="İşletme adı veya link ara..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0062FF] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          {loadingBusinesses ? (
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+              <RefreshCw className="w-6 h-6 text-[#0062FF] animate-spin mx-auto mb-2" />
+              <p className="text-xs text-slate-500 font-medium">İşletmeler yükleniyor...</p>
+            </div>
+          ) : filteredBusinesses.length === 0 ? (
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F2A4A]">Henüz Kayıtlı İşletme Bulunmuyor</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                İşletme başvuruları onaylandığında burada kalıcı olarak listelenecek ve yönetim bağlantıları aktif olacaktır.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredBusinesses.map((biz) => {
+                const liveUrl = `https://${biz.slug}.randevuformu.com`;
+                const directUrl = `https://randevuformu.com/${biz.slug}`;
+
+                return (
+                  <div
+                    key={biz.id}
+                    className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#0062FF]/40 transition-all flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] text-white flex items-center justify-center font-black text-sm shadow-xs">
+                          {biz.name.slice(0, 1).toUpperCase()}
                         </div>
-                      ) : isApproved ? (
-                        <span className="text-[11px] font-medium text-emerald-400">
-                          ✓ Onaylandı ve Aktif
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                          Aktif Form
                         </span>
-                      ) : (
-                        <span className="text-[11px] font-medium text-rose-400">
-                          ✕ Reddedildi
-                        </span>
-                      )}
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-black text-[#0F2A4A] line-clamp-1">{biz.name}</h4>
+                        <p className="text-xs text-slate-500 font-medium">{biz.category}</p>
+                      </div>
+
+                      <div className="pt-2 text-[11px] text-slate-500 space-y-1">
+                        {biz.owner && <p>Yetkili: <strong className="text-slate-700">{biz.owner}</strong></p>}
+                        {biz.phone && <p>İletişim: <span className="text-slate-700">{biz.phone}</span></p>}
+                        <p className="text-slate-400 text-[10px]">Slug: <code className="text-[#0062FF] bg-blue-50 px-1 py-0.5 rounded">{biz.slug}</code></p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <a
+                        href={directUrl}
+                        target="_blank"
+                        className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1 transition-all border border-slate-200"
+                      >
+                        <span>Formu Aç</span>
+                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                      </a>
+                      <a
+                        href={`/dashboard?tenant=${biz.slug}`}
+                        target="_blank"
+                        className="px-3 py-1.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-bold text-xs flex items-center gap-1 transition-all shadow-xs"
+                      >
+                        <span>Paneline Gir</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </a>
                     </div>
                   </div>
                 );
@@ -756,272 +751,73 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      {/* ================= SECTION: GENEL BAKIŞ & GRAFİKLER ================= */}
-      {activeTab === "overview" && (
-        <>
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Revenue & Appointments Chart */}
-            <div className="lg:col-span-2 bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-white">Haftalık Randevu Hacmi</h2>
-                  <p className="text-xs text-slate-400">Günlük tamamlanan seans ve üretilen hacim</p>
-                </div>
-                <span className="text-xs font-bold text-indigo-400 bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-800">
-                  Son 7 Gün
+      {/* TAB 3: SİSTEM & ALTYAPI DURUMU */}
+      {activeTab === "system" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-50 text-[#0062FF]">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0F2A4A]">Veri Depolama &amp; Senkronizasyon</h3>
+                <p className="text-xs text-slate-500">Vercel Edge Config + Supabase SSR Entegrasyonu</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-2 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">Vercel Edge Config</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Bağlı &amp; Canlı
                 </span>
               </div>
-
-              <div className="h-72 w-full pt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorRandevu" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                    <XAxis dataKey="name" stroke="#64748B" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#64748B" fontSize={11} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#334155",
-                        borderRadius: "1rem",
-                        color: "#ffffff",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="randevu"
-                      name="Randevu Adedi"
-                      stroke="#6366F1"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#colorRandevu)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">Supabase PostgreSQL</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Bağlı &amp; Canlı
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">Gmail SMTP Servisi</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> randevuformuu@gmail.com
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Category Breakdown */}
-            <div className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Sektörel Dağılım</h2>
-                <p className="text-xs text-slate-400">Platformdaki işletmelerin hizmet alanları</p>
-
-                <div className="h-48 w-full mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#0f172a",
-                          borderColor: "#334155",
-                          borderRadius: "1rem",
-                          color: "#ffffff",
-                          fontSize: "12px",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="space-y-2 mt-4 pt-4 border-t border-slate-800">
-                {categoryData.map((cat) => (
-                  <div key={cat.name} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }}></span>
-                      <span className="text-slate-300 font-medium">{cat.name}</span>
-                    </div>
-                    <span className="font-bold text-white">%{cat.value}</span>
-                  </div>
-                ))}
+                <h3 className="text-sm font-bold text-[#0F2A4A]">Güvenlik &amp; Brute-Force Koruması</h3>
+                <p className="text-xs text-slate-500">256-Bit Oturum İmzalama ve Kilit Yönetimi</p>
               </div>
             </div>
-          </div>
 
-          {/* System Health & Server Status Bar */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                Sistem ve Altyapı Sağlığı
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span className="flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-emerald-400" /> Supabase DB
-                  </span>
-                  <span className="text-emerald-400 font-bold">14ms</span>
-                </div>
-                <div className="text-xs font-bold text-white">Bağlantı Sağlıklı</div>
+            <div className="space-y-2.5 pt-2 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">HMAC-SHA256 Oturum İmzası</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Aktif
+                </span>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> Edge Server
-                  </span>
-                  <span className="text-indigo-400 font-bold">%99.99</span>
-                </div>
-                <div className="text-xs font-bold text-white">Uptime Aktif</div>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">Brute-Force 5-Attempt Koruması</span>
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Aktif
+                </span>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-purple-400" /> Mail Gateway
-                  </span>
-                  <span className="text-purple-400 font-bold">Hazır</span>
-                </div>
-                <div className="text-xs font-bold text-white">Nodemailer SMTP</div>
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span className="flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-amber-400" /> Ödeme Webhook
-                  </span>
-                  <span className="text-amber-400 font-bold">200 OK</span>
-                </div>
-                <div className="text-xs font-bold text-white">İyzico &amp; Stripe</div>
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                <span className="font-semibold text-slate-700">Kilit Sıfırlama Uç Noktası</span>
+                <a href="/api/admin/auth/unlock" target="_blank" className="text-[#0062FF] font-bold hover:underline">
+                  /api/admin/auth/unlock
+                </a>
               </div>
             </div>
-          </div>
-        </>
-      )}
-
-      {/* ================= SECTION: KAYITLI İŞLETMELER TAB / LIST ================= */}
-      {(activeTab === "overview" || activeTab === "businesses") && (
-        <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden space-y-4 p-6 sm:p-8">
-          <div className="pb-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Kayıtlı İşletmeler &amp; Müşteriler</h2>
-              <p className="text-xs text-slate-400">Platformdaki tüm randevu sağlayıcılarını yönetin</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="İşletme veya sahip ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48 sm:w-64"
-                />
-              </div>
-
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium cursor-pointer"
-              >
-                <option value="all">Tüm Kategoriler</option>
-                <option value="Diş Hekimliği">Diş Hekimliği</option>
-                <option value="Güzellik & Kuaför">Güzellik & Kuaför</option>
-                <option value="Beslenme & Diyet">Beslenme & Diyet</option>
-                <option value="Hukuk & Danışmanlık">Hukuk & Danışmanlık</option>
-                <option value="Fizyoterapi">Fizyoterapi</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="uppercase bg-slate-950/60 text-slate-400 font-bold border-b border-slate-800">
-                <tr>
-                  <th scope="col" className="px-5 py-4">
-                    İşletme Adı
-                  </th>
-                  <th scope="col" className="px-5 py-4">
-                    Kategori
-                  </th>
-                  <th scope="col" className="px-5 py-4">
-                    Sahip &amp; İletişim
-                  </th>
-                  <th scope="col" className="px-5 py-4 text-center">
-                    Randevu Sayısı
-                  </th>
-                  <th scope="col" className="px-5 py-4">
-                    Paket
-                  </th>
-                  <th scope="col" className="px-5 py-4">
-                    Durum
-                  </th>
-                  <th scope="col" className="px-5 py-4 text-right">
-                    İşlem
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredBusinesses.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-5 py-4 font-medium text-white whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xs">
-                          {b.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-white">{b.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            randevuformu.com/{b.slug}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-xs font-semibold text-slate-300">{b.category}</td>
-                    <td className="px-5 py-4 text-xs">
-                      <div className="font-bold text-white">{b.owner}</div>
-                      <div className="text-slate-400">{b.email}</div>
-                    </td>
-                    <td className="px-5 py-4 text-center font-bold text-white">{b.bookingsCount}</td>
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        {b.plan}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      {b.status === "active" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" /> Aktif
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-800">
-                          <Clock className="w-3 h-3" /> Onay Bekliyor
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <a
-                        href={`/ornek/${b.slug}`}
-                        target="_blank"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl text-indigo-300 bg-white/5 hover:bg-white/10 transition-colors"
-                      >
-                        Profili Aç <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       )}

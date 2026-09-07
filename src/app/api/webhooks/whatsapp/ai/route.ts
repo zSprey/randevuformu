@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const messageText = body.message || body.text || body.Body || "";
     const senderPhone = body.from || body.From || body.phone || "05551234567";
-    const tenantSlug = body.tenantSlug || "dr-ahmet";
+    const tenantSlug = body.tenantSlug || "byerman";
 
     if (!messageText) {
       return apiBadRequest("Mesaj içeriği boş olamaz.");

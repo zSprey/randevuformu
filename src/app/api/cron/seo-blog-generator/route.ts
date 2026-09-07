@@ -175,7 +175,7 @@ ${selectedTopic.solution}
 
 ### Hemen Başlayın
 
-İşletmenizin randevu yönetimini modernize etmek ve ücretsiz formunuzu 30 saniyede açmak için [Giriş Ekranını](/login) ziyaret edebilir veya [Örnek Randevu Sayfasını](/ornek/dr-ahmet) inceleyebilirsiniz.
+İşletmenizin randevu yönetimini modernize etmek ve ücretsiz formunuzu 30 saniyede açmak için [Giriş Ekranını](/login) ziyaret edebilir veya [Örnek Randevu Sayfasını](/byerman) inceleyebilirsiniz.
       `.trim(),
     };
 

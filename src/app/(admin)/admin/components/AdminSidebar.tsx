@@ -16,7 +16,9 @@ import {
   CalendarDays,
   ExternalLink,
   ShieldCheck,
-  Mail
+  Mail,
+  ArrowRight,
+  Globe
 } from "lucide-react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -26,11 +28,11 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const menuItems = [
-  { name: "Genel Bakış & Metrikler", href: "/admin", icon: LayoutDashboard },
-  { name: "Kayıtlı İşletmeler", href: "/admin", icon: Building2 },
-  { name: "Randevu Hacmi", href: "/admin", icon: CalendarDays },
-  { name: "Ekip Yönetimi", href: "/staff", icon: Users },
-  { name: "Form Alanları", href: "/forms", icon: Settings },
+  { name: "Genel Bakış & Başvurular", href: "/admin", icon: LayoutDashboard },
+  { name: "Kayıtlı İşletmeler", href: "/admin#businesses", icon: Building2 },
+  { name: "Randevu Takvimi", href: "/calendar", icon: CalendarDays },
+  { name: "Personel Yönetimi", href: "/staff", icon: Users },
+  { name: "Form & Özelleştirme", href: "/forms", icon: Settings },
 ];
 
 export default function AdminSidebar() {
@@ -43,10 +45,13 @@ export default function AdminSidebar() {
   const handleAdminLogout = async () => {
     try {
       await fetch("/api/admin/auth/check", { method: "POST" });
-    } catch (e) {
-      // ignore
-    }
+    } catch {}
     document.cookie = "rf_superadmin_session=; path=/; max-age=0;";
+    document.cookie = "rf_superadmin=; path=/; max-age=0;";
+    try {
+      localStorage.removeItem("rf_superadmin_session");
+      localStorage.removeItem("rf_superadmin");
+    } catch {}
     window.location.href = "/admin/login";
   };
 
@@ -54,10 +59,11 @@ export default function AdminSidebar() {
     <>
       {/* Mobile Menu Button */}
       <button 
-        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+        className="md:hidden fixed top-4 right-4 z-50 p-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl shadow-md"
         onClick={toggleSidebar}
+        aria-label="Menüyü Aç"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6 text-white" />}
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {/* Overlay */}
@@ -67,97 +73,107 @@ export default function AdminSidebar() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-40 md:hidden"
         />
       )}
 
       {/* Sidebar */}
       <motion.aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex-shrink-0 text-slate-100",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex-shrink-0 text-slate-800 shadow-sm",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
-          <Link href="/admin" className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
-            <span className="bg-red-600 text-white p-1.5 rounded-lg shadow-md shadow-red-600/30">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <span>SuperAdmin</span>
+        {/* Brand Header */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200/80">
+          <Link href="/admin" className="flex items-center gap-2.5 font-extrabold text-base tracking-tight text-[#0F2A4A]">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] text-white flex items-center justify-center shadow-sm">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="block leading-none">Randevu<span className="text-[#0062FF]">Formu</span></span>
+              <span className="text-[10px] font-bold text-slate-400 tracking-normal uppercase">Super Admin</span>
+            </div>
           </Link>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-            musa
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Canlı
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        {/* Navigation Items */}
+        <div className="flex-1 overflow-y-auto py-5 px-3 space-y-1">
+          <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Yönetim Modülleri
+          </div>
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href && !item.href.includes("#");
             const Icon = item.icon;
             return (
               <Link key={item.name} href={item.href}>
                 <span 
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group",
                     isActive 
-                      ? "bg-red-600/20 text-red-300 border border-red-500/30" 
-                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                      ? "bg-[#0062FF]/10 text-[#0062FF] shadow-xs" 
+                      : "text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-100/70"
                   )}
-                  onClick={() => setIsOpen(false)}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={cn(
+                    "w-4 h-4 transition-colors", 
+                    isActive ? "text-[#0062FF]" : "text-slate-400 group-hover:text-slate-600"
+                  )} />
                   {item.name}
                 </span>
               </Link>
             );
           })}
 
-          <div className="pt-6 border-t border-slate-800 space-y-1">
-            <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Hızlı Bağlantılar
-            </p>
-            <Link
-              href="/"
-              target="_blank"
-              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
-            >
-              <span>Ana Sayfa</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
-            >
-              <span>Tenant Paneli</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-            <Link
-              href="/contact"
-              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
-            >
-              <span>B2B İletişim</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
+          <div className="pt-4 px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Hızlı Bağlantılar
           </div>
+          <Link href="/" target="_blank">
+            <span className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-100/70 transition-all group">
+              <span className="flex items-center gap-3">
+                <Globe className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                Ana Sayfayı Gör
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
+            </span>
+          </Link>
+          <Link href="/dashboard" target="_blank">
+            <span className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-[#0F2A4A] hover:bg-slate-100/70 transition-all group">
+              <span className="flex items-center gap-3">
+                <Building2 className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                İşletme Paneli
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
+            </span>
+          </Link>
         </div>
 
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          <a
-            href="mailto:destek@randevuformu.com"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] text-slate-400 hover:text-indigo-300 transition-colors"
-          >
-            <Mail className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="truncate">destek@randevuformu.com</span>
-          </a>
-
-          <button 
-            type="button"
-            onClick={handleAdminLogout}
-            className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Admin Oturumunu Kapat
-          </button>
+        {/* User Card & Logout Footer */}
+        <div className="p-3 border-t border-slate-200/80 bg-slate-50/50">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#0F2A4A] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                M
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-xs font-bold text-[#0F2A4A] truncate">musa</p>
+                <p className="text-[10px] text-slate-500 font-medium truncate">Ana Yönetici</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleAdminLogout}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Güvenli Çıkış"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-[10px] text-center text-slate-400 font-medium">
+            v2.4.0 • randevuformu.com
+          </p>
         </div>
       </motion.aside>
     </>

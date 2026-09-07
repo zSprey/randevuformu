@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-09-05T04:19:22.505Z",
+  "pagesTested": [
+    "https://randevuformu.com",
+    "https://randevuformu.com/byerman",
+    "https://randevuformu.com/sektorler/berber"
+  ],
+  "workingFeatures": [
+    "Ana sayfa başarıyla yüklendi (Randevu Formu & Online Randevu Sistemi | randevuformu.com)",
+    "Ana Sayfa Kayıt / Randevu Formu Oluştur butonu aktif",
+    "Doğrulanmış Google İşletmesi rozeti ve Google Maps yönlendirmesi aktif",
+    "Hizmet seçimi tıklanabilir ve çalışıyor",
+    "Sektör landing page aktif: Dükkan Önü Beklemelerini Bitirin, Koltuğunuz Hep Dolu Olsun.",
+    "Auth Guard koruması aktif: /settings rotası oturumsuz kullanıcılara kapalı"
+  ],
+  "defectsAndGaps": [
+    "Hizmet seçiminden sonraki 'Devam Et' butonu tetiklenemedi.",
+    "Tarih seçiminde aktif saat slotu bulunamadı veya slotlar pasif."
+  ],
+  "consoleErrors": [],
+  "networkFailures": []
+}

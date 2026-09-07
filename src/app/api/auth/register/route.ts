@@ -4,7 +4,10 @@ import {
   createBusinessApplication,
   getApplicationByEmail,
 } from "@/lib/storage/applicationStore";
-import { sendAdminNewApplicationNotification } from "@/lib/email";
+import {
+  sendAdminNewApplicationNotification,
+  sendBusinessApplicationReceivedNotification,
+} from "@/lib/email";
 import {
   apiSuccess,
   apiBadRequest,
@@ -135,8 +138,20 @@ export async function POST(req: NextRequest) {
       location_url: cleanLocationUrl,
     });
 
-    // 5. Send Admin Notification Email Asynchronously
+    // 5. Send Notification Emails Asynchronously (To Registrant Business & Admin)
     try {
+      // A. To Business Owner: Welcome & 3-Step Setup Guide
+      sendBusinessApplicationReceivedNotification({
+        business_name: cleanBusinessName,
+        owner_name: cleanOwnerName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        category: category.trim(),
+        city: (city || "").trim() || undefined,
+        district: (district || "").trim() || undefined,
+      }).catch((err) => console.warn("[Register API] Business email async err:", err));
+
+      // B. To Super Admin: Instant Application Review Card
       sendAdminNewApplicationNotification({
         business_name: cleanBusinessName,
         owner_name: cleanOwnerName,

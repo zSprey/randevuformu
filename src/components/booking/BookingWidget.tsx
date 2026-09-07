@@ -109,31 +109,95 @@ export default function BookingWidget({
   const [lockTimer, setLockTimer] = useState<number | null>(null);
   const [walletSuccess, setWalletSuccess] = useState(false);
 
-  // Load custom staff for this business dynamically
+  // Load custom staff for this business dynamically (from storage and server API)
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    let isMounted = true;
+    const cleanTenant = (tenantId === "byerman-id" || businessSlug === "byerman" || tenantId === "byerman")
+      ? "byerman"
+      : (tenantId || businessSlug || "byerman");
+
+    async function loadStaff() {
+      // 1. Try local cache first for instant render
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem(`rf_staff_${cleanTenant}`) || localStorage.getItem(`rf_staff_${tenantId}`);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const dynamicStaff: StaffOption[] = parsed
+                .filter((s: any) => s.is_active !== false)
+                .map((s: any) => ({
+                  id: s.id,
+                  name: s.display_name || s.name,
+                  role: s.title || s.role || "Uzman",
+                }));
+              if (isMounted && dynamicStaff.length > 0) {
+                setStaffList([
+                  { id: "ANY_STAFF", name: "⚡ İlk Müsait Uzman", role: "En Hızlı Seans" },
+                  ...dynamicStaff,
+                ]);
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Always fetch fresh from server API (Source of Truth)
       try {
-        const saved = localStorage.getItem(`rf_staff_${tenantId}`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const dynamicStaff: StaffOption[] = parsed
+        const res = await fetch(`/api/staff?tenantId=${encodeURIComponent(cleanTenant)}&t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const list = data?.data?.staff || data?.staff || [];
+          if (Array.isArray(list)) {
+            const dynamicStaff: StaffOption[] = list
               .filter((s: any) => s.is_active !== false)
               .map((s: any) => ({
                 id: s.id,
                 name: s.display_name || s.name,
                 role: s.title || s.role || "Uzman",
               }));
-            setStaffList([
-              { id: "ANY_STAFF", name: "⚡ İlk Müsait Uzman", role: "En Hızlı Seans" },
-              ...dynamicStaff,
-            ]);
-            return;
+            if (isMounted) {
+              const fullList = [
+                { id: "ANY_STAFF", name: "⚡ İlk Müsait Uzman", role: "En Hızlı Seans" },
+                ...dynamicStaff,
+              ];
+              setStaffList(fullList);
+
+              // If previously selected staff is no longer in the list, fallback to ANY_STAFF
+              setSelectedStaff((prev) => {
+                if (prev !== "ANY_STAFF" && !dynamicStaff.some((st) => st.id === prev)) {
+                  return "ANY_STAFF";
+                }
+                return prev;
+              });
+
+              // Keep local cache synced
+              if (typeof window !== "undefined") {
+                localStorage.setItem(`rf_staff_${cleanTenant}`, JSON.stringify(list));
+              }
+            }
           }
         }
       } catch {}
     }
-  }, [tenantId]);
+
+    loadStaff();
+
+    const handleStaffUpdate = () => {
+      loadStaff();
+    };
+
+    window.addEventListener("rf_staff_updated", handleStaffUpdate);
+    window.addEventListener("storage", handleStaffUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("rf_staff_updated", handleStaffUpdate);
+      window.removeEventListener("storage", handleStaffUpdate);
+    };
+  }, [tenantId, businessSlug]);
 
   // Fetch live calculated slots for the selected date
   const fetchSlots = async (date: string, duration: number) => {
