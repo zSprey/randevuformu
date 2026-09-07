@@ -85,11 +85,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         if (isByErman) {
           setTenantSlug("byerman");
-          setTenantName("By Erman Hair Studio");
+          setTenantName("By Erman - Erkek Berberi");
         } else {
           const storedName = localStorage.getItem("rf_tenant_name");
           const storedSlug = localStorage.getItem("rf_tenant_slug") || currentTenant;
-          setTenantName(storedName && storedName !== "By Erman Hair Studio" ? storedName : "İşletme Yönetim Paneli");
+          setTenantName(storedName && storedName !== "By Erman - Erkek Berberi" ? storedName : "İşletme Yönetim Paneli");
           setTenantSlug(storedSlug && storedSlug !== "byerman" ? storedSlug : "dashboard");
         }
       } catch {}

@@ -61,7 +61,7 @@ export default function ChatbotWidget({
       if (businessSlug && SEKTOR_DATA[businessSlug]) {
         setBusinessName(SEKTOR_DATA[businessSlug].exampleName || SEKTOR_DATA[businessSlug].badge);
       } else if (storedUser === 'byerman' && storedTenant === 'byerman') {
-        setBusinessName('By Erman Hair Studio');
+        setBusinessName('By Erman - Erkek Berberi');
       } else if (storedName && !storedName.includes('Ahmet') && storedName !== 'İşletme Yönetim Paneli') {
         setBusinessName(storedName);
       } else if (businessSlug && businessSlug !== 'platform') {
@@ -191,10 +191,14 @@ export default function ChatbotWidget({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#0F2A4A] hover:bg-[#0062FF] text-white rounded-full shadow-lg shadow-[#0F2A4A]/25 border border-white/20 flex items-center justify-center transition-all"
+            className="group fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] text-white rounded-2xl shadow-xl shadow-[#0062FF]/20 border border-white/30 flex items-center justify-center transition-all cursor-pointer"
             aria-label="Sohbet Asistanı"
           >
-            <MessageCircle className="w-6 h-6 text-white" strokeWidth={2} />
+            <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" strokeWidth={2.2} />
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white"></span>
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -209,27 +213,28 @@ export default function ChatbotWidget({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] bg-[#FAFBFC] border border-slate-200/90 rounded-2xl shadow-2xl shadow-slate-900/15 flex flex-col overflow-hidden"
           >
-            {/* Header — Kurumsal Deep Navy */}
-            <div className="bg-[#0F2A4A] px-4 py-3.5 flex items-center justify-between shrink-0">
+            {/* Header — Temiz Beyaz Lüks Tema */}
+            <div className="bg-white px-4 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 shadow-2xs">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-[#0062FF] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0F2A4A] to-[#0062FF] flex items-center justify-center shadow-xs">
                   <MessageCircle className="w-4 h-4 text-white" strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px]">
+                  <p className="text-[13px] font-bold text-[#0F2A4A] leading-tight truncate max-w-[200px]">
                     {businessName}
                   </p>
-                  <p className="text-[11px] text-blue-200">
-                    {mode === 'platform' ? 'Platform Danışmanı' : mode === 'business' ? 'İşletme Asistanı' : 'Randevu Asistanı'}
+                  <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {mode === 'platform' ? 'Platform Danışmanı' : mode === 'business' ? 'İşletme Asistanı' : 'Yapay Zeka Asistanı'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-lg text-slate-400 hover:text-[#0F2A4A] hover:bg-slate-100 flex items-center justify-center transition-colors"
                 aria-label="Kapat"
               >
-                <X className="w-4 h-4 text-white/80" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 

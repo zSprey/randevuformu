@@ -900,7 +900,7 @@ export default function ErmanBarberWidget({
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-[#0F2A4A]">
-                  By Erman Hair Studio • Google Haritalar Müşteri Yorumları &amp; Değerlendirmeleri
+                  By Erman - Erkek Berberi • Google Haritalar Müşteri Yorumları &amp; Değerlendirmeleri
                 </p>
                 <p className="text-[11px] text-slate-500">
                   Salonumuz hakkındaki tüm müşteri deneyimlerini doğrudan Google Haritalar profili üzerinden inceleyebilir veya siz de yorum bırakabilirsiniz.
@@ -1060,8 +1060,8 @@ export default function ErmanBarberWidget({
                 event={{
                   id: `byerman-${Date.now()}`,
                   title: `${assignedStaff.name} - ${selectedService.name}`,
-                  description: `By Erman Hair Studio\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nUsta: ${assignedStaff.name} (${assignedStaff.chair})\nHizmet: ${selectedService.name}${selectedExtraServices.length > 0 ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})` : ""}\nToplam: ₺${totalPrice}`,
-                  location: "By Erman Hair Studio, İstanbul",
+                  description: `By Erman - Erkek Berberi\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nUsta: ${assignedStaff.name} (${assignedStaff.chair})\nHizmet: ${selectedService.name}${selectedExtraServices.length > 0 ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})` : ""}\nToplam: ₺${totalPrice}`,
+                  location: "İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul",
                   date: activeDate,
                   time: selectedSlot,
                   durationMinutes: totalDuration || 45,

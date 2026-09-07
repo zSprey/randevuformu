@@ -2038,7 +2038,7 @@ export default function SettingsPage() {
                               <>
                                 <a
                                   href={`https://wa.me/${fb.customer_phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                    `Merhaba ${fb.customer_name}, By Erman Hair Studio'dan arıyorum. Randevunuzdaki geri bildiriminizi inceledik, memnuniyetinizi sağlamak ve telafi etmek isteriz.`
+                                    `Merhaba ${fb.customer_name}, By Erman - Erkek Berberi'nden arıyorum. Randevunuzdaki geri bildiriminizi inceledik, memnuniyetinizi sağlamak ve telafi etmek isteriz.`
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"

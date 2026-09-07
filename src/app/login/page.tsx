@@ -129,7 +129,7 @@ function LoginFormContent() {
       // A. By Erman Bypass
       if (isByErman) {
         if (loginPassword === "byerman123" || loginPassword === "ermankuafor123") {
-          setAuthCookie("byerman", "byerman", "By Erman Hair Studio");
+          setAuthCookie("byerman", "byerman", "By Erman - Erkek Berberi");
           setSuccessMsg("Giriş başarılı! Yönetim paneline yönlendiriliyorsunuz...");
           setTimeout(() => {
             window.location.href = "/dashboard";

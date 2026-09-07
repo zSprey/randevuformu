@@ -611,7 +611,7 @@ export default function DashboardPage() {
 
         <BusinessCalendarSyncModal
           tenant={getTenantParam()}
-          businessName={isErmanTenant ? "By Erman Hair Studio" : "İşletme Randevuları"}
+          businessName={isErmanTenant ? "By Erman - Erkek Berberi" : "İşletme Randevuları"}
           isOpen={showSyncModal}
           onClose={() => setShowSyncModal(false)}
         />

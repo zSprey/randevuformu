@@ -40,7 +40,7 @@ export default function QrStandPage() {
       const isByErman = isByErmanHost || (currentUser === "byerman" && currentTenant === "byerman");
 
       if (isByErman) {
-        setBusinessName("By Erman Hair Studio");
+        setBusinessName("By Erman - Erkek Berberi");
         setBusinessSlug("byerman");
         setWifiSsid("ByErman_Misafir");
         return;

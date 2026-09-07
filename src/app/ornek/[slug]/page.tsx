@@ -31,8 +31,8 @@ export default async function OrnekDetailPage({ params }: OrnekPageProps) {
 
   // Check if By Erman / Erman Kuaför
   const isErman = slug === "byerman" || slug === "ermankuafor";
-  const businessName = isErman ? "By Erman Hair Studio" : (sector?.exampleName || "Dr. Ahmet Yılmaz Diş Kliniği");
-  const category = isErman ? "VIP Kuaför & Saç Tasarım" : (sector?.category || "Örnek Hizmet");
+  const businessName = isErman ? "By Erman - Erkek Berberi" : (sector?.exampleName || "Örnek İşletme");
+  const category = isErman ? "Erkek Berberi" : (sector?.category || "Örnek Hizmet");
 
   const defaultServices = isErman
     ? [

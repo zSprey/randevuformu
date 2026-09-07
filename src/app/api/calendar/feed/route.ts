@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       getStoredAppointments(tenant),
     ]);
 
-    const businessTitle = profile?.name || (tenant === "byerman" ? "By Erman Hair Studio" : `${tenant.toUpperCase()} Randevuları`);
+    const businessTitle = profile?.name || (tenant === "byerman" ? "By Erman - Erkek Berberi" : `${tenant.toUpperCase()} Randevuları`);
     const location = profile?.google_maps_url || profile?.address || "İşletme Salonu";
 
     // 2. Aktif (iptal edilmemiş) randevuları dönüştür
