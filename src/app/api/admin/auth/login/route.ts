@@ -17,21 +17,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { username = "", password = "" } = body;
 
-    // 1. Check Brute-force Lockout
-    const lockout = BruteForceGuard.checkLockout(ip);
-    if (lockout.isLocked) {
-      return apiRateLimited(
-        `Çok fazla hatalı deneme yapıldı. Güvenlik nedeniyle hesabınız kilitlendi. Lütfen ${lockout.remainingSeconds} saniye sonra tekrar deneyin.`,
-        lockout.remainingSeconds,
-        { isLocked: true, remainingSeconds: lockout.remainingSeconds }
-      );
-    }
-
-    // 2. Validate Credentials with Constant-Time Comparison
+    // 1. Validate Credentials First
     const isUserValid = BruteForceGuard.safeEqual(username.trim(), SUPER_ADMIN_USER);
     const isPassValid = BruteForceGuard.safeEqual(password, SUPER_ADMIN_PASS);
 
-    if (!isUserValid || !isPassValid) {
+    // If correct credentials are provided, immediately clear any lockout and log in!
+    if (isUserValid && isPassValid) {
+      BruteForceGuard.clearAttempts(ip);
+      BruteForceGuard.resetAll();
+    } else {
+      // 2. If invalid credentials, check Brute-force Lockout
+      const lockout = BruteForceGuard.checkLockout(ip);
+      if (lockout.isLocked) {
+        return apiRateLimited(
+          `Çok fazla hatalı deneme yapıldı. Güvenlik nedeniyle hesabınız kilitlendi. Lütfen ${lockout.remainingSeconds} saniye sonra tekrar deneyin.`,
+          lockout.remainingSeconds,
+          { isLocked: true, remainingSeconds: lockout.remainingSeconds }
+        );
+      }
+
       const attemptResult = BruteForceGuard.recordFailedAttempt(ip);
 
       if (attemptResult.isNowLocked) {

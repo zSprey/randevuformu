@@ -15,6 +15,19 @@ export default function SuperAdminLoginPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [lockoutTime, setLockoutTime] = useState<number | null>(null);
 
+  const handleUnlock = async () => {
+    try {
+      const res = await fetch("/api/admin/auth/unlock", { method: "POST" });
+      if (res.ok) {
+        setErrorMsg("");
+        setLockoutTime(null);
+        setSuccessMsg("Kilit başarıyla kaldırıldı! Bilgilerinizi girip giriş yapabilirsiniz.");
+      }
+    } catch {
+      setErrorMsg("Kilit kaldırılamadı, lütfen sayfayı yenileyip tekrar deneyin.");
+    }
+  };
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -85,9 +98,20 @@ export default function SuperAdminLoginPage() {
 
         {/* Feedback */}
         {errorMsg && (
-          <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2.5 leading-relaxed">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+          <div className="mb-5 p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex flex-col gap-2 leading-relaxed">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+            {(lockoutTime || errorMsg.includes("kilitlendi")) && (
+              <button
+                type="button"
+                onClick={handleUnlock}
+                className="mt-1 self-start px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 rounded-xl text-white font-bold text-[11px] transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                🔓 Kilidi Hemen Kaldır
+              </button>
+            )}
           </div>
         )}
 

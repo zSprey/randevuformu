@@ -4,6 +4,8 @@ const EDGE_CONFIG_ID = process.env.EDGE_CONFIG_ID || "";
 const VERCEL_TOKEN = process.env.VERCEL_BEARER_TOKEN || "";
 const EDGE_CONFIG_READ_URL = process.env.EDGE_CONFIG || "";
 
+import crypto from "crypto";
+
 export interface StoredAppointment {
   id: string;
   tenant?: string;
@@ -14,7 +16,7 @@ export interface StoredAppointment {
   customer_note?: string;
   appointment_date: string;
   appointment_time: string;
-  status: "confirmed" | "seated" | "completed" | "cancelled" | "pending";
+  status: "confirmed" | "seated" | "completed" | "cancelled" | "pending" | "no-show";
   services?: { name: string; price_text?: string };
   staff_id?: string;
   staff_name?: string;
@@ -343,3 +345,128 @@ export async function deleteAppointment(id: string, tenant?: string): Promise<bo
 
   return true;
 }
+
+// 5. GET APPOINTMENT BY ID
+export async function getAppointmentById(
+  id: string,
+  tenant?: string
+): Promise<StoredAppointment | null> {
+  const tenantKey = (tenant || "byerman").toLowerCase();
+  const list = await getStoredAppointments(tenantKey);
+  const found = list.find((a) => a.id === id);
+  if (found) return found;
+
+  // Search without strict tenant if not found
+  if (tenantKey !== "byerman") {
+    const ermanList = await getStoredAppointments("byerman");
+    const ermanFound = ermanList.find((a) => a.id === id);
+    if (ermanFound) return ermanFound;
+  }
+
+  return null;
+}
+
+// 6. GENERATE & VERIFY SECURE APPOINTMENT TOKEN
+const TOKEN_SECRET = process.env.NEXTAUTH_SECRET || "randevuformu_secure_token_secret_2026";
+
+export function generateAppointmentToken(app: StoredAppointment): string {
+  const raw = `${app.id}:${app.customer_phone || ""}:${app.appointment_date}:${TOKEN_SECRET}`;
+  return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 16);
+}
+
+export function verifyAppointmentToken(app: StoredAppointment, token: string): boolean {
+  if (!token) return false;
+  const expected = generateAppointmentToken(app);
+  // Also accept last 4 digits of phone as secondary easy verification
+  const phoneFallback = (app.customer_phone || "").replace(/\D/g, "").slice(-4);
+  return token === expected || (token.length >= 4 && token === phoneFallback);
+}
+
+// 7. CLIENT ATTENDANCE & NO-SHOW RELIABILITY SCORE
+export interface ClientReliability {
+  total: number;
+  completed: number;
+  noShow: number;
+  cancelled: number;
+  score: number; // 0 - 100
+  isRisky: boolean;
+  badgeLabel: string;
+  badgeColor: "emerald" | "amber" | "rose" | "slate";
+}
+
+export async function calculateClientReliability(
+  phone: string,
+  tenant?: string
+): Promise<ClientReliability> {
+  const cleanPhone = (phone || "").replace(/\D/g, "");
+  if (!cleanPhone) {
+    return {
+      total: 0,
+      completed: 0,
+      noShow: 0,
+      cancelled: 0,
+      score: 100,
+      isRisky: false,
+      badgeLabel: "Yeni Müşteri",
+      badgeColor: "slate",
+    };
+  }
+
+  const tenantKey = (tenant || "byerman").toLowerCase();
+  const allAppointments = await getStoredAppointments(tenantKey);
+
+  const clientApps = allAppointments.filter((a) => {
+    const aPhone = (a.customer_phone || "").replace(/\D/g, "");
+    return aPhone.length >= 7 && (aPhone.endsWith(cleanPhone.slice(-7)) || cleanPhone.endsWith(aPhone.slice(-7)));
+  });
+
+  const total = clientApps.length;
+  const completed = clientApps.filter((a) => a.status === "completed" || a.status === "seated").length;
+  const noShow = clientApps.filter((a) => a.status === "no-show").length;
+  const cancelled = clientApps.filter((a) => a.status === "cancelled").length;
+
+  if (total === 0) {
+    return {
+      total: 0,
+      completed: 0,
+      noShow: 0,
+      cancelled: 0,
+      score: 100,
+      isRisky: false,
+      badgeLabel: "Yeni Müşteri",
+      badgeColor: "slate",
+    };
+  }
+
+  // Calculate score based on completed vs noShow
+  const attendedCount = completed;
+  const decisiveCount = completed + noShow;
+  const score = decisiveCount > 0 ? Math.round((attendedCount / decisiveCount) * 100) : 100;
+  const isRisky = noShow > 0 || (total >= 2 && score < 75);
+
+  let badgeLabel = "⭐ %100 Güvenilir";
+  let badgeColor: "emerald" | "amber" | "rose" | "slate" = "emerald";
+
+  if (noShow > 0) {
+    badgeLabel = `⚠️ ${noShow} Kez Gelmedi (%${score})`;
+    badgeColor = score < 60 ? "rose" : "amber";
+  } else if (completed >= 3) {
+    badgeLabel = "💎 Sadık Müşteri";
+    badgeColor = "emerald";
+  } else if (completed >= 1) {
+    badgeLabel = "✓ Doğrulanmış Müşteri";
+    badgeColor = "emerald";
+  }
+
+  return {
+    total,
+    completed,
+    noShow,
+    cancelled,
+    score,
+    isRisky,
+    badgeLabel,
+    badgeColor,
+  };
+}
+
