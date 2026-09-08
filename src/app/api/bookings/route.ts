@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import { slotLockManager } from "@/lib/engine/lockManager";
 import { MeetingGenerator } from "@/lib/integrations/meetingGenerator";
 import { sendDualBarberBookingSms } from "@/lib/sms/smsService";
-import { getStoredAppointments, saveNewAppointment, StoredAppointment } from "@/lib/storage/appointmentsStore";
+import { getStoredAppointments, saveNewAppointment, normalizeTenant, StoredAppointment } from "@/lib/storage/appointmentsStore";
 import {
   apiSuccess,
   apiBadRequest,
@@ -43,9 +44,16 @@ export async function POST(request: Request) {
       event_id,
       service_id,
       tenant_id,
+      tenant,
+      business_id,
+      business_slug,
+      businessSlug,
       user_name,
+      customer_name,
       user_email,
+      customer_email,
       user_phone,
+      customer_phone,
       staff_id,
       staff_name,
       staffId,
@@ -59,7 +67,8 @@ export async function POST(request: Request) {
     } = body;
 
     const targetEventId = event_id || service_id;
-    const targetTenantId = tenant_id || "default-tenant";
+    const rawTenant = tenant_id || tenant || business_slug || businessSlug || business_id || "byerman";
+    const targetTenantId = normalizeTenant(rawTenant);
 
     const resolvedStaffId = staff_id || staffId || null;
     let resolvedStaffName = staff_name || staffName || null;
@@ -69,11 +78,13 @@ export async function POST(request: Request) {
       else if (resolvedStaffId === "ANY_STAFF") resolvedStaffName = "Fark Etmez / İlk Müsait Usta";
     }
 
-    const cleanPhone = (user_phone || "").replace(/\D/g, "");
-    const effectiveEmail = user_email?.trim() || (cleanPhone ? `${cleanPhone}@musteri.randevuformu.com` : "musteri@randevuformu.com");
+    const effectiveName = (user_name || customer_name || "").trim();
+    const effectivePhone = (user_phone || customer_phone || "").trim();
+    const cleanPhone = effectivePhone.replace(/\D/g, "");
+    const effectiveEmail = (user_email || customer_email || "").trim() || (cleanPhone ? `${cleanPhone}@musteri.randevuformu.com` : "musteri@randevuformu.com");
 
     // 1. Validate mandatory fields (name, service, start_time, and either phone or email)
-    if (!targetEventId || !user_name || (!user_email && !user_phone) || !start_time) {
+    if (!targetEventId || !effectiveName || (!effectiveEmail && !effectivePhone) || !start_time) {
       return apiBadRequest("Eksik bilgi: Hizmet, isim, telefon/e-posta ve başlangıç saati zorunludur.");
     }
 
@@ -163,17 +174,33 @@ export async function POST(request: Request) {
       platform: meeting_platform,
       bookingId: bookingUniqueId,
       businessName: eventTitle,
-      customerName: user_name,
+      customerName: effectiveName,
     });
+
+    // Extract exact date YYYY-MM-DD and time HH:mm:ss in Turkey timezone (Europe/Istanbul UTC+3)
+    const appointmentDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Istanbul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(startTime);
+
+    const appointmentTimeStr = new Intl.DateTimeFormat("tr-TR", {
+      timeZone: "Europe/Istanbul",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(startTime);
 
     // 6. Capacity Lock with Auto-Rollback Transaction wrapper
     const bookingPayload = {
       id: bookingUniqueId,
       tenant_id: targetTenantId,
       event_id: targetEventId,
-      user_name,
+      user_name: effectiveName,
       user_email: effectiveEmail,
-      user_phone: user_phone || null,
+      user_phone: effectivePhone || null,
       staff_id: resolvedStaffId,
       staff_name: resolvedStaffName,
       start_time: startTime.toISOString(),
@@ -199,37 +226,40 @@ export async function POST(request: Request) {
       },
       async () => {
         // 1. Always save to persistent Edge Config Appointments Store
-        try {
-          const storedApp: StoredAppointment = {
-            id: bookingUniqueId,
-            tenant: targetTenantId,
-            tenant_id: targetTenantId,
-            customer_name: user_name,
-            customer_phone: user_phone || "",
-            customer_note: notes || eventTitle || "Saç Kesimi & Yıkama",
-            appointment_date: startTime.toISOString().split("T")[0],
-            appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
-            status: "confirmed" as const,
-            services: { name: notes || eventTitle || "Saç Kesimi & Yıkama" },
-            staff_id: resolvedStaffId || undefined,
-            staff_name: resolvedStaffName || undefined,
-            created_at: new Date().toISOString(),
-          };
-          await saveNewAppointment(storedApp);
-        } catch (err) {
-          console.warn("[Bookings] Error saving to appointmentsStore:", err);
+        const storedApp: StoredAppointment = {
+          id: bookingUniqueId,
+          tenant: targetTenantId,
+          tenant_id: targetTenantId,
+          business_id: targetTenantId,
+          customer_name: effectiveName,
+          customer_phone: effectivePhone,
+          customer_note: notes || eventTitle || "Saç Kesimi & Yıkama",
+          appointment_date: appointmentDateStr,
+          appointment_time: appointmentTimeStr,
+          status: "confirmed" as const,
+          services: { name: notes || eventTitle || "Saç Kesimi & Yıkama" },
+          staff_id: resolvedStaffId || undefined,
+          staff_name: resolvedStaffName || undefined,
+          created_at: new Date().toISOString(),
+        };
+
+        const saveSuccess = await saveNewAppointment(storedApp);
+        if (!saveSuccess) {
+          throw new Error("Randevu kalıcı veritabanına kaydedilemedi.");
         }
 
         // 2. Also attempt Supabase appointments table
         try {
           const appointmentInsertData = {
+            id: bookingUniqueId,
             tenant: targetTenantId,
             tenant_id: targetTenantId,
-            customer_name: user_name,
-            customer_phone: user_phone || "",
+            business_id: targetTenantId,
+            customer_name: effectiveName,
+            customer_phone: effectivePhone,
             customer_note: notes || "",
-            appointment_date: startTime.toISOString().split("T")[0],
-            appointment_time: startTime.toISOString().split("T")[1].slice(0, 8),
+            appointment_date: appointmentDateStr,
+            appointment_time: appointmentTimeStr,
             status: "confirmed",
             staff_id: resolvedStaffId || null,
             staff_name: resolvedStaffName || null,
@@ -246,18 +276,18 @@ export async function POST(request: Request) {
     );
 
     if (!txResult.success) {
-      return apiConflict(txResult.error || "Randevu saati kilitlenemedi.");
+      return apiConflict(txResult.error || "Randevu saati kilitlenemedi veya veritabanına yazılamadı.");
     }
 
     const createdBooking = txResult.data || bookingPayload;
 
     // 7. Send Confirmation Email via Nodemailer (Resilient)
     let mailSent = false;
-    if (process.env.SMTP_PASS) {
+    if (process.env.SMTP_PASS && effectiveEmail) {
       try {
         const mailOptions = {
           from: process.env.SMTP_FROM_EMAIL || `"Randevu Sistemi" <${process.env.SMTP_USER || "noreply@randevuformu.com"}>`,
-          to: user_email,
+          to: effectiveEmail,
           subject: `Randevunuz Onaylandı: ${eventTitle}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
@@ -266,7 +296,7 @@ export async function POST(request: Request) {
                 <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">${eventTitle}</p>
               </div>
               <div style="padding: 24px; color: #1e293b; font-size: 15px; line-height: 1.6;">
-                <p>Sayın <strong>${user_name}</strong>,</p>
+                <p>Sayın <strong>${effectiveName}</strong>,</p>
                 <p>Randevunuz başarıyla sisteme kaydedilmiştir.</p>
                 <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
                   <p style="margin: 4px 0;">📅 <strong>Tarih & Başlangıç:</strong> ${startTime.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}</p>
@@ -290,7 +320,7 @@ export async function POST(request: Request) {
 
     // 8. Dual SMS Notification (Müşteri + Erman Usta: +90 538 480 90 01)
     let smsResult = { customerSmsSent: false, barberSmsSent: false };
-    if (user_phone) {
+    if (effectivePhone) {
       try {
         const appointmentDate = startTime.toLocaleDateString("tr-TR", {
           timeZone: "Europe/Istanbul",
@@ -305,8 +335,8 @@ export async function POST(request: Request) {
         });
 
         smsResult = await sendDualBarberBookingSms({
-          customerName: user_name,
-          customerPhone: user_phone,
+          customerName: effectiveName,
+          customerPhone: effectivePhone,
           appointmentDate,
           appointmentTime,
           serviceName: eventTitle || "Erkek Berberi Tıraş Hizmeti",
@@ -315,6 +345,20 @@ export async function POST(request: Request) {
       } catch (smsErr) {
         console.warn("[Bookings Dual SMS Warning]:", smsErr);
       }
+    }
+
+    // 9. Revalidate cache for business dashboard and calendar
+    try {
+      revalidatePath(`/business/${targetTenantId}/appointments`);
+      if (rawTenant && rawTenant !== targetTenantId) {
+        revalidatePath(`/business/${rawTenant}/appointments`);
+      }
+      revalidatePath("/dashboard");
+      revalidatePath("/calendar");
+      revalidatePath("/appointments");
+      revalidatePath(`/${targetTenantId}`);
+    } catch (revalErr) {
+      console.warn("[Bookings Revalidate Warning]:", revalErr);
     }
 
     return apiSuccess(

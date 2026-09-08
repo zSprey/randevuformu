@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   getStoredAppointments,
   saveNewAppointment,
   updateAppointmentStatus,
   updateAppointment,
   deleteAppointment,
+  normalizeTenant,
   StoredAppointment,
 } from "@/lib/storage/appointmentsStore";
 
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Müşteri adı ve telefon zorunludur." }, { status: 400 });
     }
 
-    const assignedTenant = (tenant || tenant_id || business_id || "byerman").toLowerCase();
+    const assignedTenant = normalizeTenant(tenant || tenant_id || business_id);
     const resolvedStaffId = staff_id || staffId || undefined;
     let resolvedStaffName = staff_name || staffName || undefined;
 
@@ -87,7 +89,18 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
-    await saveNewAppointment(newApp);
+    const saved = await saveNewAppointment(newApp);
+    if (!saved) {
+      return NextResponse.json({ success: false, error: "Randevu kaydedilemedi." }, { status: 500 });
+    }
+
+    try {
+      revalidatePath("/dashboard");
+      revalidatePath("/calendar");
+      revalidatePath("/appointments");
+      revalidatePath(`/business/${assignedTenant}/appointments`);
+      revalidatePath(`/${assignedTenant}`);
+    } catch {}
 
     return NextResponse.json({ success: true, appointment: newApp }, { status: 201 });
   } catch (error: any) {
@@ -109,11 +122,20 @@ export async function PATCH(req: NextRequest) {
     if (staff_id || staffId) updates.staff_id = staff_id || staffId;
     if (staff_name || staffName) updates.staff_name = staff_name || staffName;
 
+    const normalizedTenant = normalizeTenant(tenant);
+
     if (status && Object.keys(updates).length === 1) {
-      await updateAppointmentStatus(id, status, tenant);
+      await updateAppointmentStatus(id, status, normalizedTenant);
     } else {
-      await updateAppointment(id, updates, tenant);
+      await updateAppointment(id, updates, normalizedTenant);
     }
+
+    try {
+      revalidatePath("/dashboard");
+      revalidatePath("/calendar");
+      revalidatePath("/appointments");
+      revalidatePath(`/business/${normalizedTenant}/appointments`);
+    } catch {}
 
     return NextResponse.json({ success: true, updates });
   } catch (error: any) {
@@ -125,13 +147,22 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    const tenant = searchParams.get("tenant") || req.cookies.get("rf_tenant")?.value || "";
+    const rawTenant = searchParams.get("tenant") || req.cookies.get("rf_tenant")?.value || "";
+    const normalizedTenant = normalizeTenant(rawTenant);
 
     if (!id) {
       return NextResponse.json({ success: false, error: "ID parametresi zorunludur." }, { status: 400 });
     }
 
-    await deleteAppointment(id, tenant);
+    await deleteAppointment(id, normalizedTenant);
+
+    try {
+      revalidatePath("/dashboard");
+      revalidatePath("/calendar");
+      revalidatePath("/appointments");
+      revalidatePath(`/business/${normalizedTenant}/appointments`);
+    } catch {}
+
     return NextResponse.json({ success: true, message: "Randevu başarıyla silindi." });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

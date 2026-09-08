@@ -290,6 +290,8 @@ export default function BookingWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           business_slug: businessSlug,
+          tenant: businessSlug,
+          tenant_id: tenantId || businessSlug,
           service_id: selectedService?.id || "default",
           customer_name: customerName,
           user_name: customerName,

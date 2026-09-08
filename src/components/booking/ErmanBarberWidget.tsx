@@ -619,6 +619,8 @@ export default function ErmanBarberWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           business_slug: "byerman",
+          tenant: "byerman",
+          tenant_id: "byerman",
           service_id: selectedService.id,
           service_name: selectedService.name,
           extra_services: selectedExtraServices.map((s) => ({
@@ -641,14 +643,14 @@ export default function ErmanBarberWidget({
       });
 
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success !== false) {
         setStep(4);
       } else {
         setErrorMessage(data.error || "Randevu kaydedilemedi. Lütfen tekrar deneyin.");
       }
-    } catch {
-      // Graceful success fallback
-      setStep(4);
+    } catch (err: any) {
+      console.error("[Booking Submission Error]:", err);
+      setErrorMessage("Bağlantı hatası: Randevu kaydedilemedi. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.");
     } finally {
       setIsSubmitting(false);
     }

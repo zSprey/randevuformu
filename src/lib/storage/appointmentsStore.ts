@@ -23,14 +23,22 @@ export interface StoredAppointment {
   created_at?: string;
 }
 
+export function normalizeTenant(tenant?: string | null): string {
+  if (!tenant) return "byerman";
+  const clean = tenant.trim().toLowerCase();
+  if (clean === "default" || clean === "default-tenant" || clean === "byerman-id" || clean === "ermankuafor" || clean === "byerman") {
+    return "byerman";
+  }
+  return clean;
+}
+
 // Memory cache per tenant for resilient fallback
 const appointmentsMemoryCache = new Map<string, StoredAppointment[]>();
 
 // 1. GET STORED APPOINTMENTS (STRICT MULTI-TENANT ISOLATION)
 export async function getStoredAppointments(tenant?: string): Promise<StoredAppointment[]> {
-  const cleanTenant = (tenant || "").trim().toLowerCase();
+  const cleanTenant = normalizeTenant(tenant);
   
-  // Güvenlik Kuralı: Eğer bir tenant belirtilmemişse, başka işletmelerin verisi sızmasın diye boş döner
   if (!cleanTenant) {
     return [];
   }
@@ -127,7 +135,7 @@ export async function getStoredAppointments(tenant?: string): Promise<StoredAppo
 
 // 2. SAVE NEW APPOINTMENT (ISOLATED BY TENANT)
 export async function saveNewAppointment(app: StoredAppointment): Promise<boolean> {
-  const tenantKey = (app.tenant || app.tenant_id || app.business_id || "byerman").toLowerCase();
+  const tenantKey = normalizeTenant(app.tenant || app.tenant_id || app.business_id);
   const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
 
   // A. Read current for this tenant only
@@ -206,7 +214,7 @@ export async function updateAppointmentStatus(
   newStatus: StoredAppointment["status"],
   tenant?: string
 ): Promise<boolean> {
-  const tenantKey = (tenant || "byerman").toLowerCase();
+  const tenantKey = normalizeTenant(tenant);
   const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
 
   const current = await getStoredAppointments(tenantKey);
@@ -252,7 +260,7 @@ export async function updateAppointment(
   updates: Partial<StoredAppointment>,
   tenant?: string
 ): Promise<boolean> {
-  const tenantKey = (tenant || "byerman").toLowerCase();
+  const tenantKey = normalizeTenant(tenant);
   const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
 
   const current = await getStoredAppointments(tenantKey);
@@ -306,7 +314,7 @@ export async function updateAppointment(
 
 // 4. DELETE APPOINTMENT
 export async function deleteAppointment(id: string, tenant?: string): Promise<boolean> {
-  const tenantKey = (tenant || "byerman").toLowerCase();
+  const tenantKey = normalizeTenant(tenant);
   const storageKey = tenantKey === "byerman" ? "byerman_appointments" : `${tenantKey}_appointments`;
 
   const current = await getStoredAppointments(tenantKey);
@@ -351,7 +359,7 @@ export async function getAppointmentById(
   id: string,
   tenant?: string
 ): Promise<StoredAppointment | null> {
-  const tenantKey = (tenant || "byerman").toLowerCase();
+  const tenantKey = normalizeTenant(tenant);
   const list = await getStoredAppointments(tenantKey);
   const found = list.find((a) => a.id === id);
   if (found) return found;
