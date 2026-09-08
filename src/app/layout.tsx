@@ -45,6 +45,16 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://randevuformu.com',
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+  },
   openGraph: {
     type: "website",
     locale: "tr_TR",
@@ -54,7 +64,7 @@ export const metadata: Metadata = {
     siteName: "randevuformu.com",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Randevu Formu - Online Randevu ve Rezervasyon Sistemi",
@@ -65,7 +75,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Randevu Formu & Online Randevu Sistemi | randevuformu.com",
     description: "İşletmeniz için 30 saniyede online randevu formu kurun. WhatsApp ve SMS onaylı randevu platformu.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
     creator: "@randevuformu",
   },
   robots: {
@@ -121,7 +131,8 @@ export default function RootLayout({
         "@id": "https://randevuformu.com/#organization",
         "name": "randevuformu.com",
         "url": "https://randevuformu.com",
-        "logo": "https://randevuformu.com/og-image.jpg",
+        "logo": "https://randevuformu.com/logo.png",
+        "image": "https://randevuformu.com/logo.png",
         "description": "Türkiye'nin en kolay online randevu ve rezervasyon yönetim yazılımı.",
         "contactPoint": {
           "@type": "ContactPoint",

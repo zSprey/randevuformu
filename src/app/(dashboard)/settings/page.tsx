@@ -48,6 +48,7 @@ import {
 
 import { DEFAULT_BYERMAN_SERVICES, StoredBusinessService } from "@/lib/storage/servicesStore";
 import { PrivateFeedback, DEFAULT_BYERMAN_REPUTATION } from "@/lib/storage/reputationStore";
+import ServicePriceBadge from "@/components/common/ServicePriceBadge";
 
 export interface BusinessService {
   id: string;
@@ -1241,15 +1242,7 @@ export default function SettingsPage() {
                           <Clock className="w-3 h-3 text-slate-400" />
                           {s.duration_minutes} Dakika
                         </span>
-                        {s.price && s.price > 0 ? (
-                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            ₺{s.price.toLocaleString("tr-TR")}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-50 text-slate-400 border border-slate-200/60 italic">
-                            Fiyat Gizli (Formda Görünmez)
-                          </span>
-                        )}
+                        <ServicePriceBadge price={s.price} variant="emerald" />
                       </div>
                       {s.description && (
                         <p className="text-xs text-slate-500 leading-relaxed max-w-xl">

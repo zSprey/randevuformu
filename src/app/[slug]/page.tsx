@@ -1,301 +1,262 @@
-"use client";
-
-import React, { useState, useEffect, use } from "react";
-import Link from "next/link";
-import { CalendarDays, ArrowLeft, Loader2, Info, Building2, ShieldCheck, ArrowRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import BookingWidget from "@/components/booking/BookingWidget";
-import SchemaMarkup from "@/components/SchemaMarkup";
-import { SEKTOR_DATA } from "@/lib/sektorler";
+import React from "react";
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { CustomerChatbot } from "@/components/ai/CustomerChatbot";
-
-const ERMAN_USTA_DATA = {
-  id: "byerman",
-  name: "By Erman - Erkek Berberi",
-  slug: "byerman",
-  phone: "+90 538 480 90 01",
-  category: "Erkek Berberi",
-  description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
-  services: [
-    {
-      id: "srv-sac",
-      name: "Saç Kesimi & Yıkama",
-      duration_minutes: 30,
-      description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
-    },
-    {
-      id: "srv-sakal",
-      name: "Sakal Tıraşı & Sıcak Havlu",
-      duration_minutes: 30,
-      description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
-    },
-    {
-      id: "srv-komple",
-      name: "Saç + Sakal (Komple Tıraş)",
-      duration_minutes: 60,
-      description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
-    },
-    {
-      id: "srv-cocuk",
-      name: "Çocuk Saç Kesimi",
-      duration_minutes: 30,
-      description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
-    },
-    {
-      id: "srv-yikama",
-      name: "Saç Yıkama & Fön",
-      duration_minutes: 20,
-      description: "Rahatlatıcı saç yıkama, baş masajı ve saç şekillendirme.",
-    },
-  ],
-};
+import { supabase } from "@/lib/supabase";
+import { SEKTOR_DATA } from "@/lib/sektorler";
+import { DEFAULT_BYERMAN_PROFILE } from "@/lib/storage/profileStore";
+import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
+import BookingPageClient from "./BookingPageClient";
 
 interface PageProps {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export default function BusinessBookingPage({ params }: PageProps) {
-  const resolvedParams = "then" in params ? use(params as Promise<{ slug: string }>) : params;
-  const slug = resolvedParams?.slug || "byerman";
+async function getBusinessData(slug: string) {
+  const isErman = slug === "byerman" || slug === "ermankuafor";
 
-  // Purge fake dr-ahmet permanently
+  if (isErman) {
+    return {
+      business: {
+        id: "byerman",
+        name: DEFAULT_BYERMAN_PROFILE.name,
+        slug: "byerman",
+        phone: DEFAULT_BYERMAN_PROFILE.phone,
+        address: DEFAULT_BYERMAN_PROFILE.address,
+        city: DEFAULT_BYERMAN_PROFILE.city || "İstanbul",
+        category: "Erkek Berberi",
+        description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
+        working_hours: DEFAULT_BYERMAN_PROFILE.working_hours,
+        services: DEFAULT_BYERMAN_SERVICES,
+      },
+      isDemo: false,
+    };
+  }
+
+  // Check matched showcase sector
+  const matchedSector = Object.values(SEKTOR_DATA).find(
+    (s) => s.exampleSlug === slug || s.slug === slug
+  );
+
+  if (matchedSector) {
+    return {
+      business: {
+        id: `demo-${matchedSector.slug}`,
+        name: matchedSector.exampleName || matchedSector.title,
+        slug: slug,
+        category: matchedSector.category,
+        address: "Kadıköy / İstanbul",
+        city: "İstanbul",
+        phone: "+90 538 480 90 01",
+        services: matchedSector.services || [],
+      },
+      isDemo: true,
+    };
+  }
+
+  // Supabase lookup
+  try {
+    const { data } = await supabase
+      .from("businesses")
+      .select("*, services(*)")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (data) {
+      return {
+        business: data,
+        isDemo: false,
+      };
+    }
+  } catch (err) {
+    console.warn("Server Supabase lookup failed for slug:", slug, err);
+  }
+
+  // Generic registered business fallback
+  const displayName = slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  return {
+    business: {
+      id: slug,
+      name: displayName,
+      slug: slug,
+      category: "Randevu Hizmeti",
+      address: "İstanbul, Türkiye",
+      city: "İstanbul",
+      phone: "+90 538 480 90 01",
+      services: [
+        {
+          id: "srv-standard",
+          name: "Standart Randevu Seansı",
+          duration_minutes: 30,
+          description: "Birebir randevu ve uzman danışmanlık hizmeti.",
+        },
+      ],
+    },
+    isDemo: false,
+  };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  if (slug === "dr-ahmet") {
+    return {
+      title: {
+        absolute: "By Erman - Erkek Berberi Randevu Al | RandevuFormu",
+      },
+    };
+  }
+
+  const { business } = await getBusinessData(slug);
+  const businessName = business?.name || slug;
+  const category = business?.category || "Randevu";
+  const location = business?.address || "İstanbul";
+
+  const title = `${businessName} Randevu Al | RandevuFormu`;
+  const description = `${businessName} online randevu sayfası. ${category} — ${location}. Müsait çalışma saatlerini inceleyin, 30 saniyede kolayca randevu alın.`;
+  const canonicalUrl = `https://${slug}.randevuformu.com`;
+
+  return {
+    title: {
+      absolute: title,
+    },
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: "website",
+      siteName: "RandevuFormu",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `${businessName} Randevu Formu`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/og-image.png"],
+    },
+  };
+}
+
+export default async function BusinessBookingPage({ params }: PageProps) {
+  const { slug } = await params;
+
+  // Permanent redirect for purged demo slug
   if (slug === "dr-ahmet") {
     redirect("/byerman");
   }
 
-  const isErman = slug === "byerman" || slug === "ermankuafor";
+  const { business, isDemo } = await getBusinessData(slug);
 
-  const [loading, setLoading] = useState(false);
-  const [business, setBusiness] = useState<any>(isErman ? ERMAN_USTA_DATA : null);
-  const [isDemo, setIsDemo] = useState(false);
-
-  useEffect(() => {
-    async function loadBusinessData() {
-      if (isErman) return;
-      try {
-        const { data, error } = await supabase
-          .from("businesses")
-          .select("*, services(*)")
-          .eq("slug", slug)
-          .maybeSingle();
-
-        if (data) {
-          setBusiness(data);
-          setIsDemo(false);
-        } else {
-          // Check if this matches a known showcase demo slug or direct sector slug
-          const matchedSector = Object.values(SEKTOR_DATA).find(
-            (s) => s.exampleSlug === slug || s.slug === slug
-          );
-
-          if (slug === "byerman" || slug === "ermankuafor") {
-            setIsDemo(false);
-            setBusiness({
-              id: "byerman-id",
-              name: "By Erman - Erkek Berberi",
-              slug: slug,
-              phone: "+90 538 480 90 01",
-              category: "Erkek Berberi",
-              description: "Usta ellerde klasik Türk erkek berberi hizmeti. Sıcak havlu, ustura sakal tıraşı ve saç kesimi.",
-              services: [
-                {
-                  id: "srv-sac",
-                  name: "Saç Kesimi & Yıkama",
-                  duration_minutes: 30,
-                  price_text: "₺350",
-                  price: 350,
-                  description: "Makine veya makasla saç kesimi, saç yıkama ve fön.",
-                },
-                {
-                  id: "srv-sakal",
-                  name: "Sakal Tıraşı & Sıcak Havlu",
-                  duration_minutes: 25,
-                  price_text: "₺200",
-                  price: 200,
-                  description: "Ustura ile sakal hattı tıraşı ve buharlı sıcak havlu kompresi.",
-                },
-                {
-                  id: "srv-komple",
-                  name: "Saç + Sakal (Komple Tıraş)",
-                  duration_minutes: 55,
-                  price_text: "₺500",
-                  price: 500,
-                  description: "Komple saç kesimi, sakal tıraşı, sıcak havlu, saç yıkama ve fön.",
-                },
-                {
-                  id: "srv-cocuk",
-                  name: "Çocuk Saç Kesimi",
-                  duration_minutes: 30,
-                  price_text: "₺250",
-                  price: 250,
-                  description: "12 yaş altı çocuklar için özenli ve sabırlı saç tıraşı.",
-                },
-                {
-                  id: "srv-bakim",
-                  name: "VIP Saç Bakımı & Cilt Maskesi",
-                  duration_minutes: 35,
-                  description: "Özel tonik bakımı, baş masajı ve canlandırıcı maske.",
-                },
-              ],
-            });
-          } else if (matchedSector) {
-            setIsDemo(true);
-            setBusiness({
-              id: `demo-${matchedSector.slug}`,
-              name: matchedSector.exampleName || matchedSector.title,
-              slug: slug,
-              category: matchedSector.category,
-              services: matchedSector.services || [],
-            });
-          } else {
-            // Fetch cloud services and profile for this business slug
-            let cloudServices: any[] = [];
-            let cloudProfile: any = null;
-            try {
-              const [srvRes, profRes] = await Promise.all([
-                fetch(`/api/business/services?slug=${encodeURIComponent(slug)}`),
-                fetch(`/api/business/profile?slug=${encodeURIComponent(slug)}`),
-              ]);
-              if (srvRes.ok) {
-                const srvData = await srvRes.json();
-                if (srvData.success && Array.isArray(srvData.services) && srvData.services.length > 0) {
-                  cloudServices = srvData.services;
-                }
-              }
-              if (profRes.ok) {
-                const profData = await profRes.json();
-                if (profData.success && profData.profile) {
-                  cloudProfile = profData.profile;
-                }
-              }
-            } catch (apiErr) {
-              console.warn("Cloud load fallback for slug:", apiErr);
-            }
-
-            // Clean state for registered business slug
-            setIsDemo(false);
-            setBusiness({
-              id: cloudProfile?.business_slug || slug,
-              name: cloudProfile?.name || slug.replace(/-/g, " ").toUpperCase(),
-              slug: slug,
-              category: "Randevu Hizmeti",
-              phone: cloudProfile?.phone || "",
-              address: cloudProfile?.address || "",
-              services: cloudServices,
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Error loading business:", err);
-        const kuafor = SEKTOR_DATA["kuafor"];
-        setBusiness({
-          id: "fallback-id",
-          name: "Studio Nova Kuaför",
-          slug: slug,
-          category: "Kuaför & Saç Bakımı",
-          services: kuafor.services,
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadBusinessData();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center text-slate-700">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-[#0062FF] animate-spin" />
-          <p className="text-xs text-slate-500 font-medium">Randevu sayfası yükleniyor...</p>
-        </div>
-      </div>
-    );
+  // Determine local business schema type based on category
+  const lowerCat = (business.category || "").toLowerCase();
+  let schemaType = "LocalBusiness";
+  if (lowerCat.includes("berber") || slug.includes("berber") || slug === "byerman") {
+    schemaType = "BarberShop";
+  } else if (lowerCat.includes("kuaför") || lowerCat.includes("güzellik")) {
+    schemaType = "HairSalon";
+  } else if (lowerCat.includes("diş")) {
+    schemaType = "Dentist";
+  } else if (lowerCat.includes("diyet") || lowerCat.includes("klinik") || lowerCat.includes("psikolog")) {
+    schemaType = "MedicalBusiness";
+  } else if (lowerCat.includes("avukat") || lowerCat.includes("hukuk")) {
+    schemaType = "LegalService";
   }
 
+  // Calculate dynamic priceRange if services have prices
+  const pricedServices = (business.services || []).filter(
+    (s: any) =>
+      (s.price && Number(s.price) > 0) ||
+      (s.price_text && parseFloat(String(s.price_text).replace(/[^0-9.]/g, "")) > 0)
+  );
+  const minPrice =
+    pricedServices.length > 0
+      ? Math.min(
+          ...pricedServices.map(
+            (s: any) =>
+              Number(s.price) ||
+              parseFloat(String(s.price_text).replace(/[^0-9.]/g, ""))
+          )
+        )
+      : null;
+  const maxPrice =
+    pricedServices.length > 0
+      ? Math.max(
+          ...pricedServices.map(
+            (s: any) =>
+              Number(s.price) ||
+              parseFloat(String(s.price_text).replace(/[^0-9.]/g, ""))
+          )
+        )
+      : null;
+  const computedPriceRange =
+    minPrice !== null && maxPrice !== null
+      ? `₺${minPrice} - ₺${maxPrice}`
+      : "₺₺";
+
+  const localBusinessJsonLd = {
+    "@context": "https://schema.org",
+    "@type": schemaType,
+    "@id": `https://${slug}.randevuformu.com/#localbusiness`,
+    name: business.name,
+    url: `https://${slug}.randevuformu.com`,
+    telephone: business.phone || "+90 538 480 90 01",
+    priceRange: computedPriceRange,
+    image: "https://randevuformu.com/logo.png",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: business.address || "İstanbul, Türkiye",
+      addressLocality: business.city || "İstanbul",
+      addressCountry: "TR",
+    },
+    openingHours: "Mo,Tu,We,Th,Fr 09:30-21:30 Sa 09:30-23:00",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: `${business.name} Hizmet ve Fiyat Listesi`,
+      itemListElement: (business.services || []).map((s: any) => {
+        const itemPrice =
+          Number(s.price) ||
+          (s.price_text
+            ? parseFloat(String(s.price_text).replace(/[^0-9.]/g, ""))
+            : 0);
+        return {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: s.name,
+            description: s.description || undefined,
+          },
+          ...(itemPrice > 0
+            ? {
+                price: itemPrice,
+                priceCurrency: "TRY",
+              }
+            : {}),
+        };
+      }),
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-[#FAFBFC] text-slate-800 flex flex-col justify-between py-8 px-4 sm:px-6 relative overflow-hidden font-sans antialiased">
-      <SchemaMarkup
-        type="LocalBusiness"
-        data={{
-          name: business?.name,
-          url: `https://randevuformu.com/${slug}`,
-          department: business?.category,
-        }}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
       />
-
-      {/* Subtle Corporate Blue Geometric Accent */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-[#0062FF]/[0.04] to-transparent rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none -z-10" />
-
-      {/* Top Demo Banner if this is an example showcase — 100% Brand Palette */}
-      {isDemo && (
-        <div className="max-w-5xl mx-auto w-full mb-6 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-center text-xs text-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-2 text-left">
-            <Info className="w-4 h-4 text-[#0062FF] shrink-0" />
-            <span>💡 <strong>Örnek {business?.category || 'Sektör'} Şablonu:</strong> Bu sayfa sistem özelliklerini göstermek amacıyla hazırlanmış canlı bir demodur.</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/settings"
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#0F2A4A] border border-slate-200 font-semibold text-xs transition-colors shadow-2xs"
-            >
-              Hizmetleri Düzenle
-            </Link>
-            <Link
-              href="/login"
-              className="px-3.5 py-1.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white font-semibold text-xs flex items-center gap-1 transition-all shadow-xs active:scale-95"
-            >
-              Kendi Sayfanı Oluştur <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto w-full">
-        {business?.services && business.services.length > 0 ? (
-          <BookingWidget
-            businessName={business.name}
-            businessSlug={business.slug}
-            category={business.category}
-            services={business.services}
-            tenantId={business.id}
-          />
-        ) : (
-          <div className="p-10 rounded-2xl bg-white border border-slate-200 shadow-md text-center space-y-4 max-w-lg mx-auto">
-            <div className="w-12 h-12 rounded-2xl bg-[#0062FF]/10 text-[#0062FF] flex items-center justify-center mx-auto">
-              <CalendarDays className="w-6 h-6" />
-            </div>
-            <h2 className="text-xl font-bold text-[#0F2A4A]">{business?.name || slug}</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Bu işletmeye ait henüz aktif bir randevu hizmeti tanımlanmamış.
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/login"
-                className="inline-flex px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-bold transition-all shadow-sm"
-              >
-                İşletme Girişi Yap &amp; Formu Düzenle
-              </Link>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <footer className="mt-12 text-center text-xs text-slate-500">
-        <div className="flex items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#0062FF]" />
-          <span>Güvenli &amp; KVKK Uyumlu Randevu Altyapısı — randevuformu.com</span>
-        </div>
-      </footer>
-
-      {/* Modül 2: Müşteri AI Randevu Asistanı Chatbotu */}
-      <CustomerChatbot
-        businessSlug={slug}
-        businessName={business?.name || (isErman ? "Erman Usta" : "Randevu Asistanı")}
-      />
-    </div>
+      <BookingPageClient slug={slug} initialBusiness={business} isDemo={isDemo} />
+    </>
   );
 }

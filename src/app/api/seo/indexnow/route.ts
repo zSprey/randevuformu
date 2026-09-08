@@ -15,6 +15,7 @@ async function submitIndexNow() {
 
   const urlList = [
     `https://${host}`,
+    `https://byerman.randevuformu.com`,
     `https://${host}/byerman`,
     `https://${host}/login`,
     `https://${host}/ornek`,

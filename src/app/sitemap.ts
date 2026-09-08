@@ -52,7 +52,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // 5. Kayıtlı İşletmeler
+  // 5. Kayıtlı İşletmeler & Subdomainler (byerman.randevuformu.com)
+  const byermanSubdomainEntry: MetadataRoute.Sitemap = [
+    {
+      url: 'https://byerman.randevuformu.com',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1.0,
+    },
+  ];
+
   let businessPages: MetadataRoute.Sitemap = [];
   try {
     const { data: businesses } = await supabase
@@ -60,14 +69,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select('slug, created_at');
 
     if (businesses && businesses.length > 0) {
-      businessPages = businesses.map((b) => ({
-        url: `${baseUrl}/${b.slug}`,
-        lastModified: b.created_at ? new Date(b.created_at) : new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      }));
+      businessPages = businesses.flatMap((b) => [
+        {
+          url: `https://${b.slug}.randevuformu.com`,
+          lastModified: b.created_at ? new Date(b.created_at) : new Date(),
+          changeFrequency: 'daily' as const,
+          priority: 0.9,
+        },
+        {
+          url: `${baseUrl}/${b.slug}`,
+          lastModified: b.created_at ? new Date(b.created_at) : new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        },
+      ]);
     }
   } catch {}
 
-  return [...corePages, ...sectorPages, ...blogPages, ...examplePages, ...businessPages];
+  return [
+    ...corePages,
+    ...byermanSubdomainEntry,
+    ...sectorPages,
+    ...blogPages,
+    ...examplePages,
+    ...businessPages,
+  ];
 }

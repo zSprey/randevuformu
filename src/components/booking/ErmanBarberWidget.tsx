@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CustomerCalendarButton } from "@/components/booking/CustomerCalendarButton";
+import ServicePriceBadge from "@/components/common/ServicePriceBadge";
 
 import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
 import {
@@ -1043,7 +1044,7 @@ export default function ErmanBarberWidget({
               {hasAnyPrice && totalPrice > 0 && (
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-slate-500">Toplam Ücret:</span>
-                  <span className="font-bold text-[#0062FF]">₺{totalPrice}</span>
+                  <ServicePriceBadge price={totalPrice} variant="blue" />
                 </div>
               )}
             </div>
@@ -1070,7 +1071,7 @@ export default function ErmanBarberWidget({
                 event={{
                   id: `byerman-${Date.now()}`,
                   title: `${assignedStaff.name} - ${selectedService.name}`,
-                  description: `By Erman - Erkek Berberi\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nUsta: ${assignedStaff.name} (${assignedStaff.chair})\nHizmet: ${selectedService.name}${selectedExtraServices.length > 0 ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})` : ""}\nToplam: ₺${totalPrice}`,
+                  description: `By Erman - Erkek Berberi\nDanışan: ${customerName}\nTelefon: ${customerPhone}\nUsta: ${assignedStaff.name} (${assignedStaff.chair})\nHizmet: ${selectedService.name}${selectedExtraServices.length > 0 ? ` (+ ${selectedExtraServices.map((s) => s.name).join(", ")})` : ""}${hasAnyPrice && totalPrice > 0 ? `\nToplam: ₺${totalPrice.toLocaleString("tr-TR")}` : ""}`,
                   location: "İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul",
                   date: activeDate,
                   time: selectedSlot,
@@ -1406,11 +1407,7 @@ export default function ErmanBarberWidget({
                             <span className="text-slate-500 text-[11px] flex items-center gap-1">
                               <Clock className="w-3 h-3 text-slate-400" /> {srv.duration_minutes} dk
                             </span>
-                            {srv.price && srv.price > 0 && (
-                              <span className="font-bold text-[#0062FF] bg-[#0062FF]/10 px-2 py-0.5 rounded-md text-xs">
-                                ₺{srv.price}
-                              </span>
-                            )}
+                            <ServicePriceBadge price={srv.price} variant="blue" />
                           </div>
                         </button>
                       );
@@ -1463,11 +1460,7 @@ export default function ErmanBarberWidget({
                                 <span className="text-[10px] font-medium text-slate-500 block">
                                   +{extra.duration_minutes} dk
                                 </span>
-                                {extra.price && extra.price > 0 && (
-                                  <span className="text-[11px] font-bold text-indigo-700">
-                                    +₺{extra.price}
-                                  </span>
-                                )}
+                                <ServicePriceBadge price={extra.price} prefix="+" variant="extra" />
                               </div>
                             </div>
                           );
@@ -1492,9 +1485,7 @@ export default function ErmanBarberWidget({
                     <div className="flex items-center gap-3 font-semibold self-end sm:self-auto">
                       <span className="text-slate-600">Toplam Süre: {totalDuration} Dakika</span>
                       {hasAnyPrice && totalPrice > 0 && (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          ₺{totalPrice}
-                        </span>
+                        <ServicePriceBadge price={totalPrice} variant="emerald" />
                       )}
                     </div>
                   </div>

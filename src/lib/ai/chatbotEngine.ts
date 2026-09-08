@@ -569,20 +569,29 @@ export async function processCustomerMessage(
   }
 
   // 5. Gerçek Hizmet & Fiyat Listesini Derle
-  let servicesList: Array<{ name: string; price: number; durationMin: number; description?: string; is_extra?: boolean }> = [];
+  // 5. Gerçek Hizmet & Fiyat Listesini Derle (Asla sahte fiyat uydurulmaz)
+  let servicesList: Array<{
+    id?: string;
+    name: string;
+    price?: number | null;
+    durationMin: number;
+    description?: string;
+    is_extra?: boolean;
+  }> = [];
 
   if (cloudServices && cloudServices.length > 0) {
     servicesList = cloudServices.map((s: any) => {
-      let price = Number(s.price) || 0;
-      if (price <= 0 && isByErman) {
-        const match = DEFAULT_BYERMAN_SERVICES.find((def) => def.id === s.id || def.name === s.name);
-        if (match && match.price) {
-          price = match.price;
+      let price: number | null = null;
+      if (s.price !== undefined && s.price !== null && s.price !== "") {
+        const p = Number(s.price);
+        if (!isNaN(p) && p > 0) {
+          price = p;
         }
       }
       return {
+        id: s.id,
         name: s.name,
-        price: price || 350,
+        price: price,
         durationMin: s.duration_minutes || s.durationMin || 30,
         description: s.description || '',
         is_extra: Boolean(s.is_extra),
@@ -590,8 +599,9 @@ export async function processCustomerMessage(
     });
   } else if (isByErman) {
     servicesList = DEFAULT_BYERMAN_SERVICES.map((s) => ({
+      id: s.id,
       name: s.name,
-      price: s.price || 350,
+      price: s.price && s.price > 0 ? s.price : null,
       durationMin: s.duration_minutes || 30,
       description: s.description || '',
       is_extra: Boolean(s.is_extra),
@@ -599,15 +609,15 @@ export async function processCustomerMessage(
   } else if (sector && sector.services && sector.services.length > 0) {
     servicesList = sector.services.map((s: SektorServiceItem) => ({
       name: s.name,
-      price: s.price || 500,
+      price: s.price && s.price > 0 ? s.price : null,
       durationMin: s.duration_minutes || 30,
       description: s.description || '',
       is_extra: false,
     }));
   } else {
     servicesList = [
-      { name: 'Standart Seans & Hizmet', price: 400, durationMin: 30, description: 'Birebir uzman hizmeti ve uygulama.' },
-      { name: 'Kapsamlı Seans & Bakım', price: 700, durationMin: 60, description: 'Detaylı analiz ve tam kapsamlı hizmet.' },
+      { name: 'Standart Seans & Hizmet', price: null, durationMin: 30, description: 'Birebir uzman hizmeti ve uygulama.' },
+      { name: 'Kapsamlı Seans & Bakım', price: null, durationMin: 60, description: 'Detaylı analiz ve tam kapsamlı hizmet.' },
     ];
   }
 
@@ -615,7 +625,118 @@ export async function processCustomerMessage(
     ? 'Tüm hizmetlerimizde tek kullanımlık steril havlu ve ustura kullanılmaktadır. Seans saatinde koltuğunuzun hazır olması için randevu saatinden 5 dakika önce gelmeniz yeterlidir.'
     : (sectorProfile?.prepTip || 'Randevu saatinden 5-10 dakika önce gelmeniz seansınızın zamanında başlamasını sağlar.');
 
-  // 6. Tarih ve Zaman Hesaplamaları (Türkiye Saati & Pazar Bilinci)
+  // 6. DETERMINİSTİK HİZMET & FİYAT INTENT KATMANI (LLM ÖNCESİ SIFIR HALÜSİNASYON)
+  const isAskingPrice =
+    lower.includes('fiyat') ||
+    lower.includes('ücret') ||
+    lower.includes('ucret') ||
+    lower.includes('kaç tl') ||
+    lower.includes('kac tl') ||
+    lower.includes('kaç para') ||
+    lower.includes('kac para') ||
+    lower.includes('maliyet') ||
+    lower.includes('ne kadar') ||
+    lower.includes('tarife') ||
+    lower.includes('tutar');
+
+  if (isAskingPrice) {
+    const normalize = (str: string) =>
+      str
+        .toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]/g, ' ');
+
+    const normMessage = normalize(message);
+
+    // 1. Belirli bir hizmet mi sorulmuş? (Hizmet adı eşleştirmesi)
+    let matchedService = servicesList.find((srv) => {
+      const normName = normalize(srv.name);
+      return normMessage.includes(normName);
+    });
+
+    if (!matchedService) {
+      for (const srv of servicesList) {
+        const normName = normalize(srv.name);
+        const keywords = normName
+          .split(' ')
+          .filter((w) => w.length >= 3 && !['icin', 'veya'].includes(w));
+        const matches = keywords.filter((kw) => normMessage.includes(kw));
+        if (matches.length > 0 && (matches.length >= Math.min(2, keywords.length) || keywords.length === 1)) {
+          matchedService = srv;
+          break;
+        }
+      }
+    }
+
+    // Ekstra yaygın anahtar kelimeler
+    if (!matchedService) {
+      if (normMessage.includes('sakal')) {
+        matchedService = servicesList.find((s) => normalize(s.name).includes('sakal'));
+      } else if (normMessage.includes('cocuk')) {
+        matchedService = servicesList.find((s) => normalize(s.name).includes('cocuk'));
+      } else if (normMessage.includes('sac') && !normMessage.includes('sakal')) {
+        matchedService = servicesList.find((s) => normalize(s.name).includes('sac'));
+      }
+    }
+
+    // DALLANMA 1: Belirli bir hizmet sorulduğunda
+    if (matchedService) {
+      const hasValidPrice = matchedService.price !== null && matchedService.price !== undefined && Number(matchedService.price) > 0;
+      if (hasValidPrice) {
+        // Price DOLUYSA: DB'deki fiyatı olduğu gibi söyle (uydurma, yuvarlama yok)
+        const priceVal = Number(matchedService.price);
+        return {
+          reply: `**${matchedService.name}:** ₺${priceVal.toLocaleString('tr-TR')} (${matchedService.durationMin} dakika)${matchedService.description ? `\n\n${matchedService.description}` : ''}\n\nRandevunuzu dilediğiniz gün ve saat için kolayca oluşturabilirsiniz.`,
+          quickActions: [`${matchedService.name} Randevusu Al`, 'Tüm Fiyat Listesi', 'Yarın Boş Saatler'],
+          detectedSector: sector?.slug,
+        };
+      } else {
+        // Price BOŞSA: Asla fiyat uydurma. Esnaf/hasta psikolojisine uygun net ve güven verici CRO cevabı
+        return {
+          reply: `Bu hizmetimiz (${matchedService.name}) için güncel fiyat bilgisi sisteme henüz tanımlanmamıştır; en doğru ve net bilgiyi işletmemizle doğrudan iletişime geçerek öğrenebilirsiniz 🙂\n\n📞 **İletişim:** ${phone}\n📍 **Adres:** ${address}`,
+          quickActions: ['WhatsApp ile İletişime Geç', 'Tüm Hizmetleri Gör', 'Randevu Saatleri'],
+          detectedSector: sector?.slug,
+        };
+      }
+    }
+
+    // DALLANMA 2: Genel fiyat listesi sorgusu
+    const pricedItems = servicesList.filter((s) => s.price !== null && s.price !== undefined && Number(s.price) > 0);
+    const unpricedItems = servicesList.filter((s) => !s.price || Number(s.price) <= 0);
+
+    let listText = '';
+    if (pricedItems.length > 0) {
+      listText += pricedItems
+        .map(
+          (s) =>
+            `• **${s.name}**: ₺${Number(s.price).toLocaleString('tr-TR')} (${s.durationMin} dk)${
+              s.description ? ` — _${s.description}_` : ''
+            }`
+        )
+        .join('\n');
+    }
+
+    if (unpricedItems.length > 0) {
+      if (listText) listText += '\n\n';
+      listText += unpricedItems
+        .map((s) => `• **${s.name}**: _Fiyat bilgisi için işletmeyle iletişime geçiniz_ (${s.durationMin} dk)`)
+        .join('\n');
+      listText += '\n\n💡 Fiyat bilgisi tanımlanmamış hizmetlerimiz için güncel tutarı işletmemizle doğrudan iletişime geçerek öğrenebilirsiniz 🙂';
+    }
+
+    return {
+      reply: `**${businessName}** güncel hizmet ve seans ücret tarifemiz:\n\n${listText}\n\n💡 _${prepTip}_\n\nRandevu almak için herhangi bir ön ödeme gerekmez; ödemenizi işlem sonrasında nakit veya kredi kartıyla yapabilirsiniz.`,
+      quickActions: ['Yarın Boş Yer Var mı?', 'Hemen Randevu Al', 'WhatsApp ile Danış'],
+      detectedSector: sector?.slug,
+    };
+  }
+
+  // 7. Tarih ve Zaman Hesaplamaları (Türkiye Saati & Pazar Bilinci)
   const now = new Date();
   const currentDayOfWeek = now.getDay(); // 0 = Pazar, 1 = Pazartesi ... 6 = Cumartesi
 
@@ -639,7 +760,7 @@ export async function processCustomerMessage(
     .join('\n');
 
   const servicesContext = servicesList
-    .map((s) => `• ${s.name}: ₺${s.price} (${s.durationMin} dakika)${s.description ? ` — ${s.description}` : ''}`)
+    .map((s) => `• ${s.name}: ${s.price && s.price > 0 ? `₺${s.price}` : 'Fiyat Tanımlı Değil (İşletmeyle İletişime Geçin)'} (${s.durationMin} dakika)${s.description ? ` — ${s.description}` : ''}`)
     .join('\n');
 
   const teacherSystemPrompt = `SEN KİMSİN?
@@ -663,11 +784,10 @@ ${servicesContext}
 ÖNEMLİ POLİTİKALAR & KURALLAR:
 1. Randevu İptali / Saati Erteleme: Müşteriler randevularını https://randevuformu.com/randevu/yonet adresinden veya onay SMS/WhatsApp bildirimindeki bağlantıdan tek tıkla cezasız erteleyebilir veya iptal edebilirler.
 2. Ödeme Yöntemleri: Nakit, Kredi Kartı & Banka Kartı (temassız dahil tüm bankalar) ve Havale/EFT kabul edilmektedir. Randevu alırken kart bilgisi girilmesi gerekmez, ödeme seans sonrası yapılır.
-3. Çocuk Tıraşı: 12 yaş altı çocuklar için Çocuk Saç Kesimi (₺250 / 30 dk) mevcuttur.
-4. Hijyen: Her müşteride tek kullanımlık steril havlu ve jilet kullanılır.
+3. Hijyen: Her müşteride tek kullanımlık steril havlu ve jilet kullanılır.
 
 ÖĞRETMEN GİBİ CEVAPLAMA TALİMATLARI:
-1. GERÇEKÇİLİK: Sadece bu işletmenin yukarıda yazılı gerçek hizmetleri ve fiyatları hakkında konuş. Asla olmayan bir hizmeti uydurma.
+1. GERÇEKÇİLİK VE FİYAT KURALI (TAVİZSİZ): Yalnızca yukarıdaki hizmet listesinde '₺X' olarak açıkça yazan hizmetlerin fiyatını söyleyebilirsin. Fiyatı tanımlı olmayan hiçbir hizmet için ASLA fiyat uydurma veya tahmin yapma. Fiyatı tanımlı olmayan bir hizmet sorulduğunda KESİNLİKLE şu cevabı ver: 'Bu hizmetimiz için güncel fiyat bilgisi sisteme henüz tanımlanmamıştır; en doğru ve net bilgiyi işletmemizle doğrudan iletişime geçerek öğrenebilirsiniz 🙂'
 2. PAZAR GÜNÜ KURALI: Eğer kullanıcı yarın için sorarsa ve yarın Pazar ise; "Salonumuz Pazar günleri kapalıdır. Ancak sizi Pazartesi günü için memnuniyetle ağırlayabiliriz" diyerek Pazartesi gününe davet et.
 3. KISA VE ÖZ: Net, maddeli, Türkçe imla kurallarına uygun ve samimi cevap ver.
 4. YÖNLENDİRME: Cevabının sonunda müşteriyi sayfadaki randevu alma formundan saat seçmeye davet et.`;
@@ -744,53 +864,6 @@ ${servicesContext}
       reply: `Bugün için **${businessName}** salonumuzda uygun bulunan saatler aşağıda listelenmiştir. Dilediğiniz saati seçerek yerinizi hemen ayırtabilirsiniz:`,
       suggestedSlots,
       quickActions: ['Fiyatları Gör', 'WhatsApp ile Danış', 'Farklı Bir Gün Seç'],
-      detectedSector: sector?.slug,
-    };
-  }
-
-  // C. Hizmet & Fiyat Soruları
-  if (
-    lower.includes('fiyat') ||
-    lower.includes('ücret') ||
-    lower.includes('ucret') ||
-    lower.includes('kaç tl') ||
-    lower.includes('kac para') ||
-    lower.includes('maliyet') ||
-    lower.includes('ne kadar') ||
-    lower.includes('tarife')
-  ) {
-    // Özel olarak bir hizmet sorulmuş mu?
-    if (lower.includes('sakal')) {
-      return {
-        reply: `**Sakal Tıraşı & Sıcak Havlu:** ₺200 (25 dakika)\n\nGeleneksel ustura tıraşı, sakal hattı şekillendirme ve buharlı sıcak havlu kompresi içermektedir.\n\nDilerseniz saç kesimiyle birlikte **Saç + Sakal Komple Tıraş & Bakım (₺500)** paketimizi de tercih edebilirsiniz.`,
-        quickActions: ['Sakal Tıraşı Randevusu Al', 'Tüm Fiyat Listesi', 'Yarın Boş Yerler'],
-        detectedSector: sector?.slug,
-      };
-    }
-
-    if (lower.includes('çocuk') || lower.includes('cocuk')) {
-      return {
-        reply: `**Çocuk Saç Kesimi (12 yaş altı):** ₺250 (30 dakika)\n\nÇocuklarımız için sabırlı, eğlenceli ve özenli saç kesimi hizmeti sunuyoruz.`,
-        quickActions: ['Çocuk Saç Kesimi Seç', 'Tüm Fiyatlar', 'Yarın Boş Saatler'],
-        detectedSector: sector?.slug,
-      };
-    }
-
-    if (lower.includes('saç') && !lower.includes('sakal')) {
-      return {
-        reply: `**Saç Kesimi & Yıkama & Fön:** ₺350 (35 dakika)\n\nKişinin yüz tipine uygun modern saç kesimi, saç yıkama ve stil fön uygulamasını içerir.`,
-        quickActions: ['Saç Kesimi Randevusu Al', 'Tüm Fiyat Listesi', 'Yarın Boş Saatler'],
-        detectedSector: sector?.slug,
-      };
-    }
-
-    const prices = servicesList
-      .map((s) => `• **${s.name}**: ₺${s.price} (${s.durationMin} dk)${s.description ? ` — _${s.description}_` : ''}`)
-      .join('\n');
-
-    return {
-      reply: `**${businessName}** güncel hizmet ve seans ücret tarifemiz:\n\n${prices}\n\n💡 _${prepTip}_\n\nRandevu almak için herhangi bir ön ödeme gerekmez; ödemenizi işlem sonrasında nakit veya kredi kartıyla yapabilirsiniz.`,
-      quickActions: ['Yarın Boş Yer Var mı?', 'Hemen Randevu Al', 'WhatsApp ile Danış'],
       detectedSector: sector?.slug,
     };
   }

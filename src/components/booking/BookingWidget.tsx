@@ -44,6 +44,7 @@ import {
 import { tr } from "date-fns/locale";
 import SmartWaitlistWidget from "./SmartWaitlistWidget";
 import { CustomerCalendarButton } from "@/components/booking/CustomerCalendarButton";
+import ServicePriceBadge from "@/components/common/ServicePriceBadge";
 
 export interface ServiceItem {
   id: string;
@@ -472,9 +473,7 @@ export default function BookingWidget({
                 {/* Optional Price: Only renders if price > 0, completely omitted otherwise */}
                 {hasPrice ? (
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center font-bold text-[#0062FF] bg-[#0062FF]/10 px-2.5 py-0.5 rounded-md text-xs">
-                      ₺{selectedService.price?.toLocaleString("tr-TR")}
-                    </span>
+                    <ServicePriceBadge price={selectedService.price} variant="blue" />
                     <span className="text-[11px] text-slate-400">Sabit Seans Ücreti</span>
                   </div>
                 ) : null}
@@ -571,12 +570,8 @@ export default function BookingWidget({
                             <Clock className="w-3 h-3 text-slate-400" /> {s.duration_minutes} dk
                           </span>
 
-                          {/* Optional Price badge */}
-                          {itemHasPrice ? (
-                            <span className="font-bold text-[#0062FF] bg-[#0062FF]/10 px-2 py-0.5 rounded-md text-xs">
-                              ₺{s.price?.toLocaleString("tr-TR")}
-                            </span>
-                          ) : null}
+                          {/* Optional Price badge: Only renders when price > 0 */}
+                          <ServicePriceBadge price={s.price} variant="blue" />
                         </div>
                       </div>
                     );
@@ -1051,9 +1046,7 @@ export default function BookingWidget({
                   {hasPrice && (
                     <div className="flex justify-between">
                       <span className="text-slate-500">Tutar:</span>
-                      <span className="font-semibold text-emerald-600">
-                        ₺{selectedService?.price?.toLocaleString("tr-TR")}
-                      </span>
+                      <ServicePriceBadge price={selectedService?.price} variant="emerald" />
                     </div>
                   )}
                 </div>

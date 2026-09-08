@@ -193,8 +193,8 @@ export async function getStoredServices(
     console.warn("[ServicesStore] Supabase query error:", err);
   }
 
-  // D. Fallback default
-  const defaults = DEFAULT_BYERMAN_SERVICES;
+  // D. Fallback default (only byerman falls back to default barber services)
+  const defaults = cleanTenant === "byerman" ? DEFAULT_BYERMAN_SERVICES : [];
   servicesMemoryCache.set(cleanTenant, defaults);
   return defaults;
 }

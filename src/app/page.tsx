@@ -82,6 +82,18 @@ export default function Home() {
 
   const faqs = [
     {
+      q: "RandevuFormu nedir?",
+      a: "RandevuFormu, berber, kuaför, güzellik merkezi, diş hekimi, diyetisyen, veteriner ve klinik gibi tüm randevulu hizmet işletmeleri için geliştirilmiş yeni nesil online randevu ve müşteri yönetim sistemidir. İşletmelere kendi markalarına özel subdomain (isletme.randevuformu.com) sağlar.",
+    },
+    {
+      q: "RandevuFormu nasıl çalışır?",
+      a: "1) 30 saniyede ücretsiz işletme profilinizi oluşturun. 2) Hizmetlerinizi ve çalışma saatlerinizi ekleyin. 3) Randevu linkinizi Instagram biyografinize veya web sitenize ekleyin. Müşterileriniz 7/24 dilediği saatte randevu alsın, randevular anında Google Takviminize işlensin ve taraflara WhatsApp onayı gitsin.",
+    },
+    {
+      q: "Müşterilerin randevu alırken uygulama indirmesi gerekir mi?",
+      a: "Hayır. RandevuFormu tamamen web tabanlıdır. Danışanlarınız herhangi bir mobil uygulama indirmeden veya karmaşık üyelik oluşturmadan doğrudan tarayıcı üzerinden 30 saniyede randevusunu oluşturabilir.",
+    },
+    {
       q: "randevuformu.com işletmeme ne tür kolaylıklar sağlar?",
       a: "Telefon trafiğinizi sonlandırır. Müşterileriniz web sitenizden veya Instagram biyografinizden 7/24 anında randevu alabilir, randevular SMS ve WhatsApp ile doğrulanır, Google ve Outlook takviminizle çakışmasız senkronize çalışır.",
     },
@@ -159,6 +171,57 @@ export default function Home() {
 
       {/* ── Features Bento Grid ── */}
       <Features />
+
+      {/* ═══════════════════════════════════════
+          HOW IT WORKS & BRAND DEFINITION (SEO REINFORCEMENT)
+          ═══════════════════════════════════════ */}
+      <section className="bg-slate-50 py-16 sm:py-24 border-t border-slate-200/80">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <span className="text-[11px] font-bold text-[#0062FF] uppercase tracking-wider bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+              Hızlı Başlangıç Rehberi
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#0F2A4A] tracking-tight mt-4 mb-3">
+              RandevuFormu Nedir? Nasıl Çalışır?
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+              <strong>RandevuFormu</strong>, Türkiye&apos;deki berber, kuaför, diş hekimi, diyetisyen ve klinikler için geliştirilmiş yeni nesil online randevu ve müşteri rezervasyon altyapısıdır. Telefon trafiğine son verir, randevuları takviminize otomatik işler.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#0062FF]/10 text-[#0062FF] font-black text-lg flex items-center justify-center">
+                1
+              </div>
+              <h3 className="text-base font-bold text-[#0F2A4A]">30 Saniyede Formunuzu Açın</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                İşletme adınızı girerek anında kendinize özel <strong>isletmeadi.randevuformu.com</strong> adresinizi alın. Hizmetlerinizi, işlem sürelerinizi ve fiyatlarınızı belirleyin.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#0062FF]/10 text-[#0062FF] font-black text-lg flex items-center justify-center">
+                2
+              </div>
+              <h3 className="text-base font-bold text-[#0F2A4A]">Instagram &amp; Web Sitenize Ekleyin</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Oluşan randevu linkinizi Instagram biyografinize, Google Haritalar profilinize veya web sitenize ekleyin. Müşterileriniz 7/24 dilediği saatte randevu alsın.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#0062FF]/10 text-[#0062FF] font-black text-lg flex items-center justify-center">
+                3
+              </div>
+              <h3 className="text-base font-bold text-[#0F2A4A]">Otomatik WhatsApp Teyidi &amp; Takvim</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Alınan her randevu Google ve Outlook takviminizle anında senkronize olur. Müşteriye ve size otomatik WhatsApp / SMS onay ve hatırlatma bildirimi gider.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ═══════════════════════════════════════
           SECTORS GRID
