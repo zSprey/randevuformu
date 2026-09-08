@@ -124,15 +124,27 @@ export const DEFAULT_BYERMAN_SERVICES: StoredBusinessService[] = [
   },
 ];
 
+export function normalizeTenant(tenant?: string | null): string {
+  if (!tenant) return "byerman";
+  const clean = tenant.trim().toLowerCase();
+  if (clean === "default" || clean === "byerman-id" || clean === "ermankuafor" || clean === "byerman") {
+    return "byerman";
+  }
+  return clean;
+}
+
 /**
  * 1. GET SERVICES FOR A TENANT
  */
-export async function getStoredServices(tenant: string = "byerman"): Promise<StoredBusinessService[]> {
-  const cleanTenant = (tenant || "byerman").trim().toLowerCase();
+export async function getStoredServices(
+  tenant: string = "byerman",
+  skipCache: boolean = false
+): Promise<StoredBusinessService[]> {
+  const cleanTenant = normalizeTenant(tenant);
   const storageKey = `${cleanTenant}_services`;
 
   // A. Try Memory Cache
-  if (servicesMemoryCache.has(cleanTenant)) {
+  if (!skipCache && servicesMemoryCache.has(cleanTenant)) {
     const cached = servicesMemoryCache.get(cleanTenant);
     if (cached && cached.length > 0) return cached;
   }
@@ -194,7 +206,7 @@ export async function saveStoredServices(
   tenant: string = "byerman",
   services: StoredBusinessService[]
 ): Promise<boolean> {
-  const cleanTenant = (tenant || "byerman").trim().toLowerCase();
+  const cleanTenant = normalizeTenant(tenant);
   const storageKey = `${cleanTenant}_services`;
 
   // Update memory cache
@@ -203,7 +215,7 @@ export async function saveStoredServices(
   // A. Save to Edge Config
   if (EDGE_CONFIG_ID && VERCEL_TOKEN) {
     try {
-      await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
+      const res = await fetch(`https://api.vercel.com/v1/edge-config/${EDGE_CONFIG_ID}/items`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${VERCEL_TOKEN}`,
@@ -219,6 +231,9 @@ export async function saveStoredServices(
           ],
         }),
       });
+      if (!res.ok) {
+        console.warn("[ServicesStore] EdgeConfig write failed with status:", res.status);
+      }
     } catch (e) {
       console.warn("[ServicesStore] EdgeConfig write error:", e);
     }

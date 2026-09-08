@@ -322,13 +322,21 @@ export default function ErmanBarberWidget({
 
       // Global Cloud API fetch
       try {
-        const res = await fetch(`/api/business/services?slug=${businessSlug}`);
+        const target = (businessSlug === "default" || businessSlug === "byerman-id" || businessSlug === "ermankuafor" || !businessSlug) ? "byerman" : businessSlug;
+        const res = await fetch(`/api/business/services?slug=${target}&_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const data = await res.json();
         if (data.success && Array.isArray(data.services) && data.services.length > 0) {
           setServicesList(data.services);
           const firstMain = data.services.find((s: any) => !s.is_extra) || data.services[0];
-          setSelectedService(firstMain);
+          setSelectedService((prev) => {
+            const exists = data.services.find((s: any) => s.id === prev?.id);
+            return exists || firstMain;
+          });
           try {
+            localStorage.setItem(`rf_business_services_${target}`, JSON.stringify(data.services));
             localStorage.setItem("rf_business_services", JSON.stringify(data.services));
           } catch {}
         }

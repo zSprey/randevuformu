@@ -221,8 +221,9 @@ export default function SettingsPage() {
       if (tabParam) setActiveTab(tabParam);
 
       // 0.1 Services Persistence (Local Cache & Cloud API)
-      const targetSlug = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || "byerman");
-      const savedServices = localStorage.getItem("rf_business_services");
+      const rawTenant = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant") || "byerman");
+      const targetSlug = (rawTenant === "default" || rawTenant === "byerman-id" || rawTenant === "ermankuafor" || !rawTenant) ? "byerman" : rawTenant;
+      const savedServices = localStorage.getItem(`rf_business_services_${targetSlug}`) || localStorage.getItem("rf_business_services");
       if (savedServices) {
         try {
           const parsed = JSON.parse(savedServices);
@@ -232,11 +233,15 @@ export default function SettingsPage() {
         } catch {}
       }
       try {
-        const sRes = await fetch(`/api/business/services?slug=${targetSlug}`);
+        const sRes = await fetch(`/api/business/services?slug=${targetSlug}&_t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const sData = await sRes.json();
-        if (sData.success && Array.isArray(sData.services) && sData.services.length > 0) {
+        if (sData.success && Array.isArray(sData.services)) {
           setServices(sData.services);
           try {
+            localStorage.setItem(`rf_business_services_${targetSlug}`, JSON.stringify(sData.services));
             localStorage.setItem("rf_business_services", JSON.stringify(sData.services));
           } catch {}
         }
@@ -992,15 +997,18 @@ export default function SettingsPage() {
       showToast(serviceIsExtraInput ? "✓ Ekstra hizmet başarıyla eklendi." : "✓ Yeni hizmet başarıyla eklendi.");
     }
 
+    const rawTarget = clinicSlug || localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant") || "byerman";
+    const targetSlug = (rawTarget === "default" || rawTarget === "byerman-id" || rawTarget === "ermankuafor" || !rawTarget) ? "byerman" : rawTarget;
+
     setServices(updatedList);
+    localStorage.setItem(`rf_business_services_${targetSlug}`, JSON.stringify(updatedList));
     localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
     window.dispatchEvent(new Event("storage"));
     setIsServiceModalOpen(false);
 
     // Save to Cloud API
     try {
-      const targetSlug = clinicSlug || "byerman";
-      await fetch("/api/business/services", {
+      const res = await fetch("/api/business/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1009,6 +1017,12 @@ export default function SettingsPage() {
           services: updatedList,
         }),
       });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.services)) {
+        setServices(data.services);
+        localStorage.setItem(`rf_business_services_${targetSlug}`, JSON.stringify(data.services));
+        localStorage.setItem("rf_business_services", JSON.stringify(data.services));
+      }
     } catch (err) {
       console.warn("Failed to persist services to cloud:", err);
     } finally {
@@ -1024,15 +1038,18 @@ export default function SettingsPage() {
 
     if (!confirm("Bu hizmeti silmek istediğinize emin misiniz?")) return;
 
+    const rawTarget = clinicSlug || localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant") || "byerman";
+    const targetSlug = (rawTarget === "default" || rawTarget === "byerman-id" || rawTarget === "ermankuafor" || !rawTarget) ? "byerman" : rawTarget;
+
     const updatedList = services.filter((s) => s.id !== id);
     setServices(updatedList);
+    localStorage.setItem(`rf_business_services_${targetSlug}`, JSON.stringify(updatedList));
     localStorage.setItem("rf_business_services", JSON.stringify(updatedList));
     window.dispatchEvent(new Event("storage"));
     showToast("Hizmet silindi.");
 
     try {
-      const targetSlug = clinicSlug || "byerman";
-      await fetch("/api/business/services", {
+      const res = await fetch("/api/business/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1041,6 +1058,12 @@ export default function SettingsPage() {
           serviceId: id,
         }),
       });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.services)) {
+        setServices(data.services);
+        localStorage.setItem(`rf_business_services_${targetSlug}`, JSON.stringify(data.services));
+        localStorage.setItem("rf_business_services", JSON.stringify(data.services));
+      }
     } catch (err) {
       console.warn("Failed to delete service in cloud:", err);
     }
