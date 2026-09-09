@@ -12,7 +12,8 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return INITIAL_BLOG_POSTS.map((post) => ({
+  const posts = await getAllBlogPosts();
+  return posts.map((post) => ({
     slug: post.slug,
   }));
 }

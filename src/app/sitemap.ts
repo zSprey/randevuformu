@@ -2,7 +2,7 @@
 import { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 import { SEKTOR_DATA } from '@/lib/sektorler';
-import { INITIAL_BLOG_POSTS } from '@/lib/blogData';
+import { getAllBlogPosts } from '@/lib/blogStore';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://randevuformu.com';
@@ -36,8 +36,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // 3. Blog Yazıları
-  const blogPages: MetadataRoute.Sitemap = INITIAL_BLOG_POSTS.map((post) => ({
+  // 3. Blog Yazıları (Tüm dinamik + statik makaleler)
+  const allBlogPosts = await getAllBlogPosts();
+  const blogPages: MetadataRoute.Sitemap = allBlogPosts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',

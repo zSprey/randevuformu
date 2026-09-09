@@ -47,9 +47,10 @@ export default function BlogCatalogPage() {
 
   const categories = [
     "ALL",
+    "İşletme Büyüme Rehberi",
+    "Güzellik & Kuaför",
     "Diş Hekimliği",
     "Beslenme & Diyet",
-    "Güzellik & Kuaför",
     "Veteriner Hekimlik",
     "Fizyoterapi & Pilates",
     "Psikoloji & Terapi",
