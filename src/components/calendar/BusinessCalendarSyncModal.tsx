@@ -10,11 +10,8 @@ import {
   ExternalLink,
   QrCode,
   X,
-  Bell,
-  Sparkles,
   Apple,
-  Download,
-  Info,
+  Radio,
 } from "lucide-react";
 
 interface BusinessCalendarSyncModalProps {
@@ -31,7 +28,8 @@ export function BusinessCalendarSyncModal({
   onClose,
 }: BusinessCalendarSyncModalProps) {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"apple" | "google" | "qr">("apple");
+  const [mode, setMode] = useState<"phone" | "qr">("phone");
+  const [deviceType, setDeviceType] = useState<"android" | "apple" | "other">("other");
   const [hostUrl, setHostUrl] = useState("https://randevuformu.com");
 
   useEffect(() => {
@@ -39,16 +37,20 @@ export function BusinessCalendarSyncModal({
       setHostUrl(window.location.origin);
       const ua = navigator.userAgent.toLowerCase();
       if (/android/i.test(ua)) {
-        setActiveTab("google");
+        setDeviceType("android");
+        setMode("phone");
       } else if (/iphone|ipad|ipod/i.test(ua)) {
-        setActiveTab("apple");
+        setDeviceType("apple");
+        setMode("phone");
+      } else {
+        setDeviceType("other");
+        setMode("qr");
       }
     }
   }, []);
 
   const cleanTenant = tenant || "byerman";
   const httpFeedUrl = `${hostUrl}/api/calendar/feed?tenant=${cleanTenant}`;
-  const downloadIcsUrl = `${httpFeedUrl}&download=1`;
   const webcalUrl = httpFeedUrl.replace(/^https?:\/\//, "webcal://");
   const googleCalUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(
     httpFeedUrl
@@ -62,289 +64,224 @@ export function BusinessCalendarSyncModal({
     } catch {}
   };
 
-  // QR Kod URL (Google Chart API ile anında mobil okutulabilir QR)
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+  // QR Kod URL
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
     webcalUrl
-  )}&bgcolor=ffffff&color=0F2A4A&margin=2`;
+  )}&bgcolor=ffffff&color=0F172A&margin=2`;
+
+  const isApple = deviceType === "apple";
+  const isAndroid = deviceType === "android";
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden text-[#0F172A]"
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden text-slate-900"
           >
-            {/* Modal Header */}
-            <div className="px-6 py-4.5 bg-gradient-to-r from-[#0F2A4A] to-[#1E3A8A] text-white flex items-center justify-between">
+            {/* Modal Header - Apple Minimalist */}
+            <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-slate-100 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                  <Smartphone className="w-5 h-5 text-[#38BDF8]" />
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-[#0062FF]">
+                  <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm sm:text-base flex items-center gap-2">
-                    <span>Telefon Takvimine Otomatik Bağla</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                      Canlı Eşitleme
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
+                      Takvime Canlı Bağla
+                    </h3>
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Canlı
                     </span>
-                  </h3>
-                  <p className="text-[11px] text-slate-300">
-                    Gelen her randevu telefonunuza otomatik düşer ve alarmı çalar.
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Gelen her randevu telefonunuza otomatik düşer
                   </p>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Kapat"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-5">
-              {/* Feature Highlights */}
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-start gap-2">
-                  <Bell className="w-4 h-4 text-[#0062FF] shrink-0 mt-0.5" />
-                  <span className="text-blue-950 font-medium leading-snug">
-                    Randevudan 1 saat ve 15 dk önce telefonda sesli bildirim çalar.
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span className="text-emerald-950 font-medium leading-snug">
-                    Sıfır şifre/hesap gerektirir; 1 kez bağlamanız yeterlidir.
-                  </span>
-                </div>
-              </div>
-
-              {/* Platform Selector Tabs */}
-              <div className="grid grid-cols-3 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold">
+            <div className="p-5 space-y-4">
+              {/* Segmented Control: 2 Tabs only (fits all mobile screens cleanly) */}
+              <div className="p-1 rounded-2xl bg-slate-100/80 border border-slate-200/60 grid grid-cols-2 text-xs font-semibold">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("apple")}
-                  className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    activeTab === "apple"
-                      ? "bg-white text-[#0F2A4A] shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
+                  onClick={() => setMode("phone")}
+                  className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    mode === "phone"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
-                  <Apple className="w-3.5 h-3.5" />
-                  <span>iPhone / Mac</span>
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Telefonumdan Bağla</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("google")}
-                  className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    activeTab === "google"
-                      ? "bg-white text-emerald-600 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
+                  onClick={() => setMode("qr")}
+                  className={`py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    mode === "qr"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Android / Google</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("qr")}
-                  className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    activeTab === "qr"
-                      ? "bg-white text-indigo-600 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  <QrCode className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Kamerayla Okut</span>
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Kamerayla Okut (QR)</span>
                 </button>
               </div>
 
-              {/* Tab 1: Apple / iPhone */}
-              {activeTab === "apple" && (
-                <div className="space-y-3 text-center">
-                  <p className="text-xs text-slate-600">
-                    iPhone veya Mac cihazınızdaysanız, aşağıdaki butona bastığınızda iOS Takvim uygulaması doğrudan açılır ve aboneliği onaylamanızı ister:
-                  </p>
+              {/* MODE 1: TELEFONUMDAN BAĞLA */}
+              {mode === "phone" && (
+                <div className="space-y-3.5">
+                  {/* Bilgi Şeridi */}
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-2 text-[11px] text-slate-600">
+                    <div className="flex items-center gap-2 font-medium text-slate-800">
+                      <Radio className="w-3.5 h-3.5 text-[#0062FF]" />
+                      <span>Tam Otomatik &amp; Canlı Eşitleme</span>
+                    </div>
+                    <ul className="space-y-1 text-[11px] text-slate-500 pl-5 list-disc marker:text-slate-400">
+                      <li>Randevular her 15 dakikada bir otomatik güncellenir.</li>
+                      <li>Randevudan 1 saat ve 15 dk önce telefonunuzda sesli alarm çalar.</li>
+                      <li>Şifre gerekmez; bir kez bağlamanız yeterlidir.</li>
+                    </ul>
+                  </div>
+
+                  {/* TEK HERO BUTON - DİREKT CANLI ABONELİK (SIFIR .ICS DOSYASI) */}
                   <a
                     href={webcalUrl}
-                    className="w-full py-3 px-4 rounded-xl bg-[#0062FF] hover:bg-[#0051d4] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.99]"
+                    className="w-full py-3.5 px-4 rounded-2xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-between shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
                   >
-                    <Apple className="w-4 h-4" />
-                    <span>iPhone / Apple Takvimine Ekle (Tek Tık)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  <a
-                    href={downloadIcsUrl}
-                    download={`${cleanTenant}-randevulari.ics`}
-                    className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-600" />
-                    <span>veya .ICS Dosyası Olarak İndir</span>
-                  </a>
-                  <p className="text-[11px] text-slate-400">
-                    Açılan pencerede <strong>&ldquo;Abone Ol&rdquo;</strong> &gt; <strong>&ldquo;Ekle&rdquo;</strong> demeniz yeterlidir.
-                  </p>
-                </div>
-              )}
-
-              {/* Tab 2: Android & Google Takvim */}
-              {activeTab === "google" && (
-                <div className="space-y-2.5 text-center">
-                  <p className="text-xs text-slate-600">
-                    Android telefonunuza randevuları doğrudan kaydedebilir veya canlı takvime bağlayabilirsiniz:
-                  </p>
-
-                  {/* 1. Android Takvime Doğrudan Bağla (Canlı Eşitleme) */}
-                  <a
-                    href={webcalUrl}
-                    className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm flex items-center justify-between shadow-sm transition-transform active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-2.5 text-left">
-                      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                        <Smartphone className="w-4 h-4 text-white" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                        {isApple ? (
+                          <Apple className="w-5 h-5 text-white" />
+                        ) : (
+                          <Smartphone className="w-5 h-5 text-white" />
+                        )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span>Android Takvimine Doğrudan Bağla</span>
-                          <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white/25 text-emerald-100 font-semibold">
-                            Tek Tık
-                          </span>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-white leading-snug">
+                          {isApple
+                            ? "Apple Takvimine Canlı Bağla"
+                            : isAndroid
+                            ? "Android Takvimine Canlı Bağla"
+                            : "Telefon Takvimine Canlı Bağla"}
                         </div>
-                        <p className="text-[10px] font-normal text-emerald-100">
-                          Samsung Takvim, Xiaomi veya varsayılan telefon takvimini açar
-                        </p>
+                        <div className="text-[10.5px] text-blue-100 font-normal">
+                          {isApple
+                            ? "iPhone Takvim uygulamasını açar ve abone eder"
+                            : "Cihazın varsayılan takvimini anında açar"}
+                        </div>
                       </div>
                     </div>
-                    <ExternalLink className="w-4 h-4 shrink-0 text-emerald-200" />
+                    <ExternalLink className="w-4 h-4 text-blue-200 shrink-0" />
                   </a>
 
-                  {/* 2. Android'e İndir ve Takvime Kaydet (.ICS Dosyası) */}
-                  <a
-                    href={downloadIcsUrl}
-                    download={`${cleanTenant}-randevulari.ics`}
-                    className="w-full py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center justify-between shadow-sm transition-transform active:scale-[0.99]"
-                  >
-                    <div className="flex items-center gap-2.5 text-left">
-                      <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
-                        <Download className="w-4 h-4 text-emerald-400" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span>Android&apos;e İndir &amp; Kaydet (.ICS)</span>
-                          <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
-                            Direkt Kayıt
-                          </span>
-                        </div>
-                        <p className="text-[10px] font-normal text-slate-300">
-                          Tüm randevuları indirir; indirilen dosyaya dokunarak takvime kaydedin
-                        </p>
-                      </div>
-                    </div>
-                    <Download className="w-4 h-4 shrink-0 text-slate-400" />
-                  </a>
-
-                  {/* 3. Google Takvim Web (PC / Bilgisayar) */}
+                  {/* İkincil Alternatif: Google Takvim Web */}
                   <a
                     href={googleCalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100/80 border border-blue-200 text-blue-900 font-semibold text-xs flex items-center justify-between transition-colors"
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-between transition-colors"
                   >
-                    <div className="flex items-center gap-2 text-left">
-                      <div className="w-6 h-6 rounded-lg bg-blue-600/10 flex items-center justify-center shrink-0">
-                        <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-bold text-blue-950">
-                          Google Takvim (PC / Masaüstü Web)
-                        </div>
-                        <p className="text-[9.5px] text-blue-700 font-normal">
-                          Google hesabınıza tarayıcı üzerinden canlı abone olur
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                      <span>Google Takvim (Masaüstü Web)</span>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="text-[10px] text-slate-400 font-normal flex items-center gap-1">
+                      Web&apos;de aç <ExternalLink className="w-3 h-3" />
+                    </span>
                   </a>
-
-                  {/* Bilgi Kutusu: Neden Google Takvim mobilde açılmadı? */}
-                  <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[10.5px] text-amber-900 leading-relaxed text-left flex items-start gap-2">
-                    <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="text-amber-950 font-semibold">Google Takvim Mobilde Neden Açılmadı?</strong>
-                      <p className="mt-0.5 text-amber-800 text-[10px] leading-normal">
-                        Google Takvim mobil uygulaması, güvenlik kısıtlaması nedeniyle telefon tarayıcısından tek tıkla URL takvimi ekletmez. Android telefonunuz için yukarıdaki <strong>&ldquo;Android Takvimine Bağla&rdquo;</strong> veya <strong>&ldquo;Android&apos;e İndir &amp; Kaydet&rdquo;</strong> seçeneğini kullanınız. Google hesabına eklemek isterseniz bilgisayarınızdan Google Takvim&apos;i açabilir veya aşağıdaki iCal linkini kopyalayabilirsiniz.
-                      </p>
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* Tab 3: QR Kod ile Telefona Okut */}
-              {activeTab === "qr" && (
+              {/* MODE 2: QR KOD (BİLGİSAYAR VEYA KAMERA) */}
+              {mode === "qr" && (
                 <div className="space-y-3 text-center">
-                  <p className="text-xs text-slate-600">
-                    Şu anda bilgisayardaysanız, <strong>iPhone veya Android kameranızı</strong> aşağıdaki QR koda tutarak takvimi anında telefonunuza bağlayabilirsiniz:
+                  <p className="text-xs text-slate-500">
+                    Telefonunuzun kamerasını aşağıdaki koda tutun; takviminiz anında açılsın:
                   </p>
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl inline-block shadow-2xs">
+
+                  <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl inline-block shadow-xs">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={qrCodeUrl}
                       alt="Takvim QR Kodu"
-                      className="w-44 h-44 mx-auto rounded-lg"
-                      width={176}
-                      height={176}
+                      className="w-48 h-48 mx-auto rounded-xl"
+                      width={192}
+                      height={192}
                     />
                   </div>
-                  <p className="text-[11px] font-medium text-emerald-600">
-                    Kamerayı açın &gt; Çıkan Takvim Bildirimine dokunun &gt; &ldquo;Abone Ol&rdquo; deyin.
+
+                  <p className="text-[11px] font-medium text-slate-600">
+                    iPhone veya Android kamerasıyla okutup <strong>&ldquo;Abone Ol&rdquo;</strong> demeniz yeterlidir.
                   </p>
+
+                  {/* Google Calendar Web for Desktop */}
+                  <a
+                    href={googleCalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                    <span>Bilgisayarda Google Takvime Ekle</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
                 </div>
               )}
 
-              {/* Direct Feed Link Copy */}
-              <div className="pt-2 border-t border-slate-100">
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1.5">
-                  Özel Takvim Akış Bağlantınız (iCal URL)
-                </label>
-                <div className="flex items-center gap-2">
+              {/* Feed URL Copy - Ultra sleek & compact */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mb-1.5">
+                  <span>Özel Takvim Akış Bağlantısı (iCal URL)</span>
+                  {copied && <span className="text-emerald-600 font-semibold">Kopyalandı!</span>}
+                </div>
+                <div className="flex items-center gap-1.5">
                   <input
                     type="text"
                     readOnly
                     value={httpFeedUrl}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700 font-mono select-all focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-mono select-all focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
                   >
                     {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-700">Kopyalandı!</span>
-                      </>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                     ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Kopyala</span>
-                      </>
+                      <Copy className="w-3.5 h-3.5 text-slate-600" />
                     )}
+                    <span>{copied ? "Tamam" : "Kopyala"}</span>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>{businessName} Canlı Akışı</span>
+            <div className="px-5 py-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="font-medium truncate max-w-[240px]">{businessName}</span>
               <button
                 type="button"
                 onClick={onClose}
-                className="font-semibold text-slate-700 hover:text-[#0F2A4A] cursor-pointer"
+                className="font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
               >
                 Kapat
               </button>
