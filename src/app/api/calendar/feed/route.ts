@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const tenant = (searchParams.get("tenant") || searchParams.get("slug") || "byerman").toLowerCase().trim();
+    const isDownload = searchParams.get("download") === "1" || searchParams.get("download") === "true";
 
     // 1. İşletme profilini ve randevularını çek
     const [profile, appointments] = await Promise.all([
@@ -67,7 +68,9 @@ export async function GET(req: NextRequest) {
       headers: {
         "Content-Type": "text/calendar; charset=utf-8",
         "Cache-Control": "no-cache, no-store, max-age=0, must-revalidate",
-        "Content-Disposition": `inline; filename="${tenant}-randevulari.ics"`,
+        "Content-Disposition": isDownload
+          ? `attachment; filename="${tenant}-randevulari.ics"`
+          : `inline; filename="${tenant}-randevulari.ics"`,
         "X-Published-TTL": "PT15M",
       },
     });

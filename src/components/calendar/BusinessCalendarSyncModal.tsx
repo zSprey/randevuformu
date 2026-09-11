@@ -13,6 +13,8 @@ import {
   Bell,
   Sparkles,
   Apple,
+  Download,
+  Info,
 } from "lucide-react";
 
 interface BusinessCalendarSyncModalProps {
@@ -35,13 +37,20 @@ export function BusinessCalendarSyncModal({
   useEffect(() => {
     if (typeof window !== "undefined") {
       setHostUrl(window.location.origin);
+      const ua = navigator.userAgent.toLowerCase();
+      if (/android/i.test(ua)) {
+        setActiveTab("google");
+      } else if (/iphone|ipad|ipod/i.test(ua)) {
+        setActiveTab("apple");
+      }
     }
   }, []);
 
   const cleanTenant = tenant || "byerman";
   const httpFeedUrl = `${hostUrl}/api/calendar/feed?tenant=${cleanTenant}`;
+  const downloadIcsUrl = `${httpFeedUrl}&download=1`;
   const webcalUrl = httpFeedUrl.replace(/^https?:\/\//, "webcal://");
-  const googleCalUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(
+  const googleCalUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(
     httpFeedUrl
   )}`;
 
@@ -133,12 +142,12 @@ export function BusinessCalendarSyncModal({
                   onClick={() => setActiveTab("google")}
                   className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeTab === "google"
-                      ? "bg-white text-[#0062FF] shadow-xs"
+                      ? "bg-white text-emerald-600 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
-                  <span>Google / Android</span>
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Android / Google</span>
                 </button>
                 <button
                   type="button"
@@ -156,7 +165,7 @@ export function BusinessCalendarSyncModal({
 
               {/* Tab 1: Apple / iPhone */}
               {activeTab === "apple" && (
-                <div className="space-y-3.5 text-center">
+                <div className="space-y-3 text-center">
                   <p className="text-xs text-slate-600">
                     iPhone veya Mac cihazınızdaysanız, aşağıdaki butona bastığınızda iOS Takvim uygulaması doğrudan açılır ve aboneliği onaylamanızı ister:
                   </p>
@@ -168,31 +177,109 @@ export function BusinessCalendarSyncModal({
                     <span>iPhone / Apple Takvimine Ekle (Tek Tık)</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                  <a
+                    href={downloadIcsUrl}
+                    download={`${cleanTenant}-randevulari.ics`}
+                    className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>veya .ICS Dosyası Olarak İndir</span>
+                  </a>
                   <p className="text-[11px] text-slate-400">
                     Açılan pencerede <strong>&ldquo;Abone Ol&rdquo;</strong> &gt; <strong>&ldquo;Ekle&rdquo;</strong> demeniz yeterlidir.
                   </p>
                 </div>
               )}
 
-              {/* Tab 2: Google Takvim */}
+              {/* Tab 2: Android & Google Takvim */}
               {activeTab === "google" && (
-                <div className="space-y-3.5 text-center">
+                <div className="space-y-2.5 text-center">
                   <p className="text-xs text-slate-600">
-                    Google Takvim (Android / PC) kullanıyorsanız, Google Takvim hesabınıza tek tıkla canlı randevu takvimini ekleyebilirsiniz:
+                    Android telefonunuza randevuları doğrudan kaydedebilir veya canlı takvime bağlayabilirsiniz:
                   </p>
+
+                  {/* 1. Android Takvime Doğrudan Bağla (Canlı Eşitleme) */}
+                  <a
+                    href={webcalUrl}
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm flex items-center justify-between shadow-sm transition-transform active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-2.5 text-left">
+                      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                        <Smartphone className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span>Android Takvimine Doğrudan Bağla</span>
+                          <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white/25 text-emerald-100 font-semibold">
+                            Tek Tık
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-normal text-emerald-100">
+                          Samsung Takvim, Xiaomi veya varsayılan telefon takvimini açar
+                        </p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 shrink-0 text-emerald-200" />
+                  </a>
+
+                  {/* 2. Android'e İndir ve Takvime Kaydet (.ICS Dosyası) */}
+                  <a
+                    href={downloadIcsUrl}
+                    download={`${cleanTenant}-randevulari.ics`}
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center justify-between shadow-sm transition-transform active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-2.5 text-left">
+                      <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                        <Download className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span>Android&apos;e İndir &amp; Kaydet (.ICS)</span>
+                          <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">
+                            Direkt Kayıt
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-normal text-slate-300">
+                          Tüm randevuları indirir; indirilen dosyaya dokunarak takvime kaydedin
+                        </p>
+                      </div>
+                    </div>
+                    <Download className="w-4 h-4 shrink-0 text-slate-400" />
+                  </a>
+
+                  {/* 3. Google Takvim Web (PC / Bilgisayar) */}
                   <a
                     href={googleCalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.99]"
+                    className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100/80 border border-blue-200 text-blue-900 font-semibold text-xs flex items-center justify-between transition-colors"
                   >
-                    <Calendar className="w-4 h-4" />
-                    <span>Google Takvime Abone Ol</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-2 text-left">
+                      <div className="w-6 h-6 rounded-lg bg-blue-600/10 flex items-center justify-center shrink-0">
+                        <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-blue-950">
+                          Google Takvim (PC / Masaüstü Web)
+                        </div>
+                        <p className="text-[9.5px] text-blue-700 font-normal">
+                          Google hesabınıza tarayıcı üzerinden canlı abone olur
+                        </p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   </a>
-                  <p className="text-[11px] text-slate-400">
-                    Açılan Google Takvim ekranında <strong>&ldquo;Takvim Ekle&rdquo;</strong> butonuna basın.
-                  </p>
+
+                  {/* Bilgi Kutusu: Neden Google Takvim mobilde açılmadı? */}
+                  <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[10.5px] text-amber-900 leading-relaxed text-left flex items-start gap-2">
+                    <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-amber-950 font-semibold">Google Takvim Mobilde Neden Açılmadı?</strong>
+                      <p className="mt-0.5 text-amber-800 text-[10px] leading-normal">
+                        Google Takvim mobil uygulaması, güvenlik kısıtlaması nedeniyle telefon tarayıcısından tek tıkla URL takvimi ekletmez. Android telefonunuz için yukarıdaki <strong>&ldquo;Android Takvimine Bağla&rdquo;</strong> veya <strong>&ldquo;Android&apos;e İndir &amp; Kaydet&rdquo;</strong> seçeneğini kullanınız. Google hesabına eklemek isterseniz bilgisayarınızdan Google Takvim&apos;i açabilir veya aşağıdaki iCal linkini kopyalayabilirsiniz.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
