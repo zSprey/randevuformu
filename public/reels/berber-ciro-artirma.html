@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berberlerde Boş Koltuk Kaybını Önleme | randevuformu.com</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #030712;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .reel-container {
+      width: 450px;
+      height: 800px;
+      max-width: 100vw;
+      max-height: 100vh;
+      background: radial-gradient(circle at top, #0F2A4A, #050B14);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      background: #0062FF;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #0062FF;
+    }
+    .progress-bar {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #0062FF;
+      width: 0%;
+      animation: progressAnim 14s linear infinite;
+    }
+    @keyframes progressAnim {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    .scene-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      padding: 20px 0;
+      transition: all 0.4s ease;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+      background: rgba(0, 98, 255, 0.15);
+      border: 1px solid #0062FF;
+      color: #60A5FA;
+      align-self: center;
+    }
+    .headline {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.25;
+      letter-spacing: -0.8px;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, #FFFFFF, #94A3B8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subheadline {
+      font-size: 17px;
+      color: #CBD5E1;
+      line-height: 1.5;
+      max-width: 90%;
+      margin: 0 auto;
+    }
+    .footer-cta {
+      text-align: center;
+      z-index: 10;
+    }
+    .cta-button {
+      display: inline-block;
+      width: 100%;
+      padding: 16px;
+      background: #0062FF;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 16px;
+      border-radius: 16px;
+      text-decoration: none;
+      box-shadow: 0 10px 25px -5px rgba(0, 98, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="reel-container">
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="brand-bar">
+      <div class="logo">
+        <div class="logo-dot"></div>
+        <span>randevuformu.com</span>
+      </div>
+      <span style="font-size: 12px; color: #94A3B8; font-weight: 600;">#BüyümeTaktikleri</span>
+    </div>
+
+    <div class="scene-content" id="sceneBox">
+      <div class="badge" id="sceneBadge">⚠️ ESNAFIN GİZLİ ZARARI</div>
+      <h1 class="headline" id="sceneHeadline">Günde Sadece 2 Koltuk Boş Kalıyorsa...</h1>
+      <p class="subheadline" id="sceneSub">Ayda en az 45.000 TL kiranızı çöpe atıyorsunuz demektir.</p>
+    </div>
+
+    <div class="footer-cta">
+      <a href="https://randevuformu.com" class="cta-button">Hemen Ücretsiz Başlayın 👉</a>
+    </div>
+  </div>
+
+  <script>
+    const scenes = [
+      {
+        durationSeconds: 3.5,
+        headline: "Günde Sadece 2 Koltuk Boş Kalıyorsa...",
+        subheadline: "Ayda en az 45.000 TL kiranızı çöpe atıyorsunuz demektir.",
+        badgeText: "⚠️ ESNAFIN GİZLİ ZARARI"
+      },
+      {
+        durationSeconds: 3.5,
+        headline: "Müşteriler Gece 23:00'te Randevu Arıyor",
+        subheadline: "Dükkan kapalıyken telefon açılmıyor, müşteri yan salona kaçıyor.",
+        badgeText: "🌙 %65 GECE KURALI"
+      },
+      {
+        durationSeconds: 3.5,
+        headline: "Tek Bir Linkle Koltukları 7/24 Doldurun",
+        subheadline: "Instagram biyografinize ve Google Haritalar'a randevu formunu koyun.",
+        badgeText: "🚀 OTONOM ÇÖZÜM"
+      },
+      {
+        durationSeconds: 4,
+        headline: "Ücretsiz Randevu Formunuzu 30 Saniyede Açın",
+        subheadline: "randevuformu.com ile hemen başlayın, kasanızı rahatlatın.",
+        badgeText: "💈 ÜCRETSİZ DENE"
+      }
+    ];
+
+    let currentIndex = 0;
+
+    function playScenes() {
+      const scene = scenes[currentIndex];
+      const box = document.getElementById('sceneBox');
+      box.style.opacity = '0';
+      box.style.transform = 'translateY(10px)';
+
+      setTimeout(() => {
+        document.getElementById('sceneBadge').innerText = scene.badgeText;
+        document.getElementById('sceneHeadline').innerText = scene.headline;
+        document.getElementById('sceneSub').innerText = scene.subheadline;
+        box.style.opacity = '1';
+        box.style.transform = 'translateY(0)';
+      }, 200);
+
+      setTimeout(() => {
+        currentIndex = (currentIndex + 1) % scenes.length;
+        playScenes();
+      }, scene.durationSeconds * 1000);
+    }
+
+    setTimeout(playScenes, 500);
+  </script>
+</body>
+</html>

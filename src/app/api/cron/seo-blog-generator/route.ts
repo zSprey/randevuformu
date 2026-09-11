@@ -6,6 +6,7 @@ import {
   apiUnauthorized,
   handleApiError,
 } from "@/lib/apiResponse";
+import { humanizeText, getHumanAuthor } from "@/lib/ai/humanizer";
 
 export const dynamic = "force-dynamic";
 
@@ -129,14 +130,55 @@ export async function GET(req: NextRequest) {
 
     const uniqueSlug = `${selectedTopic.slugPrefix}-${currentYear}-${Math.floor(dayOfYear / SECTOR_TOPIC_POOL.length) + 1}`;
 
+    const humanAuthor = getHumanAuthor(selectedTopic.category);
+
+    const rawContent = `
+## ${currentYear}'de ${selectedTopic.category} İçin Randevu ve Ciro Yönetimi
+
+Geleneksel telefon görüşmeleri, WhatsApp üzerinden saatlerce süren uygun saat pazarlıkları ve defterde karalanan randevular yerel hizmet sektörünün en büyük gizli ciro kaybıdır.
+
+### Sektörün Kanayan Yarası: Boş Saatler ve No-Show
+${selectedTopic.painPoint}
+
+### Saha Deneyimiyle Çözüm
+${selectedTopic.solution}
+
+---
+
+### İşletmeye Doğrudan Nakit Kazandıran 4 Pratik Taktik
+
+1. **7/24 Kesintisiz Rezervasyon Kabulü:**
+   Müşterilerin %65'i akşam saatlerinde randevu arar. Instagram profilinize veya Google Haritalar'a ekleyeceğiniz online randevu linki siz uyurken bile ertesi günün koltuğunu doldurur.
+
+2. **Gelmeme (No-Show) Oranını Sıfırlama:**
+   Otomatik WhatsApp hatırlatıcısı ve küçük bir kapora/ön ödeme, hastanın veya müşterinin randevuya sadakatini %90 artırır.
+
+3. **Akrilik QR Masa Standı:**
+   İşletmenizin bekleme salonundaki stand üzerinde yer alan QR kodu okutan müşteri, kasada sıra beklemeden bir sonraki seansını 15 saniyede ayarlar.
+
+4. **Koltuk ve Uzman Dağılımı:**
+   İşletmenizdeki her uzmanın çalışma günleri, molaları ve işlem süreleri bağımsız yönetilir; çifte rezervasyon riski tamamen sıfırlanır.
+
+---
+
+### Hemen Hayata Geçirin
+
+Randevu akışınızı tek tıkla profesyonelleştirmek için [Giriş Ekranından](/login) formunuzu oluşturabilir veya [Örnek Randevu Sayfasını](/byerman) canlı inceleyebilirsiniz.
+    `.trim();
+
+    const humanizedContent = humanizeText(rawContent, { context: "blog" });
+    const humanizedExcerpt = humanizeText(
+      `${selectedTopic.keyword} alanında faaliyet gösteren işletmeler için operasyonel kayıpları sıfırlayan, boş koltuk maliyetini bitiren ve müşteri sadakatini artıran pratik saha stratejileri.`
+    );
+
     const newPost: BlogPost = {
       id: `ai-cron-${Date.now()}`,
       slug: uniqueSlug,
       title: `${currentYear} ${selectedTopic.title}`,
-      excerpt: `${selectedTopic.keyword} alanında faaliyet gösteren işletmeler için operasyonel kayıpları sıfırlayan ve müşteri sadakatini artıran otonom randevu stratejileri.`,
+      excerpt: humanizedExcerpt,
       category: selectedTopic.category,
-      author: "randevuformu.com AI SEO Editörü",
-      readTime: "7 dk okuma",
+      author: `${humanAuthor.author} (${humanAuthor.role})`,
+      readTime: "6 dk okuma",
       publishDate: new Date().toLocaleDateString("tr-TR", {
         day: "numeric",
         month: "long",
@@ -158,39 +200,7 @@ export async function GET(req: NextRequest) {
           answer: "Evet, işletme sahibinin ve ekibin şahsi takvimindeki etkinlikler otomatik olarak randevu sayfasında kapatılır, çifte rezervasyon riski milisaniyeler içinde elenir.",
         },
       ],
-      content: `
-## ${currentYear}'de ${selectedTopic.category} İçin Dijital Randevu Devrimi
-
-Geleneksel telefon görüşmeleri, WhatsApp üzerinden saatlerce süren uygun saat pazarlıkları ve ajandada karalanan randevular artık yerel hizmet sektörünün en büyük ciro kaybı nedenidir.
-
-### Temel Sektörel Sorun
-${selectedTopic.painPoint}
-
-### Otonom Çözüm & randevuformu.com Yaklaşımı
-${selectedTopic.solution}
-
----
-
-### Randevu Altyapısının Sunduğu 4 Temel Avantaj
-
-1. **7/24 Kesintisiz Rezervasyon Kabulü:**
-   Müşterileriniz Instagram bio linkinizden, Google Haritalar profilinizden veya web sitenizden tek tıkla doğrudan müsait saatleri görerek randevu oluşturabilir.
-
-2. **No-Show (Gelmeme) Oranında %85 Düşüş:**
-   Otomatik WhatsApp ve SMS teyitleri sayesinde müşterilerin randevuyu unutma ihtimali ortadan kalkar. Dilerseniz İyzico sanal POS ile ön kapora tahsil edebilirsiniz.
-
-3. **Masaüstü QR Standı & Masa Rezervasyonu:**
-   İşletmenizin bekleme salonundaki akrilik stand üzerinde yer alan QR kodu okutan danışanlar bir sonraki seanslarını kasada sıra beklemeden saniyeler içinde planlar.
-
-4. **Çoklu Uzman & Personel Yönetimi:**
-   İşletmenizdeki her uzmanın çalışma saatleri, tatil günleri ve hizmet süreleri bağımsız olarak işlenir.
-
----
-
-### Hemen Başlayın
-
-İşletmenizin randevu yönetimini modernize etmek ve ücretsiz formunuzu 30 saniyede açmak için [Giriş Ekranını](/login) ziyaret edebilir veya [Örnek Randevu Sayfasını](/byerman) inceleyebilirsiniz.
-      `.trim(),
+      content: humanizedContent,
     };
 
     // 1. Kalıcı olarak kaydet (Edge Config + Supabase + Cache Invalidation)

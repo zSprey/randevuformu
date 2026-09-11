@@ -4,6 +4,7 @@ import { SEKTOR_DATA, SektorConfig, SektorServiceItem } from '@/lib/sektorler';
 import { getBusinessProfile, DEFAULT_BYERMAN_PROFILE } from '@/lib/storage/profileStore';
 import { getStoredServices, DEFAULT_BYERMAN_SERVICES } from '@/lib/storage/servicesStore';
 import { getStoredStaff, BYERMAN_DEFAULT_STAFF } from '@/lib/storage/staffStore';
+import { humanizeText } from '@/lib/ai/humanizer';
 
 export interface CustomerChatResponse {
   reply: string;
@@ -976,7 +977,10 @@ ${servicesContext}
 
   // J. Varsayılan Eğitilmiş Karşılama
   return {
-    reply: `Merhaba! Ben **${businessName}** akıllı randevu asistanıyım. Size randevu saatleri, hizmet ve ücretlerimiz, adresimiz ve uzman ustalarımız hakkında memnuniyetle yardımcı olabilirim. Nasıl yardımcı olabilirim?`,
+    reply: humanizeText(
+      `Merhaba! **${businessName}** salonumuza hoş geldiniz! Size randevu saatleri, hizmetlerimiz, güncel fiyatlarımız ve uzman ekibimiz hakkında yardımcı olmak için buradayım. Bugün nasıl bir işlem düşünüyorsunuz? 🙂`,
+      { context: 'chat' }
+    ),
     quickActions: ['Yarın boş yer var mı?', 'Fiyat listesi nedir?', 'Neredesiniz? (Konum)', 'Hangi ustalar var?'],
     detectedSector: sector?.slug,
   };
