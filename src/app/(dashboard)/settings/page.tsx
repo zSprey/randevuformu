@@ -38,6 +38,10 @@ import {
   MessageSquare,
   Copy,
   AlertCircle,
+  Volume2,
+  VolumeX,
+  Play,
+  Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -49,6 +53,7 @@ import {
 import { DEFAULT_BYERMAN_SERVICES, StoredBusinessService } from "@/lib/storage/servicesStore";
 import { PrivateFeedback, DEFAULT_BYERMAN_REPUTATION } from "@/lib/storage/reputationStore";
 import ServicePriceBadge from "@/components/common/ServicePriceBadge";
+import { soundEngine, SoundTone } from "@/lib/soundEngine";
 
 export interface BusinessService {
   id: string;
@@ -202,9 +207,64 @@ export default function SettingsPage() {
   const [privateFeedbacks, setPrivateFeedbacks] = useState<PrivateFeedback[]>([]);
   const [isSavingReputation, setIsSavingReputation] = useState(false);
 
+  // Sound & PWA Notification States
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundTone, setSoundTone] = useState<SoundTone>("cash_register");
+  const [soundVolume, setSoundVolume] = useState(0.85);
+  const [pushPermission, setPushPermission] = useState<string>("default");
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleToneChange = (tone: SoundTone) => {
+    setSoundTone(tone);
+    soundEngine.saveSettings({ tone });
+    soundEngine.play(tone, soundVolume);
+  };
+
+  const handleVolumeChange = (vol: number) => {
+    setSoundVolume(vol);
+    soundEngine.saveSettings({ volume: vol });
+  };
+
+  const handleSoundToggle = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    soundEngine.saveSettings({ enabled });
+    if (enabled) {
+      soundEngine.play(soundTone, soundVolume);
+    }
+  };
+
+  const handleTestSound = () => {
+    soundEngine.play(soundTone, soundVolume);
+    showToast("Zil sesi hoparlörde çalındı! 🔔");
+  };
+
+  const handleRequestPushPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      showToast("Bu tarayıcı masaüstü bildirim desteği sunmuyor.");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission === "granted") {
+        showToast("Masaüstü bildirim izni başarıyla etkinleştirildi! 🎉");
+        try {
+          new Notification("RandevuFormu Bildirimleri Aktif! 🎉", {
+            body: "Yeni randevular anlık olarak ekranınıza düşecektir.",
+            icon: "/icon.png",
+          });
+        } catch {}
+      } else {
+        showToast("Bildirim izni reddedildi veya engellendi.");
+      }
+    } catch {
+      showToast("Bildirim izni alınırken hata oluştu.");
+    }
   };
 
   useEffect(() => {
@@ -220,6 +280,15 @@ export default function SettingsPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get("tab");
       if (tabParam) setActiveTab(tabParam);
+
+      // Sound & Notification Settings Init
+      const soundConfig = soundEngine.getSettings();
+      setSoundEnabled(soundConfig.enabled);
+      setSoundTone(soundConfig.tone);
+      setSoundVolume(soundConfig.volume);
+      if ("Notification" in window) {
+        setPushPermission(Notification.permission);
+      }
 
       // 0.1 Services Persistence (Local Cache & Cloud API)
       const rawTenant = isByErman ? "byerman" : (localStorage.getItem("rf_tenant_slug") || localStorage.getItem("rf_tenant") || "byerman");
@@ -2819,6 +2888,216 @@ export default function SettingsPage() {
                       }`}
                     />
                   </button>
+                </div>
+              </div>
+
+              {/* SESLİ UYARI & HOPARLÖR MASASI */}
+              <div className="pt-6 border-t border-slate-200">
+                <div className="flex items-center justify-between pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600">
+                        <Volume2 className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-bold text-[#0F2A4A]">Canlı Randevu Zil Sesi & Hoparlör Masası</h4>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Panel açıkken yeni bir müşteri randevu aldığında anında hoparlörden çalacak lüks tınıyı belirleyin.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSoundToggle(!soundEnabled)}
+                    className={`w-11 h-6 rounded-full transition-colors relative ${
+                      soundEnabled ? "bg-amber-500" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                        soundEnabled ? "left-6" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {soundEnabled && (
+                  <div className="space-y-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
+                    {/* Ton Seçici Kartları */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Zil Sesi Tınısı (Web Audio API)
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToneChange("cash_register")}
+                          className={`p-3 rounded-xl border text-left transition-all relative ${
+                            soundTone === "cash_register"
+                              ? "bg-amber-500/10 border-amber-500 text-amber-900 shadow-xs ring-1 ring-amber-500"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg">🛎️</span>
+                            {soundTone === "cash_register" && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                            )}
+                          </div>
+                          <div className="font-bold text-xs mt-1.5">Klasik Kasa Çing</div>
+                          <div className="text-[10px] text-slate-500 mt-0.5">Lüks kasa / nakit metalik çanı</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToneChange("modern_chime")}
+                          className={`p-3 rounded-xl border text-left transition-all relative ${
+                            soundTone === "modern_chime"
+                              ? "bg-blue-500/10 border-[#0062FF] text-blue-900 shadow-xs ring-1 ring-[#0062FF]"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg">🔔</span>
+                            {soundTone === "modern_chime" && (
+                              <span className="w-2 h-2 rounded-full bg-[#0062FF]"></span>
+                            )}
+                          </div>
+                          <div className="font-bold text-xs mt-1.5">Modern Kristal Çan</div>
+                          <div className="text-[10px] text-slate-500 mt-0.5">Yumuşak akustik 3'lü akor</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToneChange("crystal_ping")}
+                          className={`p-3 rounded-xl border text-left transition-all relative ${
+                            soundTone === "crystal_ping"
+                              ? "bg-emerald-500/10 border-emerald-500 text-emerald-900 shadow-xs ring-1 ring-emerald-500"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg">✨</span>
+                            {soundTone === "crystal_ping" && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            )}
+                          </div>
+                          <div className="font-bold text-xs mt-1.5">Dijital Kristal Ping</div>
+                          <div className="text-[10px] text-slate-500 mt-0.5">Net, zarif ve hızlı bildirim</div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Ses Düzeyi & Canlı Test */}
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="w-full sm:w-1/2 flex items-center gap-3">
+                        <Volume2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={soundVolume}
+                          onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                          className="w-full accent-amber-500 cursor-pointer"
+                        />
+                        <span className="text-xs font-semibold text-slate-600 w-10 text-right">
+                          %{Math.round(soundVolume * 100)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleTestSound}
+                        className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 text-[#0F2A4A] hover:text-amber-600 font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2"
+                      >
+                        <Play className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <span>Sesi Canlı Test Et</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* MOBİL PWA & WEB PUSH BİLDİRİM MASASI */}
+              <div className="pt-6 border-t border-slate-200">
+                <div className="pb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-600">
+                      <Smartphone className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-sm font-bold text-[#0F2A4A]">Mobil Uygulama (PWA) & Masaüstü Push</h4>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Telefon ekranınız kapalıyken veya tarayıcı simge durumundayken dahi anlık randevu uyarısı alın.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Push Permission Card */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-[#0F2A4A]">Tarayıcı Bildirim İzni</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            pushPermission === "granted"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : pushPermission === "denied"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {pushPermission === "granted"
+                            ? "✓ İzin Verildi"
+                            : pushPermission === "denied"
+                            ? "✕ Engellendi"
+                            : "Bekliyor"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Yeni randevularda ekranın sağ altından veya telefon kilit ekranından bildirim gösterir.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleRequestPushPermission}
+                      disabled={pushPermission === "granted"}
+                      className={`w-full py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                        pushPermission === "granted"
+                          ? "bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-default"
+                          : "bg-[#0062FF] hover:bg-[#0050d4] text-white shadow-xs"
+                      }`}
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      <span>
+                        {pushPermission === "granted"
+                          ? "Bildirimler Aktif"
+                          : "Bildirim İznini Etkinleştir"}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* PWA App Install Info Card */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-[#0F2A4A]">Telefona Yükle (PWA)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#0062FF]">
+                          Uygulama Modu
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Safari'de <strong>Paylaş &gt; Ana Ekrana Ekle</strong> veya Chrome'da <strong>Yükle</strong> butonuna basarak tam ekran kullanın.
+                      </p>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span>Uygulama mağazasına gerek kalmadan ana ekranınızda çalışır.</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

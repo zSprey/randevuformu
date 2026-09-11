@@ -33,6 +33,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { SocialBioWizardModal } from "@/components/panel/SocialBioWizardModal";
+import AppointmentAlertListener from "@/components/notifications/AppointmentAlertListener";
+import PwaInstallBanner from "@/components/pwa/PwaInstallBanner";
 
 interface NotificationItem {
   id: string;
@@ -98,6 +100,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     updateTenantInfo();
     window.addEventListener("storage", updateTenantInfo);
     return () => window.removeEventListener("storage", updateTenantInfo);
+  }, []);
+
+  useEffect(() => {
+    const handleNewAppointment = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const apt = customEvent.detail;
+      if (!apt) return;
+      const newNotif: NotificationItem = {
+        id: "apt-" + (apt.id || Date.now()),
+        title: "Yeni Randevu: " + (apt.customer_name || "Müşteri"),
+        message: `${apt.service_name || "Hizmet"} • ${apt.appointment_date || ""} ${apt.appointment_time || ""}`,
+        time: "Şimdi",
+        type: "booking",
+        unread: true,
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+    };
+
+    window.addEventListener("rf_new_appointment", handleNewAppointment);
+    return () => window.removeEventListener("rf_new_appointment", handleNewAppointment);
   }, []);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -513,6 +535,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* AI Chatbot Asistanı - İşletme Modu */}
       <ChatbotWidget mode="business" />
+
+      {/* Gerçek Zamanlı Randevu Sesli Uyarıcısı */}
+      <AppointmentAlertListener />
+
+      {/* Akıllı PWA Mobil Kurulum Çubuğu */}
+      <PwaInstallBanner />
     </div>
   );
 }
