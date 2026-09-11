@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
           ? `attachment; filename="${tenant}-randevulari.ics"`
           : `inline; filename="${tenant}-randevulari.ics"`,
         "X-Published-TTL": "PT15M",
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error: any) {

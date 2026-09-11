@@ -161,52 +161,157 @@ export function BusinessCalendarSyncModal({
                     </ul>
                   </div>
 
-                  {/* TEK HERO BUTON - DİREKT CANLI ABONELİK (SIFIR .ICS DOSYASI) */}
-                  <a
-                    href={webcalUrl}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-between shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                        {isApple ? (
-                          <Apple className="w-5 h-5 text-white" />
-                        ) : (
-                          <Smartphone className="w-5 h-5 text-white" />
-                        )}
-                      </div>
-                      <div className="text-left">
-                        <div className="text-sm font-bold text-white leading-snug">
-                          {isApple
-                            ? "Apple Takvimine Canlı Bağla"
-                            : isAndroid
-                            ? "Android Takvimine Canlı Bağla"
-                            : "Telefon Takvimine Canlı Bağla"}
+                  {/* ANDROID PLATFORM FLOW */}
+                  {isAndroid && (
+                    <>
+                      <a
+                        href={googleCalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(httpFeedUrl);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 3000);
+                          } catch {}
+                        }}
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-between shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                            <Smartphone className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-sm font-bold text-white leading-snug">
+                              Google &amp; Android Takvimine Bağla
+                            </div>
+                            <div className="text-[10.5px] text-blue-100 font-normal">
+                              Telefonunuzla canlı senkronize olur
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-[10.5px] text-blue-100 font-normal">
-                          {isApple
-                            ? "iPhone Takvim uygulamasını açar ve abone eder"
-                            : "Cihazın varsayılan takvimini anında açar"}
-                        </div>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-blue-200 shrink-0" />
-                  </a>
+                        <ExternalLink className="w-4 h-4 text-blue-200 shrink-0" />
+                      </a>
 
-                  {/* İkincil Alternatif: Google Takvim Web */}
-                  <a
-                    href={googleCalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-between transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
-                      <span>Google Takvim (Masaüstü Web)</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-normal flex items-center gap-1">
-                      Web&apos;de aç <ExternalLink className="w-3 h-3" />
-                    </span>
-                  </a>
+                      {/* Android İpucu */}
+                      <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100/80 text-[11px] text-slate-700 space-y-1 text-left">
+                        <div className="font-semibold text-blue-950 flex items-center gap-1.5">
+                          <span>💡 Android Canlı Takvim İpucu</span>
+                          {copied && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold">
+                              URL Kopyalandı
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-relaxed">
+                          Butona bastığınızda Google Takvim açılır; çıkan ekranda <strong>&ldquo;Takvim Ekle&rdquo;</strong>ye dokunmanız yeterlidir. Takvim akış linkiniz otomatik olarak panonuza kopyalanmıştır.
+                        </p>
+                      </div>
+
+                      {/* Alternatif Cihaz Takvimi */}
+                      <div className="pt-1 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Samsung / Cihaz Takviminiz için:</span>
+                        <a
+                          href={webcalUrl}
+                          className="text-[#0062FF] font-semibold hover:underline flex items-center gap-1"
+                        >
+                          <span>Cihazda Aç</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </>
+                  )}
+
+                  {/* APPLE (IPHONE / MAC) PLATFORM FLOW */}
+                  {isApple && (
+                    <>
+                      <a
+                        href={webcalUrl}
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-between shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                            <Apple className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-sm font-bold text-white leading-snug">
+                              Apple Takvimine Canlı Bağla
+                            </div>
+                            <div className="text-[10.5px] text-blue-100 font-normal">
+                              iPhone Takvim uygulamasını açar ve canlı abone eder
+                            </div>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-blue-200 shrink-0" />
+                      </a>
+
+                      {/* Apple İpucu */}
+                      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-[11px] text-slate-600 space-y-1 text-left">
+                        <p className="text-[10.5px] leading-relaxed">
+                          Açılan pencerede <strong>&ldquo;Abone Ol&rdquo;</strong> &gt; <strong>&ldquo;Ekle&rdquo;</strong> demeniz yeterlidir.
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          (Bağlantının doğrudan takvim uygulamasını açması için Safari önerilir).
+                        </p>
+                      </div>
+
+                      {/* Google Takvim Alternatifi */}
+                      <a
+                        href={googleCalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-between transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                          <span>Google Takvim Kullanıyorum</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-normal flex items-center gap-1">
+                          Web&apos;de aç <ExternalLink className="w-3 h-3" />
+                        </span>
+                      </a>
+                    </>
+                  )}
+
+                  {/* OTHER / GENERIC PLATFORM FLOW */}
+                  {!isApple && !isAndroid && (
+                    <>
+                      <a
+                        href={webcalUrl}
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#0062FF] hover:bg-[#0051d4] active:scale-[0.99] text-white font-bold text-sm flex items-center justify-between shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                            <Calendar className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-sm font-bold text-white leading-snug">
+                              Cihaz Takvimine Canlı Bağla
+                            </div>
+                            <div className="text-[10.5px] text-blue-100 font-normal">
+                              Varsayılan takvim uygulamanızda canlı akışı başlatır
+                            </div>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-blue-200 shrink-0" />
+                      </a>
+
+                      <a
+                        href={googleCalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-between transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-[#0062FF]" />
+                          <span>Google Takvim (Masaüstü Web)</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-normal flex items-center gap-1">
+                          Web&apos;de aç <ExternalLink className="w-3 h-3" />
+                        </span>
+                      </a>
+                    </>
+                  )}
                 </div>
               )}
 

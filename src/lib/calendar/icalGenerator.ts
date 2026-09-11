@@ -130,9 +130,33 @@ export function generateMultiEventFeed(
     `X-WR-TIMEZONE:Europe/Istanbul`,
     `REFRESH-INTERVAL;VALUE=DURATION:PT${refreshMinutes}M`,
     `X-PUBLISHED-TTL:PT${refreshMinutes}M`,
+    "BEGIN:VTIMEZONE",
+    "TZID:Europe/Istanbul",
+    "BEGIN:STANDARD",
+    "DTSTART:19700101T000000",
+    "TZOFFSETFROM:+0300",
+    "TZOFFSETTO:+0300",
+    "TZNAME:TRT",
+    "END:STANDARD",
+    "END:VTIMEZONE",
   ];
 
-  for (const ev of events) {
+  const effectiveEvents = [...events];
+  if (effectiveEvents.length === 0) {
+    const today = new Date().toISOString().split("T")[0];
+    effectiveEvents.push({
+      id: "sync-status",
+      title: `✅ ${calendarName} - Canlı Bağlantı Aktif`,
+      description: "RandevuFormu canlı takvim senkronizasyonunuz başarıyla bağlandı. Yeni gelen randevular otomatik olarak buraya düşecektir.\n\nPanel: https://randevuformu.com/calendar",
+      location: "RandevuFormu Bulut Senkronizasyonu",
+      date: today,
+      time: "09:00",
+      durationMinutes: 30,
+      url: "https://randevuformu.com/calendar",
+    });
+  }
+
+  for (const ev of effectiveEvents) {
     const dtStart = toUtcString(ev.date, ev.time, 0);
     const dtEnd = toUtcString(ev.date, ev.time, ev.durationMinutes || 45);
     const uid = `rf-${ev.id}@randevuformu.com`;
