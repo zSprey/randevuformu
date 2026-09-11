@@ -14,28 +14,33 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://randevuformu.com'),
   title: {
-    default: "Randevu Formu & Online Randevu Sistemi | randevuformu.com",
+    default: "Her Sektör İçin Online Randevu Sistemi & Randevu Formu | randevuformu.com",
     template: "%s | Randevu Formu"
   },
-  description: "Randevu formu ve online randevu sistemi ile işletmenizi büyütün. Berber, kuaför, güzellik salonu, diş hekimi, diyetisyen ve klinikler için WhatsApp onaylı, takvim entegrasyonlu randevu yazılımı.",
+  description: "Berberler, kuaförler, diş hekimleri, güzellik salonları, klinikler, diyetisyenler ve her sektör için online randevu sistemi. WhatsApp onaylı, 30 saniyede kurulum ve takvim eşitlemeli randevu yazılımı.",
   keywords: [
-    "randevu formu",
+    "berberler için randevu",
+    "her sektör için randevu sistemi",
     "online randevu sistemi",
+    "randevu formu",
     "randevu sistemi",
+    "berber randevu sistemi",
+    "berber randevu programı",
+    "kuaför randevu programı",
+    "kuaför randevu sistemi",
+    "klinik randevu sistemi",
+    "diş hekimi randevu sistemi",
+    "diyetisyen randevu yazılımı",
     "ücretsiz randevu programı",
     "randevu formu oluşturma",
-    "kuaför randevu programı",
-    "berber randevu sistemi",
-    "doktor randevu programı",
-    "güzellik salonu randevu programı",
-    "diyetisyen randevu yazılımı",
-    "klinik randevu sistemi",
     "whatsapp randevu sistemi",
     "müşteri randevu takip",
     "online rezervasyon programı",
     "randevu yazılımı",
     "randevuformu",
-    "randevuformu.com"
+    "randevuformu.com",
+    "byerman",
+    "by erman"
   ],
   authors: [{ name: "randevuformu.com" }],
   creator: "randevuformu.com",
@@ -142,6 +147,61 @@ export default function RootLayout({
           "areaServed": "TR",
           "availableLanguage": "Turkish"
         }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://randevuformu.com/#software",
+        "name": "randevuformu.com - Her Sektör İçin Online Randevu Sistemi",
+        "operatingSystem": "Web, iOS, Android",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "Appointment Scheduling & Reservation Software",
+        "description": "Berberler, kuaförler, diş hekimleri, diyetisyenler, klinikler ve tüm randevulu sektörler için WhatsApp onaylı, çift yönlü takvim eşitlemeli online randevu formu yazılımı.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "TRY",
+          "description": "Ücretsiz Başlangıç Paketi"
+        },
+        "featureList": [
+          "Berberler İçin Randevu Sistemi (Usta ve Koltuk Seçimi)",
+          "Kuaför ve Güzellik Salonu Randevu Programı",
+          "Diş Hekimi ve Klinik Randevu Yazılımı",
+          "Diyetisyen ve Terapist Seans Takvimi",
+          "Her Sektör İçin Özel Subdomain (isletme.randevuformu.com)",
+          "WhatsApp ve SMS Otomatik Onay & Hatırlatma",
+          "Google Takvim ve Outlook Çift Yönlü Senkronizasyon",
+          "Kredi Kartı & Kapora Sanal POS Entegrasyonu"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://randevuformu.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "RandevuFormu hangi sektörler için online randevu sistemi sunar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "RandevuFormu; berberler, kuaförler, güzellik merkezleri, diş hekimleri, diyetisyenler, psikologlar, veterinerler, avukatlar, oto servisler, dövmeciler, fotoğrafçılar ve randevu ile çalışan tüm hizmet sektörleri için özel çözümler sunar."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Berberler için randevu sistemi nasıl çalışır?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Berber işletmeleri 30 saniyede ücretsiz profillerini açar; ustalarını (personel), çalışma saatlerini ve saç-sakal hizmetlerini listeler. Müşteriler Instagram biyografisi veya WhatsApp linkinden diledikleri ustayı ve saati seçerek 30 saniyede randevu alır, teyitler anında WhatsApp ile iletilir."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Her sektör için online randevu formu kurmak ücretli mi?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Hayır, randevuformu.com üzerinde işletme profilinizi açmak ve temel randevu formunuzu yayınlamak tamamen ücretsizdir. Kredi kartı gerekmez."
+            }
+          }
+        ]
       }
     ]
   };

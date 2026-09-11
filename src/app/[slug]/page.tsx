@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 import { DEFAULT_BYERMAN_PROFILE } from "@/lib/storage/profileStore";
 import { DEFAULT_BYERMAN_SERVICES } from "@/lib/storage/servicesStore";
+import { getGeoLocation } from "@/lib/seo/geoEngine";
 import BookingPageClient from "./BookingPageClient";
 
 interface PageProps {
@@ -111,19 +112,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const { business } = await getBusinessData(slug);
+  const isByErman = slug === "byerman" || slug === "ermankuafor";
   const businessName = business?.name || slug;
   const category = business?.category || "Randevu";
   const location = business?.address || "İstanbul";
 
-  const title = `${businessName} Randevu Al | RandevuFormu`;
-  const description = `${businessName} online randevu sayfası. ${category} — ${location}. Müsait çalışma saatlerini inceleyin, 30 saniyede kolayca randevu alın.`;
+  const title = isByErman
+    ? "By Erman Erkek Berberi | Online Randevu Al — Ümraniye İstanbul"
+    : `${businessName} Randevu Al | RandevuFormu`;
+
+  const description = isByErman
+    ? "By Erman Erkek Berberi resmi online randevu sayfası. Ümraniye İstanbul berber randevusu, saç kesimi, sakal tıraşı, usta seçimi, çalışma saatleri ve güncel fiyat listesi. 30 saniyede WhatsApp onaylı randevunuzu oluşturun."
+    : `${businessName} online randevu sayfası. ${category} — ${location}. Müsait çalışma saatlerini inceleyin, 30 saniyede kolayca randevu alın.`;
+
   const canonicalUrl = `https://${slug}.randevuformu.com`;
+
+  const keywords = isByErman
+    ? [
+        "by erman",
+        "byerman",
+        "by erman randevu",
+        "by erman berber",
+        "by erman erkek berberi",
+        "erman güler berber",
+        "ümraniye erkek berberi",
+        "ümraniye berber randevu",
+        "istanbul berber randevu",
+        "by erman online randevu",
+        "randevuformu byerman",
+      ]
+    : [businessName, `${businessName} randevu`, category, location];
 
   return {
     title: {
       absolute: title,
     },
     description,
+    keywords,
     alternates: {
       canonical: canonicalUrl,
     },
@@ -207,22 +232,62 @@ export default async function BusinessBookingPage({ params }: PageProps) {
       ? `₺${minPrice} - ₺${maxPrice}`
       : "₺₺";
 
+  const isByErman = slug === "byerman" || slug === "ermankuafor";
+  const geo = isByErman
+    ? getGeoLocation("istanbul", "umraniye")
+    : getGeoLocation("istanbul", "merkez");
+
   const localBusinessJsonLd = {
-    "@context": "https://schema.org",
     "@type": schemaType,
     "@id": `https://${slug}.randevuformu.com/#localbusiness`,
     name: business.name,
+    ...(isByErman
+      ? {
+          alternateName: [
+            "By Erman",
+            "ByErman",
+            "By Erman Erkek Berberi",
+            "Erman Güler",
+            "By Erman Berber",
+          ],
+        }
+      : {}),
     url: `https://${slug}.randevuformu.com`,
     telephone: business.phone || "+90 538 480 90 01",
     priceRange: computedPriceRange,
     image: "https://randevuformu.com/logo.png",
+    ...(isByErman
+      ? {
+          hasMap: "https://share.google/VpkvdhoLKLSzWpHA6",
+        }
+      : {}),
     address: {
       "@type": "PostalAddress",
       streetAddress: business.address || "İstanbul, Türkiye",
       addressLocality: business.city || "İstanbul",
+      addressRegion: "İstanbul",
+      postalCode: geo.postalCode || "34760",
       addressCountry: "TR",
     },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+    },
     openingHours: "Mo,Tu,We,Th,Fr 09:30-21:30 Sa 09:30-23:00",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      reviewCount: "148",
+      bestRating: "5",
+      worstRating: "1",
+    },
+    areaServed: [
+      {
+        "@type": "AdministrativeArea",
+        name: isByErman ? "Ümraniye, İstanbul" : "İstanbul",
+      },
+    ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: `${business.name} Hizmet ve Fiyat Listesi`,
@@ -250,11 +315,48 @@ export default async function BusinessBookingPage({ params }: PageProps) {
     },
   };
 
+  const byErmanFaqs = [
+    {
+      q: "By Erman Erkek Berberi randevusu nasıl alınır?",
+      a: "byerman.randevuformu.com üzerinden By Erman Erkek Berberi için dilediğiniz ustayı (Erman Usta veya Ahmet Kalfa), almak istediğiniz saç-sakal hizmetini ve uygun saati seçerek 30 saniyede online randevunuzu alabilirsiniz. Rezervasyon anında WhatsApp ile onaylanır.",
+    },
+    {
+      q: "By Erman Erkek Berberi nerede ve çalışma saatleri nedir?",
+      a: "By Erman Erkek Berberi; İstiklal Mah. Reşit Paşa Cad. No: 88, Ümraniye, İstanbul adresindedir. Çalışma saatleri: Pazartesi - Cuma 09:30 - 21:30, Cumartesi 09:30 - 23:00, Pazar günleri kapalıdır.",
+    },
+    {
+      q: "By Erman Erkek Berberi'nde hangi hizmetler verilmektedir?",
+      a: "Saç kesimi, sakal tıraşı, saç & sakal tasarımı, çocuk saç kesimi, saç yıkama & fön, cilt bakımı ve sıcak havlu kompresi gibi profesyonel erkek berber hizmetleri sunulmaktadır.",
+    },
+  ];
+
+  const fullJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      localBusinessJsonLd,
+      ...(isByErman
+        ? [
+            {
+              "@type": "FAQPage",
+              mainEntity: byErmanFaqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: f.a,
+                },
+              })),
+            },
+          ]
+        : []),
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(fullJsonLd) }}
       />
       <BookingPageClient slug={slug} initialBusiness={business} isDemo={isDemo} />
     </>

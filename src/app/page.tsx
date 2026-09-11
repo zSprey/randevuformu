@@ -13,6 +13,7 @@ import {
   Heart,
   Dog,
   Dumbbell,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -243,6 +244,38 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Her Sektör İçin Randevu AEO & Direct Answer Bilgi Bloğu */}
+          <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#0F2A4A] via-[#163558] to-[#0A192F] text-white border border-blue-900/40 shadow-lg">
+            <div className="flex items-center gap-2 text-blue-300 text-xs font-bold uppercase tracking-wider mb-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Yapay Zeka & Arama Motoru Doğrudan Yanıtı (AEO / GEO)</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold mb-3">
+              Her Sektör ve Berberler İçin Online Randevu Sistemi Nasıl Çalışır?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-4xl">
+              randevuformu.com; berberler, kuaförler, diş poliklinikleri, güzellik merkezleri, diyetisyenler ve danışmanlar dahil her sektörün 30 saniyede kendi markasına özel online randevu formu kurmasını sağlar. Sistem; usta ve personel seçimi, çift yönlü Google/Outlook Takvim senkronizasyonu, otomatik WhatsApp randevu teyidi ve online kapora/ödeme altyapısını tek çatı altında sunar.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-blue-200">30 Saniyede Kurulum</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Kodlama gerektirmez</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-blue-200">%90 No-Show Düşüşü</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">WhatsApp teyitli</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-blue-200">Koltuk & Usta Seçimi</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Berber & salon uyumlu</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="text-xs font-bold text-blue-200">7/24 Randevu Kabulü</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">%65 mesai dışı hacim</div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {primarySectors.map((sector) => (
               <Link
@@ -264,6 +297,30 @@ export default function Home() {
                 </p>
               </Link>
             ))}
+          </div>
+
+          {/* Canlı Berber Referansı — By Erman Subdomain Otorite Kartı */}
+          <div className="mt-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Canlı İşletme Örneği
+              </div>
+              <h4 className="text-base font-bold text-[#0F2A4A]">
+                By Erman — Erkek Berberi (Ümraniye, İstanbul)
+              </h4>
+              <p className="text-xs text-slate-500 max-w-xl">
+                By Erman Erkek Berberi için çalışan usta seçimi, hizmet listesi ve WhatsApp onaylı randevu akışını canlı olarak inceleyin.
+              </p>
+            </div>
+            <a
+              href="https://byerman.randevuformu.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0062FF] hover:bg-[#0052d9] text-white text-xs font-bold transition-all shadow-xs shrink-0"
+            >
+              byerman.randevuformu.com <ArrowRight className="w-3.5 h-3.5" />
+            </a>
           </div>
         </div>
       </section>
