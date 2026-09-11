@@ -491,8 +491,23 @@ export default function Home() {
           </div>
 
           <div className="space-y-2.5">
-            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Şirket</span>
+            <span className="font-bold text-[#0F2A4A] block text-xs uppercase tracking-wider">Kurumsal &amp; Hukuk</span>
             <ul className="space-y-2 text-slate-600 text-[13px]">
+              <li>
+                <Link href="/kvkk" className="hover:text-[#0062FF] transition-colors font-medium">
+                  KVKK Aydınlatma Metni
+                </Link>
+              </li>
+              <li>
+                <Link href="/gizlilik" className="hover:text-[#0062FF] transition-colors">
+                  Gizlilik ve Çerez Politikası
+                </Link>
+              </li>
+              <li>
+                <Link href="/kullanim-kosullari" className="hover:text-[#0062FF] transition-colors">
+                  Kullanım Koşulları
+                </Link>
+              </li>
               <li>
                 <a href="mailto:destek@randevuformu.com" className="hover:text-[#0062FF] transition-colors">
                   destek@randevuformu.com
@@ -509,9 +524,15 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-500">
           <p>&copy; {new Date().getFullYear()} randevuformu.com — Tüm hakları saklıdır.</p>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="hover:text-[#0062FF] transition-colors">
-              Giriş Yap
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px]">
+            <Link href="/kvkk" className="hover:text-[#0062FF] transition-colors font-medium">
+              KVKK Metni
+            </Link>
+            <Link href="/gizlilik" className="hover:text-[#0062FF] transition-colors">
+              Gizlilik Politikası
+            </Link>
+            <Link href="/kullanim-kosullari" className="hover:text-[#0062FF] transition-colors">
+              Kullanım Koşulları
             </Link>
             <Link href="/contact" className="hover:text-[#0062FF] transition-colors">
               İletişim

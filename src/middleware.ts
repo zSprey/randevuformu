@@ -16,12 +16,97 @@ const PROTECTED_ROUTES = [
   '/qr-stand',
 ];
 
+// ────────────────────────────────────────────────────────
+// EDGE WAF & SİBER SALDIRI KALKANI
+// ────────────────────────────────────────────────────────
+const MALICIOUS_PATTERNS = [
+  '/.env',
+  '/.git',
+  '/.svn',
+  '/.aws',
+  '/.ssh',
+  '/wp-admin',
+  '/wp-login',
+  '/xmlrpc.php',
+  '/phpinfo',
+  '/phpmyadmin',
+  '/.htaccess',
+  '/.ds_store',
+  '..',
+];
+
+// In-Memory Edge Rate Limiting (Layer 7 Flood / Brute-Force Koruması)
+const ipRateMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 dakika
+const MAX_API_REQUESTS_PER_MINUTE = 100;
+const MAX_STRICT_REQUESTS_PER_MINUTE = 20; // SMS, Auth, Admin için ekstra katı limit
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const pathname = request.nextUrl.pathname
   const lowerPathname = pathname.toLowerCase()
   const hostHeader = (request.headers.get('host') || '').toLowerCase().split(':')[0]
+
+  // 1. WAF Kötü Niyetli Tarayıcı / Saldırı Engelleme (.env, .git, traversal)
+  if (MALICIOUS_PATTERNS.some((pattern) => lowerPathname.includes(pattern))) {
+    return new NextResponse('Access Denied: Malicious Request Pattern Detected', {
+      status: 403,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  // 2. Edge API Rate Limiter (Layer 7 DDoS / Flooding Koruması)
+  if (lowerPathname.startsWith('/api/')) {
+    const isBypass =
+      lowerPathname.startsWith('/api/cron/') ||
+      lowerPathname.startsWith('/api/seo/indexnow') ||
+      lowerPathname.startsWith('/api/calendar/feed');
+
+    if (!isBypass) {
+      const forwardedFor = request.headers.get('x-forwarded-for');
+      const realIp = request.headers.get('x-real-ip');
+      const clientIp = (forwardedFor ? forwardedFor.split(',')[0].trim() : realIp) || '127.0.0.1';
+      const now = Date.now();
+
+      const isStrictEndpoint =
+        lowerPathname.startsWith('/api/sms/') ||
+        lowerPathname.startsWith('/api/auth/') ||
+        lowerPathname.startsWith('/api/admin/');
+
+      const limit = isStrictEndpoint ? MAX_STRICT_REQUESTS_PER_MINUTE : MAX_API_REQUESTS_PER_MINUTE;
+      const recordKey = `${clientIp}:${isStrictEndpoint ? 'strict' : 'std'}`;
+
+      // Hafıza temizliği (2000'i aşarsa süresi geçmişleri sil)
+      if (ipRateMap.size > 2000) {
+        for (const [k, v] of ipRateMap.entries()) {
+          if (now > v.resetAt) ipRateMap.delete(k);
+        }
+      }
+
+      const record = ipRateMap.get(recordKey);
+      if (!record || now > record.resetAt) {
+        ipRateMap.set(recordKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+      } else {
+        record.count += 1;
+        if (record.count > limit) {
+          return new NextResponse(
+            JSON.stringify({
+              error: 'Too Many Requests',
+              message: 'Aşırı istek tespit edildi. Güvenliğiniz için lütfen 1 dakika bekleyiniz.',
+            }),
+            {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'Retry-After': '60',
+              },
+            }
+          );
+        }
+      }
+    }
+  }
 
   // ────────────────────────────────────────────────────────
   // 0. GOOGLE SEARCH CONSOLE & INDEXNOW INSTANT AUTO-VERIFICATION
@@ -170,7 +255,8 @@ export async function middleware(request: NextRequest) {
     'www', 'admin', 'api', 'app', 'login', 'panel', 'dashboard',
     'settings', 'staff', 'calendar', 'clients', 'packages', 'retention',
     'qr-stand', 'blog', 'sektorler', 'kesfet', 'contact', 'ornek',
-    'tv', 'widget', 'auth', 'mail', 'status', 'assets', 'cdn', 'static'
+    'tv', 'widget', 'auth', 'mail', 'status', 'assets', 'cdn', 'static',
+    'kvkk', 'gizlilik', 'kullanim-kosullari'
   ]);
 
   if (RESERVED_SUBDOMAINS.has(subdomain) || subdomain === hostHeader) {
@@ -195,6 +281,9 @@ export async function middleware(request: NextRequest) {
       p.startsWith('/retention') ||
       p.startsWith('/qr-stand') ||
       p.startsWith('/widget') ||
+      p.startsWith('/kvkk') ||
+      p.startsWith('/gizlilik') ||
+      p.startsWith('/kullanim-kosullari') ||
       p.includes('.')
 
     if (!isSystemPath) {
@@ -232,6 +321,7 @@ export async function middleware(request: NextRequest) {
   finalResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   finalResponse.headers.set('X-XSS-Protection', '1; mode=block')
   finalResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  finalResponse.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
 
   // Search Engine Edge Directive: Tell Googlebot to index freshly and not archive old cache
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/panel') && !pathname.startsWith('/api')) {
