@@ -2,6 +2,7 @@
 import { Metadata } from 'next';
 import { MapPin, Star, Calendar, ShieldCheck, CheckCircle2, ChevronRight, HelpCircle, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { generateGeoLocalBusinessLd, getAeoDirectAnswer } from '@/lib/seo/geoEngine';
 
 interface PageParams {
   sehir: string;
@@ -124,6 +125,8 @@ export default async function DizinPage({ params }: PageProps) {
     },
   ];
 
+  const aeoData = getAeoDirectAnswer(sektor, `${sehir} ${ilce}`);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -156,6 +159,18 @@ export default async function DizinPage({ params }: PageProps) {
           },
         ],
       },
+      ...businesses.map((b) =>
+        generateGeoLocalBusinessLd({
+          businessName: b.name,
+          citySlug: resolvedParams.sehir,
+          districtSlug: resolvedParams.ilce,
+          sectorSlug: resolvedParams.sektor,
+          url: `https://randevuformu.com/${b.slug}`,
+          ratingScore: b.rating,
+          reviewCount: b.reviewCount,
+          priceRange: b.priceText,
+        })
+      ),
       {
         '@type': 'ItemList',
         name: `${ilce} ${sektor} Randevu Listesi`,
@@ -168,14 +183,24 @@ export default async function DizinPage({ params }: PageProps) {
       },
       {
         '@type': 'FAQPage',
-        mainEntity: faqs.map((f) => ({
-          '@type': 'Question',
-          name: f.q,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: f.a,
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: aeoData.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: aeoData.directAnswer,
+            },
           },
-        })),
+          ...faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: f.a,
+            },
+          })),
+        ],
       },
     ],
   };
@@ -219,6 +244,29 @@ export default async function DizinPage({ params }: PageProps) {
           <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
             {sehir} {ilce} genelinde hizmet veren doğrulanmış {sektor.toLowerCase()} işletmelerini karşılaştırın, gerçek danışan yorumlarını inceleyin ve telefon kuyruğu beklemeden WhatsApp onaylı online randevunuzu hemen oluşturun.
           </p>
+        </div>
+      </section>
+
+      {/* Gingiris GEO Local Direct Answer & Citation Box */}
+      <section className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-[#0F2A4A] to-[#1E3A8A] text-white shadow-md border border-blue-900/50">
+          <div className="flex items-center gap-2 text-blue-300 text-xs font-bold uppercase tracking-wider mb-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Yapay Zeka & Bölge Özeti (AEO / Direct Answer)</span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold mb-2">
+            {aeoData.question}
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-4xl">
+            {aeoData.directAnswer}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-4 border-t border-white/10">
+            {aeoData.keyStatistics.map((stat, idx) => (
+              <div key={idx} className="bg-white/10 rounded-lg p-2.5 text-center text-[11px] font-medium text-blue-100">
+                {stat}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

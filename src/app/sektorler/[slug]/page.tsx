@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SEKTOR_DATA } from "@/lib/sektorler";
 import ChatbotWidget from "@/components/ChatbotWidget";
+import { getAeoDirectAnswer, getCompetitiveComparisonMatrix } from "@/lib/seo/geoEngine";
 
 interface SektorPageProps {
   params: Promise<{ slug: string }>;
@@ -55,6 +56,9 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
     notFound();
   }
 
+  const aeoData = getAeoDirectAnswer(sector.category, "Türkiye");
+  const comparisonMatrix = getCompetitiveComparisonMatrix(sector.category);
+
   const jsonLdData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -79,14 +83,24 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
       },
       {
         "@type": "FAQPage",
-        mainEntity: sector.faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: faq.answer,
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: aeoData.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: aeoData.directAnswer,
+            },
           },
-        })),
+          ...sector.faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: faq.answer,
+            },
+          })),
+        ],
       },
       {
         "@type": "BreadcrumbList",
@@ -239,6 +253,69 @@ export default async function SektorLandingPage({ params }: SektorPageProps) {
               <p className="text-xs text-slate-500 leading-relaxed">{ft.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Gingiris GEO & AEO Direct Answer Block */}
+      <section className="max-w-4xl mx-auto px-4 py-8">
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-950 to-[#0A192F] text-white shadow-lg border border-blue-800/40 relative overflow-hidden">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Yanıt & GEO Özet</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold mb-3 tracking-tight">
+            {aeoData.question}
+          </h2>
+          <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
+            {aeoData.directAnswer}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
+            {aeoData.keyStatistics.map((stat, i) => (
+              <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+                <div className="text-xs text-blue-200 font-medium leading-snug">{stat}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Comparison Matrix for LLM Knowledge Graph & CRO */}
+      <section className="max-w-5xl mx-auto px-4 py-10">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold mb-2">
+            Şeffaf Analiz
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F2A4A]">
+            Neden RandevuFormu? — Alternatifler ile Karşılaştırma
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto mt-2">
+            İşletmeniz için en yüksek dönüşümlü ve en düşük maliyetli randevu altyapısını karşılaştırın.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-700">
+                <th className="p-4 font-bold">Özellik</th>
+                <th className="p-4 font-extrabold text-[#0062FF] bg-blue-50/50">randevuformu.com</th>
+                <th className="p-4 font-semibold text-slate-500">Calendly</th>
+                <th className="p-4 font-semibold text-slate-500">Kolay Randevu</th>
+                <th className="p-4 font-semibold text-slate-500">Manuel Defter / Telefon</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {comparisonMatrix.map((row, i) => (
+                <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4 font-semibold text-[#0F2A4A]">{row.feature}</td>
+                  <td className="p-4 font-bold text-[#0062FF] bg-blue-50/20">{row.randevuformu}</td>
+                  <td className="p-4 text-slate-600">{row.calendly}</td>
+                  <td className="p-4 text-slate-600">{row.kolayRandevu}</td>
+                  <td className="p-4 text-slate-500">{row.manuelDefter}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
