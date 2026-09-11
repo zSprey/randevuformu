@@ -67,6 +67,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [tenantSlug, setTenantSlug] = useState("dashboard");
   const [copiedLink, setCopiedLink] = useState(false);
   const [isBioWizardOpen, setIsBioWizardOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Client-side authentication guard: Hesaba giriş yoksa anında ana ekrana (/) yönlendir
+    const verifyAuth = () => {
+      try {
+        const hasSessionCookie = document.cookie.includes("rf_session=true");
+        const storedUser = localStorage.getItem("rf_user");
+        const hasUserCookie = document.cookie.includes("rf_user=");
+
+        const loggedIn = (hasSessionCookie && Boolean(storedUser || hasUserCookie)) || Boolean(storedUser);
+        if (!loggedIn) {
+          setIsAuthenticated(false);
+          router.replace("/");
+          return;
+        }
+        setIsAuthenticated(true);
+      } catch {
+        setIsAuthenticated(false);
+        router.replace("/");
+      }
+    };
+
+    verifyAuth();
+  }, [router]);
 
   const handleCopyLink = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://randevuformu.com";
@@ -154,7 +179,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       sessionStorage.clear();
     } catch {}
 
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const navItems = [
@@ -166,6 +191,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "İşletme Ayarları", href: "/settings", icon: Settings },
     { name: "B2B İletişim", href: "/contact", icon: Mail },
   ];
+
+  if (isAuthenticated === false) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#FAFBFC] text-[#0F172A] flex overflow-hidden font-sans antialiased">

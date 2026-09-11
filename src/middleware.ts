@@ -21,6 +21,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const lowerPathname = pathname.toLowerCase()
+  const hostHeader = (request.headers.get('host') || '').toLowerCase().split(':')[0]
 
   // ────────────────────────────────────────────────────────
   // 0. GOOGLE SEARCH CONSOLE & INDEXNOW INSTANT AUTO-VERIFICATION
@@ -92,7 +93,7 @@ export async function middleware(request: NextRequest) {
   // ────────────────────────────────────────────────────────
   // 2. TENANT DASHBOARD AUTH GUARD (/dashboard, /calendar, vb.)
   // ────────────────────────────────────────────────────────
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  const isProtectedRoute = PROTECTED_ROUTES.some(route => lowerPathname.startsWith(route));
   const isLoginRoute = pathname === '/login';
 
   if (isProtectedRoute) {
@@ -131,9 +132,11 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      // KULLANICI KURALI: Hesaba giriş yapmamış kişilerin /dashboard ve yönetim sayfalarına
+      // erişimi kesinlikle engellenir; doğrudan ana ekrana (/) yönlendirilir.
+      const targetBase = hostHeader === 'www.randevuformu.com' ? 'https://randevuformu.com' : request.url;
+      const homeUrl = new URL('/', targetBase);
+      return NextResponse.redirect(homeUrl);
     }
   }
 
@@ -141,7 +144,6 @@ export async function middleware(request: NextRequest) {
   // 3. SUBDOMAIN ROUTING (byerman.randevuformu.com → /byerman)
   // ────────────────────────────────────────────────────────
   const url = request.nextUrl
-  const hostHeader = (request.headers.get('host') || '').toLowerCase().split(':')[0] // remove port
   let subdomain = ''
 
   // Dedicated custom domain check for byermanrandevuformu.com & byerman.randevuformu.com
