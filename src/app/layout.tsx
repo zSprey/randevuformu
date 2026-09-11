@@ -42,6 +42,7 @@ export const metadata: Metadata = {
   publisher: "randevuformu.com",
   applicationName: "randevuformu.com",
   category: "BusinessApplication",
+  manifest: "/manifest.webmanifest",
   alternates: {
     canonical: 'https://randevuformu.com',
   },
